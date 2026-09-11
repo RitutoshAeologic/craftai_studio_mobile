@@ -1,8 +1,8 @@
 class AppStrings {
   static const String appName = "CraftAI Studio";
-  static const String studioTagline = "Create, Remix & Monetize AI Visuals";
-  static const String exploreTitle = "Explore & Remix";
-  static const String studioTitle = "Creation Studio";
-  static const String libraryTitle = "Cloud Library";
-  static const String walletTitle = "Credit Wallet";
+  static const String appTagline = "Create, Remix & Monetize AI Visuals";
+  static const String tabExplore = "Explore";
+  static const String tabStudio = "Studio";
+  static const String tabLibrary = "Library";
+  static const String tabWallet = "Wallet";
 }

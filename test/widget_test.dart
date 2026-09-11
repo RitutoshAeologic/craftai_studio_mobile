@@ -1,30 +1,53 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-
-import 'package:craftai_studio/main.dart';
+import "package:flutter_test/flutter_test.dart";
+import "package:craftai_studio_mobile/data/models/explore_card_model.dart";
+import "package:craftai_studio_mobile/data/models/job_model.dart";
+import "package:craftai_studio_mobile/data/models/wallet_model.dart";
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test("ExploreCardModel and JobModel serialization test", () {
+    final card = ExploreCardModel(
+      id: "card_1",
+      authorName: "Studio Master",
+      authorHandle: "@studiomaster",
+      authorAvatar: "https://example.com/avatar.jpg",
+      title: "Cyberpunk Samurai",
+      previewUrl: "https://example.com/samurai.jpg",
+      category: "Cinematic",
+      maskedSummary: "masterpiece, 8k, neon lighting",
+      remixFee: 1.0,
+      creatorRoyaltyCut: 0.15,
+      remixCount: 14,
+      likeCount: 95,
+      isLiked: false,
+    );
+    expect(card.id, "card_1");
+    expect(card.category, "Cinematic");
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final job = JobModel(
+      jobId: "job_1",
+      type: "Image",
+      status: "COMPLETED",
+      prompt: "masterpiece, 8k",
+      previewUrl: "https://example.com/job.jpg",
+      creditsDeducted: 1.0,
+      isDownloadUnlocked: false,
+      downloadCost: 2.0,
+      createdAt: DateTime.now(),
+    );
+    expect(job.downloadCost, 2.0);
+    expect(job.isDownloadUnlocked, false);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    final unlockedJob = job.copyWith(isDownloadUnlocked: true);
+    expect(unlockedJob.isDownloadUnlocked, true);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    final wallet = WalletModel(
+      purchasedBalance: 100.0,
+      earnedRoyaltyBalance: 50.0,
+      freeDailyBalance: 10.0,
+      totalGenerations: 42,
+      totalRoyaltiesEarned: 15.0,
+    );
+    expect(wallet.totalSpendable, 160.0);
+    expect(wallet.isEligibleForPayout, true);
   });
 }

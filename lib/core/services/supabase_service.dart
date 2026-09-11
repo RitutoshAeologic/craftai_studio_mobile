@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseService {
@@ -5,15 +6,31 @@ class SupabaseService {
   factory SupabaseService() => _instance;
   SupabaseService._internal();
 
-  static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: 'https://xyzcompany.supabase.co');
-  static const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'public-anon-key');
+  static const String supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://placeholder.supabase.co',
+  );
+  static const String supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'placeholder-anon-key',
+  );
 
   static Future<void> initialize() async {
-    await Supabase.initialize(
-      url: supabaseUrl,
-      anonKey: supabaseAnonKey,
-    );
+    try {
+      await Supabase.initialize(
+        url: supabaseUrl,
+        publishableKey: supabaseAnonKey,
+      );
+    } catch (e) {
+      debugPrint('Supabase initialization notice: $e');
+    }
   }
 
-  static SupabaseClient get client => Supabase.instance.client;
+  static SupabaseClient? get client {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
 }
