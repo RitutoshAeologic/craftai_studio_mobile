@@ -143,11 +143,13 @@ class StudioRemoteDataSource {
     required String imageId,
     required String action,
     required String targetPreset,
+    String? imageUrl,
   }) async {
     final response = await _dio.post(
       '/prompt-engineering/tools/edit-preset',
       data: {
         'image_id': imageId,
+        if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
         'action': action,
         'target_preset': targetPreset,
         'lock_subject': true,

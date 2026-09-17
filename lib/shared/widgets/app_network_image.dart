@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
@@ -43,39 +44,77 @@ class AppNetworkImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final effectiveRadius = borderRadius ?? BorderRadius.circular(AppDimens.radiusMd);
 
-    Widget imageWidget = CachedNetworkImage(
-      imageUrl: imageUrl,
-      width: width,
-      height: height,
-      fit: fit,
-      placeholder: (_, __) =>
-          placeholder ??
-          Container(
-            color: AppColors.surfaceLight,
-            child: const Center(
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primary,
+    Widget imageWidget;
+    if (imageUrl.startsWith('data:image/') && imageUrl.contains(',')) {
+      try {
+        final base64String = imageUrl.split(',').last;
+        final bytes = base64Decode(base64String);
+        imageWidget = Image.memory(
+          bytes,
+          width: width,
+          height: height,
+          fit: fit,
+          errorBuilder: (_, __, ___) =>
+              errorWidget ??
+              Container(
+                color: AppColors.surfaceLight,
+                child: const Center(
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    color: AppColors.textMuted,
+                    size: 24,
+                  ),
+                ),
+              ),
+        );
+      } catch (_) {
+        imageWidget = errorWidget ??
+            Container(
+              color: AppColors.surfaceLight,
+              child: const Center(
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: AppColors.textMuted,
+                  size: 24,
+                ),
+              ),
+            );
+      }
+    } else {
+      imageWidget = CachedNetworkImage(
+        imageUrl: imageUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        placeholder: (_, __) =>
+            placeholder ??
+            Container(
+              color: AppColors.surfaceLight,
+              child: const Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ),
-          ),
-      errorWidget: (_, __, ___) =>
-          errorWidget ??
-          Container(
-            color: AppColors.surfaceLight,
-            child: const Center(
-              child: Icon(
-                Icons.broken_image_outlined,
-                color: AppColors.textMuted,
-                size: 24,
+        errorWidget: (_, __, ___) =>
+            errorWidget ??
+            Container(
+              color: AppColors.surfaceLight,
+              child: const Center(
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: AppColors.textMuted,
+                  size: 24,
+                ),
               ),
             ),
-          ),
-    );
+      );
+    }
 
     if (borderRadius != null || effectiveRadius != BorderRadius.zero) {
       imageWidget = ClipRRect(

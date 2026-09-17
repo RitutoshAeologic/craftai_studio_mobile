@@ -36,6 +36,8 @@ Content-Type: application/json
   "prompt": "An adorable 3D isometric diorama of a cyberpunk gaming room, miniature aesthetic, Octane Render lighting, 8k...",
   "character_id": null,
   "face_reference_urls": null,
+  "negative_prompt": null,
+  "structured_metadata": null,
   "width": 1024,
   "height": 1024,
   "seed": 42,
@@ -45,6 +47,8 @@ Content-Type: application/json
 ```
 *Field Notes:*
 - `prompt` (string, 1–4000 characters): Supports rich master prompts.
+- `negative_prompt` (string, optional): Explicit negative tokens to eliminate unwanted artifacts (used directly by SDXL / compiled engines).
+- `structured_metadata` (object, optional): Visual Director metadata (`subject`, `environment`, `lighting`, `camera_optics`, `avoid`). When passed, the backend automatically compiles model-specific prompts for the target engine.
 - `model` (string, optional): `"flux"` (default), `"gemini"`, or `"chatgpt"`.
 - `width` / `height` (int, 512–2048): `1024x1024` (1:1), `768x1344` (9:16), `1344x768` (16:9).
 - `face_reference_urls` (array of strings, optional): If 1–3 photo URLs are passed, engine auto-promotes to **Tier 1 (InstantID Face-Lock)**.
@@ -136,7 +140,16 @@ Content-Type: application/json
   "master_prompt": "Breathtaking visual masterpiece in the distinctive anime aesthetic of Makoto Shinkai. Majestic floating islands drift suspended among radiant golden hour cumulonimbus clouds, bathed in amber sunlight, ultra-detailed 8K...",
   "negative_prompt": "blurry, low quality, distorted, extra limbs, watermark, signature",
   "complexity_score": 3,
-  "model_used": "google/gemini-2.5-flash"
+  "model_used": "google/gemini-2.5-flash",
+  "structured_metadata": {
+    "subject": "Majestic floating islands suspended in the sky",
+    "environment": "Radiant golden hour cumulonimbus clouds",
+    "lighting": "Warm amber sunlight, atmospheric glow",
+    "camera_optics": "35mm wide-angle, deep focus",
+    "art_style": "Makoto Shinkai distinctive anime aesthetic",
+    "avoid": ["blurry", "low quality", "distorted", "watermark"],
+    "preserved_elements": []
+  }
 }
 ```
 
@@ -144,7 +157,7 @@ Content-Type: application/json
 
 ### 2.5 Prompt Chat Copilot (Delta Compiler)
 - **Endpoint:** `POST /api/v1/prompt-engineering/chat-delta`
-- **Description:** Conversational prompt refiner for natural language tweaks (e.g., *"Make it nighttime and add neon rain"*). Preserves `"Edit image1 as follows: "` during image-to-image refinement.
+- **Description:** Conversational prompt refiner for natural language tweaks (e.g., *"Make it nighttime and add neon rain"*). Preserves `"Edit image1 as follows: "` during image-to-image refinement. Updates structured metadata while locking preserved elements.
 
 #### Request:
 ```json
@@ -167,7 +180,16 @@ Content-Type: application/json
     "removed": []
   },
   "suggested_chips": ["Add Rim Light", "35mm Grain", "Bokeh Background"],
-  "model_used": "google/gemini-2.5-flash"
+  "model_used": "google/gemini-2.5-flash",
+  "structured_metadata": {
+    "subject": "white tiger with glowing blue eyes, ornate 24k gold crown",
+    "environment": "seamless studio background",
+    "lighting": "cinematic lighting, rim reflections",
+    "camera_optics": "85mm portrait lens, f/1.4",
+    "art_style": "photorealistic textures",
+    "avoid": ["blurry", "distorted"],
+    "preserved_elements": ["white tiger"]
+  }
 }
 ```
 

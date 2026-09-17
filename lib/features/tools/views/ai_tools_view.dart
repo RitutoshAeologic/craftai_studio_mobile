@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:craftai_studio_mobile/shared/widgets/app_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
@@ -302,9 +304,11 @@ class AiToolsView extends StatelessWidget {
               child: SizedBox(
                 height: 140.h,
                 width: double.infinity,
-                child: path.startsWith('http')
-                    ? CachedNetworkImage(imageUrl: path, fit: BoxFit.cover)
-                    : Image.file(File(path), fit: BoxFit.cover),
+                child: path.startsWith('data:')
+                    ? Image.memory(base64Decode(path.split(',').last), fit: BoxFit.cover)
+                    : path.startsWith('http')
+                        ? CachedNetworkImage(imageUrl: path, fit: BoxFit.cover)
+                        : Image.file(File(path), fit: BoxFit.cover),
               ),
             ),
             Positioned(
@@ -384,10 +388,12 @@ class AiToolsView extends StatelessWidget {
             child: Stack(
               children: [
                 Center(
-                  child: CachedNetworkImage(
+                  child: AppNetworkImage(
                     imageUrl: resultUrl,
                     fit: BoxFit.contain,
-                    placeholder: (_, __) => const CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    placeholder: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    ),
                   ),
                 ),
                 Positioned(
