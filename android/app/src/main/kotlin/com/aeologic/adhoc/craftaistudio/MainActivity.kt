@@ -1,4 +1,4 @@
-package com.craftaistudio.craftai_studio
+package com.aeologic.adhoc.craftaistudio
 
 import io.flutter.embedding.android.FlutterActivity
 

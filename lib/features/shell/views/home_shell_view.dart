@@ -5,9 +5,11 @@ import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
 import '../controllers/shell_controller.dart';
 import '../../explore/views/explore_feed_view.dart';
-import '../../studio/views/creation_studio_view.dart';
+import '../../studio/presentation/views/creation_studio_view.dart';
+import '../../tools/views/ai_tools_view.dart';
 import '../../library/views/cloud_library_view.dart';
 import '../../wallet/views/wallet_view.dart';
+import '../../../shared/widgets/credit_cost_chip.dart';
 
 class HomeShellView extends StatelessWidget {
   const HomeShellView({super.key});
@@ -19,6 +21,7 @@ class HomeShellView extends StatelessWidget {
     final List<Widget> screens = const [
       ExploreFeedView(),
       CreationStudioView(),
+      AiToolsView(),
       CloudLibraryView(),
       WalletView(),
     ];
@@ -43,13 +46,11 @@ class HomeShellView extends StatelessWidget {
                         width: 32.w,
                         height: 32.w,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.primary, AppColors.secondary],
-                          ),
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Center(
-                          child: Text('C', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18.sp)),
+                          child: Text('C', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18.sp)),
                         ),
                       ),
                       SizedBox(width: 8.w),
@@ -58,33 +59,17 @@ class HomeShellView extends StatelessWidget {
                           text: 'CraftAI ',
                           style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                           children: const [
-                            TextSpan(text: 'Studio', style: TextStyle(color: AppColors.primary)),
+                            TextSpan(text: 'Studio', style: TextStyle(color: AppColors.textSecondary)),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  Obx(() => GestureDetector(
-                    onTap: () => controller.switchTab(3),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLight,
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.auto_awesome, color: AppColors.primary, size: 14.sp),
-                          SizedBox(width: 4.w),
-                          Text(
-                            '${controller.userCredits.value.toStringAsFixed(0)} Cr',
-                            style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold, color: AppColors.primary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )),
+                  CreditCostChip(
+                    creditsRx: controller.userCredits,
+                    onTap: () => controller.switchTab(4),
+                    isHighlighted: true,
+                  ),
                 ],
               ),
             ),
@@ -95,21 +80,31 @@ class HomeShellView extends StatelessWidget {
         index: controller.currentIndex.value,
         children: screens,
       )),
-      bottomNavigationBar: Obx(() => NavigationBarTheme(
-        data: NavigationBarThemeData(
-          backgroundColor: AppColors.surface,
-          indicatorColor: AppColors.primary.withValues(alpha: 0.15),
-          labelTextStyle: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold);
-            }
-            return TextStyle(color: AppColors.textSecondary, fontSize: 11.sp);
-          }),
+      bottomNavigationBar: Obx(() => Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.border, width: 1.w)),
         ),
-        child: NavigationBar(
-          selectedIndex: controller.currentIndex.value,
-          onDestinationSelected: controller.switchTab,
-          destinations: const [
+        child: NavigationBarTheme(
+          data: NavigationBarThemeData(
+            backgroundColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            height: 64.h,
+            indicatorColor: AppColors.border.withValues(alpha: 0.5),
+            labelTextStyle: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold);
+              }
+              return TextStyle(color: AppColors.textSecondary, fontSize: 11.sp);
+            }),
+          ),
+          child: NavigationBar(
+            selectedIndex: controller.currentIndex.value,
+            onDestinationSelected: controller.switchTab,
+            backgroundColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            destinations: const [
             NavigationDestination(
               icon: Icon(Icons.explore_outlined, color: AppColors.textSecondary),
               selectedIcon: Icon(Icons.explore, color: AppColors.primary),
@@ -119,6 +114,11 @@ class HomeShellView extends StatelessWidget {
               icon: Icon(Icons.auto_awesome_outlined, color: AppColors.textSecondary),
               selectedIcon: Icon(Icons.auto_awesome, color: AppColors.primary),
               label: AppStrings.tabStudio,
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.auto_fix_high_outlined, color: AppColors.textSecondary),
+              selectedIcon: Icon(Icons.auto_fix_high, color: AppColors.primary),
+              label: 'AI Tools',
             ),
             NavigationDestination(
               icon: Icon(Icons.folder_outlined, color: AppColors.textSecondary),
@@ -132,7 +132,7 @@ class HomeShellView extends StatelessWidget {
             ),
           ],
         ),
-      )),
+      ))),
     );
   }
 }

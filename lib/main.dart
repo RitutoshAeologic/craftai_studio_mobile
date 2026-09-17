@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'core/routes/app_pages.dart';
+import 'core/routes/app_routes.dart';
 import 'core/constants/app_strings.dart';
 import 'core/services/supabase_service.dart';
 import 'core/theme/app_theme.dart';
-import 'features/shell/views/home_shell_view.dart';
+import 'features/auth/presentation/controllers/auth_controller.dart';
+import 'features/studio/domain/repositories/i_studio_repository.dart';
+import 'features/studio/data/repositories/studio_repository_impl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseService.initialize();
+
+  // Register AuthController as permanent — alive for the full app session.
+  // Every auth screen calls Get.find<AuthController>() instead of Get.put().
+  Get.put(AuthController(), permanent: true);
+
+  // Global repository bindings for studio & tools features
+  Get.lazyPut<IStudioRepository>(() => StudioRepositoryImpl());
+
   runApp(const CraftAIStudioApp());
 }
 
@@ -26,7 +38,11 @@ class CraftAIStudioApp extends StatelessWidget {
           title: AppStrings.appName,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
-          home: const HomeShellView(),
+          initialRoute: AppRoutes.splash,
+          getPages: AppPages.pages,
+          // Global snackbar / dialog theme matching dark neon palette.
+          defaultTransition: Transition.fadeIn,
+          transitionDuration: const Duration(milliseconds: 250),
         );
       },
     );

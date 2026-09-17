@@ -12,6 +12,7 @@ class WalletView extends StatelessWidget {
     final WalletController controller = Get.put(WalletController());
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.w),
         child: Column(
@@ -22,7 +23,7 @@ class WalletView extends StatelessWidget {
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                  colors: [AppColors.surface, AppColors.card],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -63,7 +64,7 @@ class WalletView extends StatelessWidget {
                         onPressed: controller.requestPayout,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accentSuccess,
-                          foregroundColor: Colors.black,
+                          foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.r)),
                         ),
@@ -112,7 +113,7 @@ class WalletView extends StatelessWidget {
             onPressed: () => ctrl.buyCreditPack(title, credits, price),
             style: ElevatedButton.styleFrom(
               backgroundColor: isHighlight ? AppColors.primary : AppColors.surfaceLight,
-              foregroundColor: isHighlight ? Colors.black : AppColors.textPrimary,
+              foregroundColor: isHighlight ? Colors.white : AppColors.textPrimary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
             ),
             child: Text('\$$price', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold)),
