@@ -66,5 +66,18 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>CraftAI Studio connects to the local development gateway to generate and enhance AI prompts.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CraftAI Studio requires access to your photo library to select reference photos and save generated artwork.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>CraftAI Studio requires access to your camera to capture reference portraits.</string>
 </dict>
 </plist>
