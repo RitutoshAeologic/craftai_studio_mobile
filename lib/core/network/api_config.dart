@@ -21,10 +21,10 @@ class ApiConfig {
     }
 
     // Default fallback when no environment define is passed:
-    // On native mobile (iOS/Android), 127.0.0.1 is loopback to the phone itself.
-    // Use Mac LAN IP so running from Xcode or on physical device works out of the box.
+    // On native mobile (iOS/Android), connect to the active HTTPS tunnel
+    // so physical devices connect seamlessly without Wi-Fi AP isolation or timeout issues.
     if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-      return 'http://192.168.68.124:8000/api/v1';
+      return 'https://craftwork-gizmo-engraved.ngrok-free.dev/api/v1';
     }
 
     return 'http://127.0.0.1:8000/api/v1';
