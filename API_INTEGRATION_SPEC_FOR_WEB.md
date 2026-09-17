@@ -6,7 +6,8 @@
 > **Backend Repository:** `git@github.com:RitutoshAeologic/craftai_studio_backend.git`  
 > **PR Link:** [Create PR on GitHub](https://github.com/RitutoshAeologic/craftai_studio_backend/pull/new/feature/multi-llm-configurable-gateway)  
 > **Mobile Parity:** Flutter Mobile App (iOS / Android)  
-> **Local Base URL:** `http://127.0.0.1:8000`  
+> **Local Base URL (Recommended):** `http://127.0.0.1:8000/api/v1` *(or root `http://127.0.0.1:8000`)*  
+> **Public HTTPS Tunnel (Remote Web Testing):** `https://craftwork-gizmo-engraved.ngrok-free.dev/api/v1` *(Header: `ngrok-skip-browser-warning: true`)*  
 > **Swagger UI (Interactive Playground):** `http://127.0.0.1:8000/docs`  
 > **ReDoc Documentation:** `http://127.0.0.1:8000/redoc`  
 > **OpenAPI JSON Schema:** `http://127.0.0.1:8000/openapi.json`
@@ -199,41 +200,91 @@ Content-Type: application/json
 
 #### A. AI Background Remover:
 - **Endpoint:** `POST /api/v1/prompt-engineering/tools/remove-background`
-- **Request:**
+- **Request:** (Supports both HTTPS URL and Base64 Data URL)
 ```json
 {
   "image_url": "https://.../photo.png"
 }
 ```
-- **Response:**
+- **Response:** (Returns both `output_url` and `cutout_url` with identical values)
 ```json
 {
-  "task_id": "cutout_abc123",
+  "task_id": "tool_rmbg_abc123",
+  "status": "completed",
+  "output_url": "https://.../photo_transparent.png",
   "cutout_url": "https://.../photo_transparent.png"
 }
 ```
 
 #### B. Tool Presets (Relight, Blur, Upscale):
 - **Endpoint:** `POST /api/v1/prompt-engineering/tools/edit-preset`
-- **Request:**
+- **Request:** (`image_url` is optional; if omitted, backend looks up `image_id` in `jobs` table)
 ```json
 {
   "image_id": "job_123",
+  "image_url": "https://.../photo.png (optional - URL or base64)",
   "action": "relight",
-  "target_preset": "golden_hour"
+  "target_preset": "golden_hour",
+  "lock_subject": true
+}
+```
+- **Response:** (Returns both `output_url` and `image_url`)
+```json
+{
+  "task_id": "tool_job_123_abc",
+  "status": "completed",
+  "applied_tool": "relight",
+  "subject_masked": true,
+  "tokens_consumed": 0,
+  "output_url": "https://.../transformed.png",
+  "image_url": "https://.../transformed.png"
 }
 ```
 
 ---
 
-### 2.6 Ephemeral Face-Lock Reference Photos
+### 2.6 Multimodal Aesthetic Vision Scanner
+- **Endpoint:** `POST /api/v1/vision-scan` *(or `/api/v1/prompt-engineering/vision-scan`)*
+- **Description:** Reverse-engineers aesthetic concepts, style tags, and camera optics from a reference image using Gemini 2.5 Flash.
+- **Request:** (Accepts JSON request body or URL query parameter `?photo_url=...`)
+```json
+{
+  "image_url": "https://.../reference_photo.png"
+}
+```
+- **Response (HTTP 200):**
+```json
+{
+  "extracted_prompt": "Close-up, natural light portrait of a beautiful young woman...",
+  "detected_style": "Natural Light Portraiture",
+  "lighting_optics": "Natural golden hour light, 85mm f/1.8",
+  "model_used": "google/gemini-2.5-flash (Live AI)"
+}
+```
+
+---
+
+### 2.7 Ephemeral Face-Lock Reference Photos
 - **Upload Endpoint:** `POST /api/v1/prompt-engineering/upload-reference` (Multipart form-data: `file`)
-- **Cleanup Endpoint:** `POST /api/v1/prompt-engineering/cleanup-reference` (JSON: `{"url": "https://..."}`)
+- **Cleanup Endpoint:** `POST /api/v1/prompt-engineering/cleanup-reference` (JSON: `{"image_url": "https://..."}`)
 - *Note:* Backend auto-purges reference photos 30 seconds after generation to enforce the **Zero-Retention Privacy Policy**.
 
 ---
 
-### 2.7 Standardized API Error Response Contract
+### 2.8 System Health Verification
+- **Endpoints:** `GET /health` and `GET /api/v1/health`
+- **Response (HTTP 200):**
+```json
+{
+  "status": "healthy",
+  "service": "CraftAI Studio Backend",
+  "version": "1.0.0"
+}
+```
+
+---
+
+### 2.9 Standardized API Error Response Contract
 FastAPI has been enhanced with unified global exception handlers. All errors consistently return JSON formatted for seamless frontend consumption:
 
 #### A. Pydantic Validation Error (HTTP 422):
