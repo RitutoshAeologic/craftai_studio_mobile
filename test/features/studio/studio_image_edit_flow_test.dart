@@ -4,15 +4,14 @@ import 'package:get/get.dart';
 import 'package:craftai_studio_mobile/features/studio/domain/models/prompt_expand_model.dart';
 import 'package:craftai_studio_mobile/features/studio/domain/models/generation_dispatch_model.dart';
 import 'package:craftai_studio_mobile/features/studio/domain/models/prompt_compile_model.dart';
-import 'package:craftai_studio_mobile/features/studio/domain/failures/studio_failure.dart';
 import 'package:craftai_studio_mobile/features/studio/domain/repositories/i_studio_repository.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
 import 'package:craftai_studio_mobile/features/explore/controllers/explore_controller.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
-import 'package:craftai_studio_mobile/data/models/job_model.dart';
+import '../../mocks/fake_studio_repository.dart';
 
-class MockStudioRepository implements IStudioRepository {
+class MockStudioRepository extends FakeStudioRepository {
   String lastExpandedRawPrompt = '';
 
   @override
@@ -89,6 +88,28 @@ class MockStudioRepository implements IStudioRepository {
   @override
   Future<StudioResult<String>> removeBackground({required String imageUrl}) async =>
       (data: 'https://example.com/cutout.png', failure: null);
+
+  @override
+  Future<StudioResult<RemixSessionModel>> createRemixSession({
+    required String anchorImageUrl,
+    String sourceType = 'explore',
+    String? remixedFromPromptId,
+    String? initialPrompt,
+    double styleWeight = 0.60,
+  }) async => (data: null, failure: null);
+
+  @override
+  Future<StudioResult<RemixSessionModel>> getRemixSession({
+    required String sessionId,
+  }) async => (data: null, failure: null);
+
+  @override
+  Future<StudioResult<RemixChatTurnResult>> sendRemixChatMessage({
+    required String sessionId,
+    required String userInstruction,
+    String aiModel = 'groq',
+    double? styleWeight,
+  }) async => (data: null, failure: null);
 }
 
 void main() {

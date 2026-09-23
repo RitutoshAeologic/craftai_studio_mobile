@@ -17,8 +17,10 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.textInputAction = TextInputAction.next,
     this.onSubmitted,
+    this.onChanged,
     this.enabled = true,
     this.autofocus = false,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
   });
 
   final TextEditingController controller;
@@ -31,8 +33,10 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputAction textInputAction;
   final void Function(String)? onSubmitted;
+  final ValueChanged<String>? onChanged;
   final bool enabled;
   final bool autofocus;
+  final AutovalidateMode? autovalidateMode;
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +61,11 @@ class AppTextField extends StatelessWidget {
           keyboardType: keyboardType,
           textInputAction: textInputAction,
           onFieldSubmitted: onSubmitted,
+          onChanged: onChanged,
           validator: validator,
           enabled: enabled,
           autofocus: autofocus,
+          autovalidateMode: autovalidateMode,
           style: TextStyle(
             fontSize: 15.sp,
             color: AppColors.textPrimary,

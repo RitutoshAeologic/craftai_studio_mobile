@@ -55,6 +55,7 @@ class SignupView extends StatelessWidget {
                         SizedBox(height: 36.h),
                         Form(
                           key: ctrl.signupFormKey,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -68,14 +69,25 @@ class SignupView extends StatelessWidget {
                               ),
                               SizedBox(height: 16.h),
                               // ── Email ─────────────────────────────────────
-                              AppTextField(
-                                controller: ctrl.emailCtrl,
-                                label: 'Email',
-                                hintText: 'you@example.com',
-                                prefixIcon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.next,
-                                validator: _validateEmail,
+                              Obx(
+                                () => AppTextField(
+                                  controller: ctrl.emailCtrl,
+                                  label: 'Email',
+                                  hintText: 'you@example.com',
+                                  prefixIcon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                  textInputAction: TextInputAction.next,
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
+                                  validator: AuthController.validateEmail,
+                                  suffixIcon: ctrl.isEmailValid.value
+                                      ? Icon(
+                                          Icons.check_circle_rounded,
+                                          color: AppColors.accentSuccess,
+                                          size: 20.r,
+                                        )
+                                      : null,
+                                ),
                               ),
                               SizedBox(height: 16.h),
                               // ── Password ──────────────────────────────────
@@ -87,7 +99,9 @@ class SignupView extends StatelessWidget {
                                   prefixIcon: Icons.lock_outline_rounded,
                                   obscureText: !ctrl.isPasswordVisible.value,
                                   textInputAction: TextInputAction.next,
-                                  validator: _validatePassword,
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
+                                  validator: AuthController.validatePassword,
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       ctrl.isPasswordVisible.value
@@ -100,7 +114,43 @@ class SignupView extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 16.h),
+                              SizedBox(height: 6.h),
+                              // ── Real-time Password Requirement Indicator ───
+                              Obx(() {
+                                final hasText = ctrl.hasPasswordText.value;
+                                final isValid = ctrl.isPasswordValid.value;
+                                return Padding(
+                                  padding: EdgeInsets.only(left: 4.w, top: 2.h),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        isValid
+                                            ? Icons.check_circle_rounded
+                                            : Icons.radio_button_unchecked_rounded,
+                                        size: 14.r,
+                                        color: isValid
+                                            ? AppColors.accentSuccess
+                                            : (hasText
+                                                ? AppColors.accentError
+                                                : AppColors.textMuted),
+                                      ),
+                                      SizedBox(width: 6.w),
+                                      Text(
+                                        'At least 6 characters',
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          color: isValid
+                                              ? AppColors.accentSuccess
+                                              : (hasText
+                                                  ? AppColors.accentError
+                                                  : AppColors.textMuted),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                              SizedBox(height: 14.h),
                               // ── Confirm password ──────────────────────────
                               Obx(
                                 () => AppTextField(
@@ -111,9 +161,11 @@ class SignupView extends StatelessWidget {
                                   obscureText:
                                       !ctrl.isConfirmPasswordVisible.value,
                                   textInputAction: TextInputAction.done,
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
                                   onSubmitted: (_) => ctrl.signUp(),
-                                  validator: (v) =>
-                                      _validateConfirm(v, ctrl.passwordCtrl.text),
+                                  validator: (v) => AuthController.validateConfirm(
+                                      v, ctrl.passwordCtrl.text),
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       ctrl.isConfirmPasswordVisible.value
@@ -127,7 +179,37 @@ class SignupView extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 28.h),
+                              SizedBox(height: 6.h),
+                              // ── Real-time Match Indicator ─────────────────
+                              Obx(() {
+                                final hasConfirm = ctrl.hasConfirmText.value;
+                                final isMatch =
+                                    ctrl.isConfirmPasswordValid.value;
+                                if (!hasConfirm || !isMatch) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Padding(
+                                  padding: EdgeInsets.only(left: 4.w, top: 2.h),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle_rounded,
+                                        size: 14.r,
+                                        color: AppColors.accentSuccess,
+                                      ),
+                                      SizedBox(width: 6.w),
+                                      Text(
+                                        'Passwords match',
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          color: AppColors.accentSuccess,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                              SizedBox(height: 24.h),
                               // ── Error banner ──────────────────────────────
                               Obx(() {
                                 final msg = ctrl.errorMessage.value;
@@ -142,6 +224,7 @@ class SignupView extends StatelessWidget {
                                 () => _PrimaryButton(
                                   label: 'Create Account',
                                   isLoading: ctrl.isLoading.value,
+                                  isValid: ctrl.isSignupFormValid.value,
                                   onTap: ctrl.signUp,
                                 ),
                               ),
@@ -159,8 +242,9 @@ class SignupView extends StatelessWidget {
                               ),
                               SizedBox(height: 36.h),
                               // ── Sign in link ──────────────────────────────
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Text(
                                     'Already have an account? ',
@@ -199,27 +283,6 @@ class SignupView extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  // ── Validators ──────────────────────────────────────────────────────────────
-
-  String? _validateEmail(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Email is required';
-    final re = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,}$');
-    if (!re.hasMatch(v.trim())) return 'Enter a valid email address';
-    return null;
-  }
-
-  String? _validatePassword(String? v) {
-    if (v == null || v.isEmpty) return 'Password is required';
-    if (v.length < 6) return 'Password must be at least 6 characters';
-    return null;
-  }
-
-  String? _validateConfirm(String? v, String password) {
-    if (v == null || v.isEmpty) return 'Please confirm your password';
-    if (v != password) return 'Passwords do not match';
-    return null;
   }
 
   // ── Header ──────────────────────────────────────────────────────────────────
@@ -288,11 +351,13 @@ class _PrimaryButton extends StatelessWidget {
     required this.label,
     required this.isLoading,
     required this.onTap,
+    this.isValid = true,
   });
 
   final String label;
   final bool isLoading;
   final VoidCallback onTap;
+  final bool isValid;
 
   @override
   Widget build(BuildContext context) {
@@ -309,9 +374,14 @@ class _PrimaryButton extends StatelessWidget {
                     AppColors.primary.withValues(alpha: 0.5),
                     AppColors.secondary.withValues(alpha: 0.5),
                   ]
-                : [AppColors.primary, AppColors.secondary],
+                : (isValid
+                    ? [AppColors.primary, AppColors.secondary]
+                    : [
+                        AppColors.primary.withValues(alpha: 0.7),
+                        AppColors.secondary.withValues(alpha: 0.7)
+                      ]),
           ),
-          boxShadow: isLoading
+          boxShadow: isLoading || !isValid
               ? []
               : [
                   BoxShadow(

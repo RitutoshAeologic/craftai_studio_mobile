@@ -33,12 +33,20 @@ void main() {
 
     expect(find.text('Creative Toolbox'), findsOneWidget);
     expect(find.text('AI Background Remover'), findsWidgets);
+    expect(find.text('Get designs done fast with Skills'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('4K Lossless Upscaler'),
+      find.text('Upscale 4K'),
       100,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.text('4K Lossless Upscaler'), findsOneWidget);
+    expect(find.text('Upscale 4K'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Marketing Poster'),
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Marketing Poster'), findsOneWidget);
   });
 }

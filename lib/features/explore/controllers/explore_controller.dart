@@ -171,7 +171,7 @@ class ExploreController extends GetxController {
       authorHandle: '@manga_blade',
       authorAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop',
       title: 'Samurai Spirit In Blossom',
-      previewUrl: 'https://images.unsplash.com/photo-1528164344705-475426879c0d?w=600&auto=format&fit=crop',
+      previewUrl: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=600&auto=format&fit=crop',
       category: 'Anime',
       maskedSummary: 'Katana Stance • Cherry Blossom Storm • Ukiyo-e Modern Blend • [Secret Recipe Encrypted]',
       remixFee: 4.0,

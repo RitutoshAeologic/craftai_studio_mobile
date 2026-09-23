@@ -6,6 +6,8 @@ import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 
 class LibraryController extends GetxController {
+  static LibraryController get to => Get.find<LibraryController>();
+
   final RxList<JobModel> myCreations = <JobModel>[].obs;
   final RxBool isLoading = false.obs;
 
@@ -70,10 +72,12 @@ class LibraryController extends GetxController {
     required String prompt,
     required double credits,
     String? previewUrl,
+    String type = 'IMAGE_GEN',
+    Map<String, dynamic>? metadata,
   }) {
     final validPreviewUrl = (previewUrl != null &&
             previewUrl.trim().isNotEmpty &&
-            previewUrl.startsWith('http'))
+            (previewUrl.startsWith('http') || previewUrl.startsWith('data:')))
         ? previewUrl
         : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop';
 
@@ -81,12 +85,13 @@ class LibraryController extends GetxController {
       0,
       JobModel(
         jobId: 'job_${DateTime.now().millisecondsSinceEpoch}',
-        type: 'IMAGE_GEN',
+        type: type,
         status: 'completed',
         prompt: prompt,
         previewUrl: validPreviewUrl,
         creditsDeducted: credits,
         isDownloadUnlocked: false,
+        metadata: metadata,
         createdAt: DateTime.now(),
       ),
     );

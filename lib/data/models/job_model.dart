@@ -8,6 +8,7 @@ class JobModel {
   final double creditsDeducted;
   final bool isDownloadUnlocked;
   final double downloadCost;
+  final Map<String, dynamic>? metadata;
   final DateTime createdAt;
 
   JobModel({
@@ -20,10 +21,14 @@ class JobModel {
     required this.creditsDeducted,
     this.isDownloadUnlocked = false,
     this.downloadCost = 2.0,
+    this.metadata,
     required this.createdAt,
   });
 
-  JobModel copyWith({bool? isDownloadUnlocked}) {
+  JobModel copyWith({
+    bool? isDownloadUnlocked,
+    Map<String, dynamic>? metadata,
+  }) {
     return JobModel(
       jobId: jobId,
       type: type,
@@ -34,6 +39,7 @@ class JobModel {
       creditsDeducted: creditsDeducted,
       isDownloadUnlocked: isDownloadUnlocked ?? this.isDownloadUnlocked,
       downloadCost: downloadCost,
+      metadata: metadata ?? this.metadata,
       createdAt: createdAt,
     );
   }

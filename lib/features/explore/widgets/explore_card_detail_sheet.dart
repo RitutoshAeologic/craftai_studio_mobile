@@ -8,6 +8,7 @@ import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import '../controllers/explore_controller.dart';
 import 'more_like_this_sheet.dart';
+import '../../remix/views/remix_chat_view.dart';
 
 class ExploreCardDetailSheet extends StatelessWidget {
   final ExploreCardModel card;
@@ -64,10 +65,27 @@ class ExploreCardDetailSheet extends StatelessWidget {
                         child: CachedNetworkImage(
                           imageUrl: card.previewUrl,
                           fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(color: AppColors.surfaceLight),
+                          placeholder: (_, __) => Container(
+                            color: AppColors.surfaceLight,
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                            ),
+                          ),
                           errorWidget: (_, __, ___) => Container(
                             color: AppColors.surfaceLight,
-                            child: const Center(child: Icon(Icons.broken_image, color: AppColors.textMuted)),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.palette_outlined, size: 36.r, color: AppColors.textMuted),
+                                  SizedBox(height: 8.h),
+                                  Text(
+                                    card.title,
+                                    style: TextStyle(fontSize: 12.sp, color: AppColors.textMuted),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -253,6 +271,45 @@ class ExploreCardDetailSheet extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+
+                    SizedBox(height: 10.h),
+
+                    // "Remix in Lab (Chat)" Action
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Get.back();
+                          Get.to(
+                            () => const RemixChatView(),
+                            arguments: {
+                              'anchorImageUrl': card.previewUrl,
+                              'sourceType': 'explore',
+                              'remixedFromPromptId': card.id,
+                              'initialPrompt': card.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', ''),
+                              'authorName': card.authorName,
+                              'royaltyPercent': (card.creatorRoyaltyCut / card.remixFee * 100).toInt(),
+                            },
+                            transition: Transition.rightToLeft,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.purpleAccent.withValues(alpha: 0.15),
+                          foregroundColor: AppColors.purpleAccent,
+                          elevation: 0,
+                          padding: EdgeInsets.symmetric(vertical: 11.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                            side: const BorderSide(color: AppColors.purpleAccent),
+                          ),
+                        ),
+                        icon: Icon(Icons.shuffle_rounded, size: 16.sp, color: AppColors.purpleAccent),
+                        label: Text(
+                          '⚡ Remix in Lab (Chat)',
+                          style: AppTextStyles.bodyMediumBold.copyWith(color: AppColors.purpleAccent),
+                        ),
+                      ),
                     ),
 
                     SizedBox(height: 10.h),

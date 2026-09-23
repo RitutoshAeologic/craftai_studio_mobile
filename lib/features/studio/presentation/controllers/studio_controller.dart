@@ -17,6 +17,7 @@ import '../views/prompt_chat_copilot_view.dart';
 import '../widgets/studio_error_sheet.dart';
 import '../widgets/studio_prompt_inspector_sheet.dart';
 import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
+import 'package:craftai_studio_mobile/core/services/network_service.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
 
 /// [StudioController] is the central brain of the MeiGen creative canvas.
@@ -291,6 +292,22 @@ class StudioController extends GetxController {
   void setAspectRatio(String ratio) {
     if (isBusy) return;
     selectedAspectRatio.value = ratio;
+  }
+
+  /// Resolves pixel width & height from aspect ratio string.
+  (int, int) resolveVisualDimensions(String ratio) {
+    switch (ratio) {
+      case '9:16':
+        return (768, 1344);
+      case '16:9':
+        return (1344, 768);
+      case '4:5':
+        return (896, 1120);
+      case '1:1':
+      case 'Auto':
+      default:
+        return (1024, 1024);
+    }
   }
 
   /// Updates target resolution tier ('HD', '2K', '4K').
@@ -729,8 +746,7 @@ class StudioController extends GetxController {
 
     lastDispatchedPrompt.value = promptToDispatch; // Stage 3: sent for generation
     lastDispatchedModel.value = selectedModel.value;
-    final w = selectedAspectRatio.value == '9:16' ? 768 : 1024;
-    final h = selectedAspectRatio.value == '9:16' ? 1344 : 1024;
+    final (w, h) = resolveVisualDimensions(selectedAspectRatio.value);
     lastDispatchedDimensions.value = '${w}x$h (${selectedAspectRatio.value})';
 
     // Formatted 4-Stage Lifecycle Audit Log
@@ -746,6 +762,19 @@ class StudioController extends GetxController {
 
     AppLogger.i('🚀 Dispatching Visual Generation | Model: ${selectedModel.value} | Aspect: ${selectedAspectRatio.value} | Cost: $cost Cr | Prompt: "$promptToDispatch"', tag: 'STUDIO_GEN');
     
+    // Fast-fail if device is currently offline before deducting credits or locking UI
+    if (Get.isRegistered<NetworkService>() && !NetworkService.to.isOnline) {
+      AppLogger.w('Generation dispatch blocked pre-flight: Device is offline', tag: 'STUDIO_GEN');
+      StudioErrorSheet.show(
+        failure: const StudioNetworkFailure(
+          'You are currently offline. Please check your internet connection before generating images.',
+        ),
+        refundedCredits: 0.0,
+        onRetry: () => generateVisual(),
+      );
+      return;
+    }
+
     // Set initial loading state
     isGenerating.value = true;
     generationProgress.value = 8;
@@ -797,8 +826,8 @@ class StudioController extends GetxController {
         prompt: promptToDispatch,
         characterId: selectedCharacter.value?.id,
         faceReferenceUrls: remoteReferenceUrls.isNotEmpty ? remoteReferenceUrls : null,
-        width: selectedAspectRatio.value == '9:16' ? 768 : 1024,
-        height: selectedAspectRatio.value == '9:16' ? 1344 : 1024,
+        width: w,
+        height: h,
         model: selectedModel.value,
         remixedFromPromptId: remixedFromPromptId.value,
       );

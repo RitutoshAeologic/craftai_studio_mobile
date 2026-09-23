@@ -46,6 +46,12 @@ class AppTextStyles {
         color: AppColors.textSecondary,
       );
 
+  static TextStyle get bodySmallBold => GoogleFonts.inter(
+        fontSize: 12.sp,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
+
   static TextStyle get caption => GoogleFonts.inter(
         fontSize: 11.sp,
         fontWeight: FontWeight.w400,
@@ -62,6 +68,12 @@ class AppTextStyles {
         fontSize: 10.sp,
         fontWeight: FontWeight.w400,
         color: AppColors.textMuted,
+      );
+
+  static TextStyle get button => GoogleFonts.inter(
+        fontSize: 14.sp,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
       );
 
   static TextStyle get buttonLarge => GoogleFonts.inter(

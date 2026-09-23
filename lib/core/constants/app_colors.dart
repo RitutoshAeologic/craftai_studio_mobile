@@ -21,6 +21,7 @@ class AppColors {
   static const Color textPrimary = Color(0xFF191713);
   static const Color textSecondary = Color(0xFF6F675D);
   static const Color textMuted = Color(0xFF8C827A);
+  static const Color textTertiary = Color(0xFFA39A90);
 
   // Semantic Status Accents
   static const Color accentSuccess = Color(0xFF15803D);

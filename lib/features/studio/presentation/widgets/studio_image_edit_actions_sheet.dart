@@ -8,6 +8,7 @@ import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/download_paywall_sheet.dart';
+import 'package:craftai_studio_mobile/features/remix/views/remix_chat_view.dart';
 
 /// [StudioImageEditActionsSheet] presents the MeiGen 4-option image editing modal.
 /// Options:
@@ -69,6 +70,28 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 Get.back();
                 studioCtrl.loadForImageEdit(imageUrl: job.previewUrl, initialPrompt: job.prompt);
                 shellCtrl.switchTab(1);
+              },
+            ),
+
+            // Option 2: Remix in Lab (Conversational Chat)
+            _buildActionItem(
+              icon: Icons.shuffle_rounded,
+              iconColor: AppColors.purpleAccent,
+              title: 'Remix in Lab (Chat)',
+              subtitle: 'Conversational style & lighting tuning anchored to this creation',
+              badge: 'Remix Lab',
+              onTap: () {
+                Get.back();
+                Get.to(
+                  () => const RemixChatView(),
+                  arguments: {
+                    'anchorImageUrl': job.previewUrl,
+                    'sourceType': 'library',
+                    'initialPrompt': job.prompt,
+                    'authorName': 'Your Creation',
+                  },
+                  transition: Transition.rightToLeft,
+                );
               },
             ),
 

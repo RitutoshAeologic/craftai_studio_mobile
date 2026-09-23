@@ -30,18 +30,30 @@ class LoginView extends StatelessWidget {
                   SizedBox(height: 44.h),
                   Form(
                     key: ctrl.loginFormKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // ── Email ──────────────────────────────────────────
-                        AppTextField(
-                          controller: ctrl.emailCtrl,
-                          label: 'Email',
-                          hintText: 'you@example.com',
-                          prefixIcon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          validator: _validateEmail,
+                        Obx(
+                          () => AppTextField(
+                            controller: ctrl.emailCtrl,
+                            label: 'Email',
+                            hintText: 'you@example.com',
+                            prefixIcon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
+                            validator: AuthController.validateEmail,
+                            suffixIcon: ctrl.isEmailValid.value
+                                ? Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.accentSuccess,
+                                    size: 20.r,
+                                  )
+                                : null,
+                          ),
                         ),
                         SizedBox(height: 16.h),
                         // ── Password ───────────────────────────────────────
@@ -53,8 +65,10 @@ class LoginView extends StatelessWidget {
                             prefixIcon: Icons.lock_outline_rounded,
                             obscureText: !ctrl.isPasswordVisible.value,
                             textInputAction: TextInputAction.done,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             onSubmitted: (_) => ctrl.signIn(),
-                            validator: _validatePassword,
+                            validator: AuthController.validatePassword,
                             suffixIcon: IconButton(
                               icon: Icon(
                                 ctrl.isPasswordVisible.value
@@ -101,13 +115,15 @@ class LoginView extends StatelessWidget {
                           () => _PrimaryButton(
                             label: 'Sign In',
                             isLoading: ctrl.isLoading.value,
+                            isValid: ctrl.isLoginFormValid.value,
                             onTap: ctrl.signIn,
                           ),
                         ),
                         SizedBox(height: 36.h),
                         // ── Sign up link ───────────────────────────────────
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
                               "Don't have an account? ",
@@ -143,21 +159,6 @@ class LoginView extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  // ── Validators ─────────────────────────────────────────────────────────────
-
-  String? _validateEmail(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Email is required';
-    final re = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,}$');
-    if (!re.hasMatch(v.trim())) return 'Enter a valid email address';
-    return null;
-  }
-
-  String? _validatePassword(String? v) {
-    if (v == null || v.isEmpty) return 'Password is required';
-    if (v.length < 6) return 'Password must be at least 6 characters';
-    return null;
   }
 
   // ── Header ─────────────────────────────────────────────────────────────────
@@ -250,11 +251,13 @@ class _PrimaryButton extends StatelessWidget {
     required this.label,
     required this.isLoading,
     required this.onTap,
+    this.isValid = true,
   });
 
   final String label;
   final bool isLoading;
   final VoidCallback onTap;
+  final bool isValid;
 
   @override
   Widget build(BuildContext context) {
@@ -271,9 +274,14 @@ class _PrimaryButton extends StatelessWidget {
                     AppColors.primary.withValues(alpha: 0.5),
                     AppColors.secondary.withValues(alpha: 0.5),
                   ]
-                : [AppColors.primary, AppColors.secondary],
+                : (isValid
+                    ? [AppColors.primary, AppColors.secondary]
+                    : [
+                        AppColors.primary.withValues(alpha: 0.7),
+                        AppColors.secondary.withValues(alpha: 0.7)
+                      ]),
           ),
-          boxShadow: isLoading
+          boxShadow: isLoading || !isValid
               ? []
               : [
                   BoxShadow(

@@ -11,7 +11,14 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
+import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
 import '../controllers/tools_controller.dart';
+import '../../remix/views/remix_chat_view.dart';
+import '../widgets/ai_backgrounds_sheet.dart';
+import '../widgets/ai_expand_sheet.dart';
+import '../widgets/marketing_poster_sheet.dart';
+import '../widgets/product_detail_sheet.dart';
+import '../widgets/upscale_sheet.dart';
 
 class AiToolsView extends StatelessWidget {
   const AiToolsView({super.key});
@@ -142,9 +149,19 @@ class AiToolsView extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
-                child: Text(
-                  'Explore AI Skills',
-                  style: AppTextStyles.h3.copyWith(fontSize: 16.sp),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Get designs done fast with Skills',
+                      style: AppTextStyles.h2.copyWith(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 3.h),
+                    Text(
+                      'Smart workflows crafted for every use case',
+                      style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -467,72 +484,347 @@ class AiToolsView extends StatelessWidget {
   }
 
   Widget _buildToolListCard(BuildContext context, Map<String, dynamic> tool, ToolsController controller) {
-    final List<Color> gradient = tool['gradient'] as List<Color>;
-    return Container(
-      margin: EdgeInsets.only(bottom: 10.h),
-      padding: EdgeInsets.all(AppDimens.spacingMd),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44.w,
-            height: 44.w,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: gradient),
-              borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+    final toolId = tool['id'] as String;
+    final bgTint = (tool['bgTint'] as Color?) ?? AppColors.surface;
+    final accentColor = (tool['accentColor'] as Color?) ?? AppColors.primary;
+
+    return InkWell(
+      onTap: () {
+        switch (toolId) {
+          case 'bg_remover':
+            _showImageSourceSheet(context, controller);
+            break;
+          case 'ai_background':
+            AiBackgroundsSheet.show(context);
+            break;
+          case 'ai_expand':
+            AiExpandSheet.show(context);
+            break;
+          case 'upscaler':
+            UpscaleSheet.show(context);
+            break;
+          case 'product_detail':
+            ProductDetailSheet.show(context);
+            break;
+          case 'marketing_poster':
+            MarketingPosterSheet.show(context);
+            break;
+          case 'remix_lab':
+            _showRemixImageSourceSheet(context);
+            break;
+          default:
+            _showImageSourceSheet(context, controller);
+        }
+      },
+      borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: bgTint,
+          borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+          border: Border.all(color: accentColor.withValues(alpha: 0.20), width: 1.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            child: Center(
-              child: Text(tool['icon'] as String, style: TextStyle(fontSize: 20.sp)),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Circular icon badge with white circle
+            Container(
+              width: 44.w,
+              height: 44.w,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(tool['icon'] as String, style: TextStyle(fontSize: 20.sp)),
+              ),
             ),
-          ),
-          SizedBox(width: AppDimens.spacingMd),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        tool['title'] as String,
-                        style: AppTextStyles.bodyMediumBold.copyWith(fontSize: 13.sp),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(4.r),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Text(
-                        tool['credits'] as String,
-                        style: AppTextStyles.captionXs.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
+            SizedBox(width: 14.w),
+
+            // Title, Subtitle, and Badge
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          tool['title'] as String,
+                          style: AppTextStyles.bodyMediumBold.copyWith(
+                            fontSize: 14.sp,
+                            color: AppColors.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      SizedBox(width: 6.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                          border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+                        ),
+                        child: Text(
+                          tool['credits'] as String,
+                          style: AppTextStyles.captionXs.copyWith(
+                            color: accentColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10.sp,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 3.h),
+                  Text(
+                    tool['desc'] as String,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.captionXs.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.3,
                     ),
-                  ],
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  tool['desc'] as String,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
+            SizedBox(width: 8.w),
+            Icon(Icons.arrow_forward_ios, size: 12.sp, color: AppColors.textTertiary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRemixImageSourceSheet(BuildContext context) {
+    final picker = ImagePicker();
+    final libraryCtrl = Get.isRegistered<LibraryController>()
+        ? Get.find<LibraryController>()
+        : Get.put(LibraryController());
+    final shellCtrl = Get.isRegistered<ShellController>()
+        ? Get.find<ShellController>()
+        : Get.put(ShellController());
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusLg)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 38.w,
+                  height: 4.h,
+                  margin: EdgeInsets.only(bottom: 12.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                  ),
+                ),
+              ),
+              Text('Choose Artwork to Remix', style: AppTextStyles.h3),
+              SizedBox(height: 4.h),
+              Text(
+                'Select from your library or upload an anchor image',
+                style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary),
+              ),
+              SizedBox(height: 16.h),
+
+              // Recent Library Generations (Web parity: "Remix from Your Recent Generations")
+              Obx(() {
+                final creations = libraryCtrl.myCreations;
+                if (creations.isEmpty) return const SizedBox.shrink();
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Your Recent Creations', style: AppTextStyles.captionBold),
+                        Text(
+                          '${creations.length} saved',
+                          style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    SizedBox(
+                      height: 90.h,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: creations.length.clamp(0, 10),
+                        separatorBuilder: (_, __) => SizedBox(width: 8.w),
+                        itemBuilder: (context, idx) {
+                          final job = creations[idx];
+                          return GestureDetector(
+                            onTap: () {
+                              Get.back();
+                              Get.to(
+                                () => const RemixChatView(),
+                                arguments: {
+                                  'anchorImageUrl': job.previewUrl,
+                                  'sourceType': 'library',
+                                  'authorName': 'Your Creation',
+                                  'initialPrompt': job.prompt,
+                                },
+                                transition: Transition.rightToLeft,
+                              );
+                            },
+                            child: Container(
+                              width: 80.w,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.r),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  AppNetworkImage(
+                                    imageUrl: job.previewUrl,
+                                    fit: BoxFit.cover,
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
+                                      color: Colors.black.withValues(alpha: 0.6),
+                                      child: Text(
+                                        job.prompt,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9.sp,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 16.h),
+                    const Divider(color: AppColors.border, height: 1),
+                    SizedBox(height: 8.h),
+                  ],
+                );
+              }),
+
+              // Source Options
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  width: 40.w,
+                  height: 40.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Icon(Icons.photo_library_outlined, color: AppColors.primary, size: 20.sp),
+                ),
+                title: Text('From Device Gallery', style: AppTextStyles.bodyMediumBold),
+                subtitle: Text('Upload any local image from photo library', style: AppTextStyles.captionXs),
+                onTap: () async {
+                  Get.back();
+                  final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+                  if (picked != null) {
+                    Get.to(
+                      () => const RemixChatView(),
+                      arguments: {
+                        'anchorImageUrl': picked.path,
+                        'sourceType': 'custom',
+                        'authorName': 'My Upload',
+                        'initialPrompt': 'Remix this photo with cinematic styling',
+                      },
+                      transition: Transition.rightToLeft,
+                    );
+                  }
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  width: 40.w,
+                  height: 40.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Icon(Icons.camera_alt_outlined, color: AppColors.primary, size: 20.sp),
+                ),
+                title: Text('Take Camera Selfie', style: AppTextStyles.bodyMediumBold),
+                subtitle: Text('Capture a live portrait or reference photo', style: AppTextStyles.captionXs),
+                onTap: () async {
+                  Get.back();
+                  final picked = await picker.pickImage(source: ImageSource.camera, imageQuality: 90);
+                  if (picked != null) {
+                    Get.to(
+                      () => const RemixChatView(),
+                      arguments: {
+                        'anchorImageUrl': picked.path,
+                        'sourceType': 'custom',
+                        'authorName': 'My Selfie',
+                        'initialPrompt': 'Remix this portrait with artistic styling',
+                      },
+                      transition: Transition.rightToLeft,
+                    );
+                  }
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  width: 40.w,
+                  height: 40.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Icon(Icons.explore_outlined, color: AppColors.primary, size: 20.sp),
+                ),
+                title: Text('Browse Community Explore', style: AppTextStyles.bodyMediumBold),
+                subtitle: Text('Remix trending community styles & prompts', style: AppTextStyles.captionXs),
+                onTap: () {
+                  Get.back();
+                  shellCtrl.switchTab(0); // Switch to Explore Tab
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -13,8 +13,9 @@ import 'package:craftai_studio_mobile/features/studio/domain/models/prompt_compi
 import 'package:craftai_studio_mobile/features/studio/domain/models/generation_dispatch_model.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
+import '../../mocks/fake_studio_repository.dart';
 
-class MockStudioRepository implements IStudioRepository {
+class MockStudioRepository extends FakeStudioRepository {
   @override
   Future<StudioResult<PromptExpandModel>> expandPrompt(
     String rawPrompt, {
@@ -94,6 +95,28 @@ class MockStudioRepository implements IStudioRepository {
     onProgress(100, 'COMPLETED', 'Done');
     return null;
   }
+
+  @override
+  Future<StudioResult<RemixSessionModel>> createRemixSession({
+    required String anchorImageUrl,
+    String sourceType = 'explore',
+    String? remixedFromPromptId,
+    String? initialPrompt,
+    double styleWeight = 0.60,
+  }) async => (data: null, failure: null);
+
+  @override
+  Future<StudioResult<RemixSessionModel>> getRemixSession({
+    required String sessionId,
+  }) async => (data: null, failure: null);
+
+  @override
+  Future<StudioResult<RemixChatTurnResult>> sendRemixChatMessage({
+    required String sessionId,
+    required String userInstruction,
+    String aiModel = 'groq',
+    double? styleWeight,
+  }) async => (data: null, failure: null);
 }
 
 void main() {

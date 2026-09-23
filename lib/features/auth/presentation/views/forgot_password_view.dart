@@ -56,19 +56,31 @@ class ForgotPasswordView extends StatelessWidget {
                         SizedBox(height: 40.h),
                         Form(
                           key: ctrl.forgotFormKey,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              AppTextField(
-                                controller: ctrl.emailCtrl,
-                                label: 'Email address',
-                                hintText: 'you@example.com',
-                                prefixIcon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.done,
-                                autofocus: true,
-                                onSubmitted: (_) => ctrl.sendPasswordReset(),
-                                validator: _validateEmail,
+                              Obx(
+                                () => AppTextField(
+                                  controller: ctrl.emailCtrl,
+                                  label: 'Email address',
+                                  hintText: 'you@example.com',
+                                  prefixIcon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                  textInputAction: TextInputAction.done,
+                                  autofocus: true,
+                                  autovalidateMode:
+                                      AutovalidateMode.onUserInteraction,
+                                  onSubmitted: (_) => ctrl.sendPasswordReset(),
+                                  validator: AuthController.validateEmail,
+                                  suffixIcon: ctrl.isEmailValid.value
+                                      ? Icon(
+                                          Icons.check_circle_rounded,
+                                          color: AppColors.accentSuccess,
+                                          size: 20.r,
+                                        )
+                                      : null,
+                                ),
                               ),
                               SizedBox(height: 12.h),
                               Text(
@@ -96,6 +108,7 @@ class ForgotPasswordView extends StatelessWidget {
                                 () => _PrimaryButton(
                                   label: 'Send Reset Link',
                                   isLoading: ctrl.isLoading.value,
+                                  isValid: ctrl.isForgotFormValid.value,
                                   onTap: ctrl.sendPasswordReset,
                                 ),
                               ),
@@ -131,15 +144,6 @@ class ForgotPasswordView extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  // ── Validators ──────────────────────────────────────────────────────────────
-
-  String? _validateEmail(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Email is required';
-    final re = RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,}$');
-    if (!re.hasMatch(v.trim())) return 'Enter a valid email address';
-    return null;
   }
 
   // ── UI helpers ──────────────────────────────────────────────────────────────
@@ -207,11 +211,13 @@ class _PrimaryButton extends StatelessWidget {
     required this.label,
     required this.isLoading,
     required this.onTap,
+    this.isValid = true,
   });
 
   final String label;
   final bool isLoading;
   final VoidCallback onTap;
+  final bool isValid;
 
   @override
   Widget build(BuildContext context) {
@@ -228,9 +234,14 @@ class _PrimaryButton extends StatelessWidget {
                     AppColors.primary.withValues(alpha: 0.5),
                     AppColors.secondary.withValues(alpha: 0.5),
                   ]
-                : [AppColors.primary, AppColors.secondary],
+                : (isValid
+                    ? [AppColors.primary, AppColors.secondary]
+                    : [
+                        AppColors.primary.withValues(alpha: 0.7),
+                        AppColors.secondary.withValues(alpha: 0.7)
+                      ]),
           ),
-          boxShadow: isLoading
+          boxShadow: isLoading || !isValid
               ? []
               : [
                   BoxShadow(
