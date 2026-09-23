@@ -5,6 +5,8 @@ import '../../domain/models/prompt_expand_model.dart';
 import '../../domain/models/prompt_compile_model.dart';
 import '../../domain/models/generation_dispatch_model.dart';
 import '../../domain/repositories/i_studio_repository.dart';
+import '../../../remix/domain/models/remix_session_model.dart';
+import '../../../remix/domain/models/remix_chat_turn_result.dart';
 import '../datasources/studio_remote_datasource.dart';
 import '../../../../core/network/api_config.dart';
 import '../../../../core/utils/app_logger.dart';
@@ -240,4 +242,222 @@ class StudioRepositoryImpl implements IStudioRepository {
       onProgress: onProgress,
     );
   }
+
+  @override
+  Future<StudioResult<RemixSessionModel>> createRemixSession({
+    required String anchorImageUrl,
+    String sourceType = 'explore',
+    String? remixedFromPromptId,
+    String? initialPrompt,
+    double styleWeight = 0.60,
+  }) async {
+    try {
+      final session = await _remoteDataSource.createRemixSession(
+        anchorImageUrl: anchorImageUrl,
+        sourceType: sourceType,
+        remixedFromPromptId: remixedFromPromptId,
+        initialPrompt: initialPrompt,
+        styleWeight: styleWeight,
+      );
+      AppLogger.s('Remix session created successfully: id=${session.id}', tag: 'REMIX_REPO');
+      return (data: session, failure: null);
+    } on DioException catch (e) {
+      AppLogger.w('createRemixSession API exception (${e.type}): ${e.message}', tag: 'REMIX_REPO');
+      return (data: null, failure: _mapDioException(e));
+    } catch (e, st) {
+      AppLogger.e('Unexpected error creating remix session', tag: 'REMIX_REPO', error: e, stackTrace: st);
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<StudioResult<RemixSessionModel>> getRemixSession({
+    required String sessionId,
+  }) async {
+    try {
+      final session = await _remoteDataSource.getRemixSession(sessionId: sessionId);
+      return (data: session, failure: null);
+    } on DioException catch (e) {
+      AppLogger.w('getRemixSession API exception (${e.type}): ${e.message}', tag: 'REMIX_REPO');
+      return (data: null, failure: _mapDioException(e));
+    } catch (e, st) {
+      AppLogger.e('Unexpected error fetching remix session', tag: 'REMIX_REPO', error: e, stackTrace: st);
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<StudioResult<RemixChatTurnResult>> sendRemixChatMessage({
+    required String sessionId,
+    required String userInstruction,
+    String aiModel = 'groq',
+    double? styleWeight,
+  }) async {
+    try {
+      final json = await _remoteDataSource.sendRemixChatMessage(
+        sessionId: sessionId,
+        userInstruction: userInstruction,
+        aiModel: aiModel,
+        styleWeight: styleWeight,
+      );
+      final turnResult = RemixChatTurnResult.fromJson(json);
+      AppLogger.s('Remix chat turn compiled: compiledPrompt="${turnResult.compiledPrompt}" | latency=${turnResult.latencyMs}ms', tag: 'REMIX_REPO');
+      return (data: turnResult, failure: null);
+    } on DioException catch (e) {
+      AppLogger.w('sendRemixChatMessage API exception (${e.type}): ${e.message}', tag: 'REMIX_REPO');
+      return (data: null, failure: _mapDioException(e));
+    } catch (e, st) {
+      AppLogger.e('Unexpected error in sendRemixChatMessage', tag: 'REMIX_REPO', error: e, stackTrace: st);
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MEIGEN SKILLS REPOSITORY IMPLEMENTATION
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  @override
+  Future<StudioResult<String>> generateAiBackground({
+    required String imageUrl,
+    String mode = 'pure_white',
+    String? customBackdrop,
+    String aspectRatio = 'Auto',
+    String quality = '1k',
+    String? userId,
+  }) async {
+    try {
+      final res = await _remoteDataSource.generateAiBackground(
+        imageUrl: imageUrl,
+        mode: mode,
+        customBackdrop: customBackdrop,
+        aspectRatio: aspectRatio,
+        quality: quality,
+        userId: userId,
+      );
+      final outUrl = res['output_url'] as String? ?? '';
+      AppLogger.s('AI Background generated: mode=$mode, url=$outUrl', tag: 'STUDIO_REPO');
+      return (data: outUrl, failure: null);
+    } on DioException catch (e) {
+      AppLogger.w('generateAiBackground DioException: ${e.message}', tag: 'STUDIO_REPO');
+      return (data: null, failure: _mapDioException(e));
+    } catch (e, st) {
+      AppLogger.e('Unexpected error generating AI Background', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<StudioResult<String>> executeAiExpand({
+    required String imageUrl,
+    String targetRatio = '16:9',
+    String quality = '1k',
+    String? userId,
+  }) async {
+    try {
+      final res = await _remoteDataSource.executeAiExpand(
+        imageUrl: imageUrl,
+        targetRatio: targetRatio,
+        quality: quality,
+        userId: userId,
+      );
+      final outUrl = res['output_url'] as String? ?? '';
+      AppLogger.s('AI Expand completed: ratio=$targetRatio, url=$outUrl', tag: 'STUDIO_REPO');
+      return (data: outUrl, failure: null);
+    } on DioException catch (e) {
+      AppLogger.w('executeAiExpand DioException: ${e.message}', tag: 'STUDIO_REPO');
+      return (data: null, failure: _mapDioException(e));
+    } catch (e, st) {
+      AppLogger.e('Unexpected error in executeAiExpand', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<StudioResult<String>> upscaleImage({
+    required String imageUrl,
+    int scaleFactor = 2,
+    String? userId,
+  }) async {
+    try {
+      final res = await _remoteDataSource.upscaleImage(
+        imageUrl: imageUrl,
+        scaleFactor: scaleFactor,
+        userId: userId,
+      );
+      final outUrl = res['output_url'] as String? ?? '';
+      AppLogger.s('Upscale 4K completed: factor=$scaleFactor, url=$outUrl', tag: 'STUDIO_REPO');
+      return (data: outUrl, failure: null);
+    } on DioException catch (e) {
+      AppLogger.w('upscaleImage DioException: ${e.message}', tag: 'STUDIO_REPO');
+      return (data: null, failure: _mapDioException(e));
+    } catch (e, st) {
+      AppLogger.e('Unexpected error in upscaleImage', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<StudioResult<String>> executeProductDetail({
+    String? imageUrl,
+    String productName = 'Commercial Product',
+    String aspectRatio = '4:5',
+    String language = 'Auto',
+    String quality = '1k',
+    String? userId,
+  }) async {
+    try {
+      final res = await _remoteDataSource.executeProductDetail(
+        imageUrl: imageUrl,
+        productName: productName,
+        aspectRatio: aspectRatio,
+        language: language,
+        quality: quality,
+        userId: userId,
+      );
+      final outUrl = res['output_url'] as String? ?? '';
+      AppLogger.s('Product Detail generated: product=$productName, url=$outUrl', tag: 'STUDIO_REPO');
+      return (data: outUrl, failure: null);
+    } on DioException catch (e) {
+      AppLogger.w('executeProductDetail DioException: ${e.message}', tag: 'STUDIO_REPO');
+      return (data: null, failure: _mapDioException(e));
+    } catch (e, st) {
+      AppLogger.e('Unexpected error in executeProductDetail', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<StudioResult<String>> generateMarketingPoster({
+    required String topic,
+    String? imageUrl,
+    String category = 'Promotion',
+    String aspectRatio = '4:5',
+    String? headline,
+    String language = 'Auto',
+    String quality = '1k',
+    String? userId,
+  }) async {
+    try {
+      final res = await _remoteDataSource.generateMarketingPoster(
+        topic: topic,
+        imageUrl: imageUrl,
+        category: category,
+        aspectRatio: aspectRatio,
+        headline: headline,
+        language: language,
+        quality: quality,
+        userId: userId,
+      );
+      final outUrl = res['output_url'] as String? ?? '';
+      AppLogger.s('Marketing Poster generated: topic=$topic, url=$outUrl', tag: 'STUDIO_REPO');
+      return (data: outUrl, failure: null);
+    } on DioException catch (e) {
+      AppLogger.w('generateMarketingPoster DioException: ${e.message}', tag: 'STUDIO_REPO');
+      return (data: null, failure: _mapDioException(e));
+    } catch (e, st) {
+      AppLogger.e('Unexpected error in generateMarketingPoster', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
 }
+

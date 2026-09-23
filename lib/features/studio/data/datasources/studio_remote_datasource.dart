@@ -5,7 +5,9 @@ import 'package:dio/dio.dart';
 import '../../domain/models/prompt_expand_model.dart';
 import '../../domain/models/prompt_compile_model.dart';
 import '../../domain/models/generation_dispatch_model.dart';
+import '../../../remix/domain/models/remix_session_model.dart';
 import '../../../../core/network/dio_logging_interceptor.dart';
+import '../../../../core/network/connectivity_interceptor.dart';
 import '../../../../core/network/api_config.dart';
 import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
 
@@ -23,14 +25,17 @@ class StudioRemoteDataSource {
     final dio = Dio(
       BaseOptions(
         baseUrl: ApiConfig.baseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 40),
+        connectTimeout: const Duration(seconds: 20),
+        receiveTimeout: const Duration(seconds: 90),
         headers: {
           'Content-Type': 'application/json',
           'ngrok-skip-browser-warning': 'true',
         },
       ),
     );
+
+    // Fast-fail if device is completely offline before waiting for network timeouts
+    dio.interceptors.add(ConnectivityInterceptor());
 
     dio.interceptors.add(
       InterceptorsWrapper(
@@ -187,6 +192,9 @@ class StudioRemoteDataSource {
   }) async {
     final response = await _dio.post(
       '/prompt-engineering/generation/dispatch',
+      options: Options(
+        receiveTimeout: const Duration(seconds: 120),
+      ),
       data: {
         'prompt': prompt,
         'character_id': characterId,
@@ -249,4 +257,176 @@ class StudioRemoteDataSource {
       onProgress(100, 'completed', 'Generation complete');
     });
   }
+
+  /// Initializes a dedicated Remix Chat session anchored to a reference image.
+  Future<RemixSessionModel> createRemixSession({
+    required String anchorImageUrl,
+    String sourceType = 'explore',
+    String? remixedFromPromptId,
+    String? initialPrompt,
+    double styleWeight = 0.60,
+  }) async {
+    final response = await _dio.post(
+      '/prompt-engineering/remix/sessions',
+      data: {
+        'anchor_image_url': anchorImageUrl,
+        'source_type': sourceType,
+        'remixed_from_prompt_id': remixedFromPromptId,
+        'initial_prompt': initialPrompt ?? 'Preserve subject with balanced aesthetics',
+        'style_weight': styleWeight,
+      },
+    );
+    final data = response.data as Map<String, dynamic>;
+    return RemixSessionModel.fromJson(data);
+  }
+
+  /// Fetches an existing Remix Chat session with full message turn history.
+  Future<RemixSessionModel> getRemixSession({
+    required String sessionId,
+  }) async {
+    final response = await _dio.get(
+      '/prompt-engineering/remix/sessions/$sessionId',
+    );
+    final data = response.data as Map<String, dynamic>;
+    return RemixSessionModel.fromJson(data);
+  }
+
+  /// Executes a low-latency conversational remix prompt delta turn.
+  Future<Map<String, dynamic>> sendRemixChatMessage({
+    required String sessionId,
+    required String userInstruction,
+    String aiModel = 'groq',
+    double? styleWeight,
+  }) async {
+    final response = await _dio.post(
+      '/prompt-engineering/remix/chat',
+      data: {
+        'session_id': sessionId,
+        'user_instruction': userInstruction,
+        'ai_model': aiModel,
+        if (styleWeight != null) 'style_weight': styleWeight,
+      },
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MEIGEN AI SKILLS (Backgrounds, Expand, Poster, 4K, Cutout, Product Detail)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Skill 2: Pure white commercial studio canvas (0 tokens) or Smart / Custom background.
+  Future<Map<String, dynamic>> generateAiBackground({
+    required String imageUrl,
+    String mode = 'pure_white',
+    String? customBackdrop,
+    String aspectRatio = 'Auto',
+    String quality = '1k',
+    String? userId,
+  }) async {
+    final response = await _dio.post(
+      '/prompt-engineering/tools/ai-background',
+      data: {
+        'image_url': imageUrl,
+        'mode': mode,
+        if (customBackdrop != null) 'custom_backdrop': customBackdrop,
+        'aspect_ratio': aspectRatio,
+        'quality': quality,
+        if (userId != null) 'user_id': userId,
+      },
+      options: Options(receiveTimeout: const Duration(seconds: 120)),
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// Skill 3: Generative canvas outpaint extension to any aspect ratio.
+  Future<Map<String, dynamic>> executeAiExpand({
+    required String imageUrl,
+    String targetRatio = '16:9',
+    String quality = '1k',
+    String? userId,
+  }) async {
+    final response = await _dio.post(
+      '/prompt-engineering/tools/ai-expand',
+      data: {
+        'image_url': imageUrl,
+        'target_ratio': targetRatio,
+        'quality': quality,
+        if (userId != null) 'user_id': userId,
+      },
+      options: Options(receiveTimeout: const Duration(seconds: 120)),
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// Skill 4: 2X/4K Super-Resolution Detail Restoration.
+  Future<Map<String, dynamic>> upscaleImage({
+    required String imageUrl,
+    int scaleFactor = 2,
+    String? userId,
+  }) async {
+    final response = await _dio.post(
+      '/prompt-engineering/tools/upscale',
+      data: {
+        'image_url': imageUrl,
+        'scale_factor': scaleFactor,
+        if (userId != null) 'user_id': userId,
+      },
+      options: Options(receiveTimeout: const Duration(seconds: 60)),
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// Skill 5: 1 Photo to full e-commerce product feature listing set.
+  /// Skill 5: Commercial Product Detail with luxury pedestal staging.
+  Future<Map<String, dynamic>> executeProductDetail({
+    String? imageUrl,
+    String productName = 'Commercial Product',
+    String aspectRatio = '4:5',
+    String language = 'Auto',
+    String quality = '1k',
+    String? userId,
+  }) async {
+    final response = await _dio.post(
+      '/prompt-engineering/tools/product-detail',
+      data: {
+        if (imageUrl != null && imageUrl.trim().isNotEmpty) 'image_url': imageUrl,
+        'product_name': productName,
+        'aspect_ratio': aspectRatio,
+        'language': language,
+        'quality': quality,
+        if (userId != null) 'user_id': userId,
+      },
+      options: Options(receiveTimeout: const Duration(seconds: 120)),
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// Skill 6: Commercial Marketing Poster with layout & typography synthesis.
+  Future<Map<String, dynamic>> generateMarketingPoster({
+    required String topic,
+    String? imageUrl,
+    String category = 'Promotion',
+    String aspectRatio = '4:5',
+    String? headline,
+    String language = 'Auto',
+    String quality = '1k',
+    String? userId,
+  }) async {
+    final response = await _dio.post(
+      '/prompt-engineering/tools/marketing-poster',
+      data: {
+        'topic': topic,
+        if (imageUrl != null) 'image_url': imageUrl,
+        'category': category,
+        'aspect_ratio': aspectRatio,
+        if (headline != null) 'headline': headline,
+        'language': language,
+        'quality': quality,
+        if (userId != null) 'user_id': userId,
+      },
+      options: Options(receiveTimeout: const Duration(seconds: 120)),
+    );
+    return response.data as Map<String, dynamic>;
+  }
 }
+

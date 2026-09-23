@@ -1,41 +1,42 @@
 import 'dart:async';
-import '../failures/studio_failure.dart';
-import '../models/prompt_expand_model.dart';
-import '../models/prompt_compile_model.dart';
-import '../models/generation_dispatch_model.dart';
-import '../../../remix/domain/models/remix_session_model.dart';
-import '../../../remix/domain/models/remix_chat_turn_result.dart';
+import 'package:craftai_studio_mobile/features/studio/domain/repositories/i_studio_repository.dart';
+import 'package:craftai_studio_mobile/features/studio/domain/models/prompt_expand_model.dart';
+import 'package:craftai_studio_mobile/features/studio/domain/models/prompt_compile_model.dart';
+import 'package:craftai_studio_mobile/features/studio/domain/models/generation_dispatch_model.dart';
+import 'package:craftai_studio_mobile/features/remix/domain/models/remix_session_model.dart';
+import 'package:craftai_studio_mobile/features/remix/domain/models/remix_chat_turn_result.dart';
 
-typedef StudioResult<T> = ({T? data, StudioFailure? failure});
+export 'package:craftai_studio_mobile/features/remix/domain/models/remix_session_model.dart';
+export 'package:craftai_studio_mobile/features/remix/domain/models/remix_chat_turn_result.dart';
 
-abstract class IStudioRepository {
-  /// 1-Shot prompt expansion (Studio Step 1)
+class FakeStudioRepository implements IStudioRepository {
+  @override
   Future<StudioResult<PromptExpandModel>> expandPrompt(
     String rawPrompt, {
     String? starterChip,
     String aspectRatio = '1:1',
     String aiEngine = 'groq',
-  });
+  }) async => (data: null, failure: null);
 
-  /// Delta Instruction Compiler (Chat Copilot Step 3A)
+  @override
   Future<StudioResult<PromptCompileModel>> compileChatDelta({
     required String basePrompt,
     required String userInstruction,
     int turnCount = 1,
     String aiEngine = 'groq',
-  });
+  }) async => (data: null, failure: null);
 
-  /// Zero-token 1-click tool presets
+  @override
   Future<StudioResult<String>> applyQuickTool({
     required String imageId,
     required String action,
     required String targetPreset,
-  });
+  }) async => (data: null, failure: null);
 
-  /// Real zero-token local CPU background removal (outputs transparent PNG URL)
-  Future<StudioResult<String>> removeBackground({required String imageUrl});
+  @override
+  Future<StudioResult<String>> removeBackground({required String imageUrl}) async => (data: null, failure: null);
 
-  /// Automated Tier 0/Tier 1 Generation Dispatcher
+  @override
   Future<StudioResult<GenerationDispatchModel>> dispatchGeneration({
     required String prompt,
     String? characterId,
@@ -44,15 +45,15 @@ abstract class IStudioRepository {
     int height = 1024,
     String? model,
     String? remixedFromPromptId,
-  });
+  }) async => (data: null, failure: null);
 
-  /// Progress listener with automatic HTTP recovery
+  @override
   StreamSubscription? listenToGenerationProgress({
     required String taskId,
     required void Function(int progress, String status, String message) onProgress,
-  });
+  }) => null;
 
-  /// Creates a dedicated Remix Chat Session
+  @override
   Future<StudioResult<RemixSessionModel>> createRemixSession({
     required String anchorImageUrl,
     String sourceType = 'explore',
@@ -61,12 +62,12 @@ abstract class IStudioRepository {
     double styleWeight = 0.60,
   }) async => (data: null, failure: null);
 
-  /// Fetches an existing Remix Chat Session
+  @override
   Future<StudioResult<RemixSessionModel>> getRemixSession({
     required String sessionId,
   }) async => (data: null, failure: null);
 
-  /// Executes a conversational remix delta turn
+  @override
   Future<StudioResult<RemixChatTurnResult>> sendRemixChatMessage({
     required String sessionId,
     required String userInstruction,
@@ -74,7 +75,7 @@ abstract class IStudioRepository {
     double? styleWeight,
   }) async => (data: null, failure: null);
 
-  /// Skill 2: AI Backgrounds
+  @override
   Future<StudioResult<String>> generateAiBackground({
     required String imageUrl,
     String mode = 'pure_white',
@@ -84,7 +85,7 @@ abstract class IStudioRepository {
     String? userId,
   }) async => (data: null, failure: null);
 
-  /// Skill 3: AI Expand
+  @override
   Future<StudioResult<String>> executeAiExpand({
     required String imageUrl,
     String targetRatio = '16:9',
@@ -92,14 +93,14 @@ abstract class IStudioRepository {
     String? userId,
   }) async => (data: null, failure: null);
 
-  /// Skill 4: Upscale 4K
+  @override
   Future<StudioResult<String>> upscaleImage({
     required String imageUrl,
     int scaleFactor = 2,
     String? userId,
   }) async => (data: null, failure: null);
 
-  /// Skill 5: Product Detail Images
+  @override
   Future<StudioResult<String>> executeProductDetail({
     String? imageUrl,
     String productName = 'Commercial Product',
@@ -109,7 +110,7 @@ abstract class IStudioRepository {
     String? userId,
   }) async => (data: null, failure: null);
 
-  /// Skill 6: Marketing Poster
+  @override
   Future<StudioResult<String>> generateMarketingPoster({
     required String topic,
     String? imageUrl,
@@ -121,4 +122,3 @@ abstract class IStudioRepository {
     String? userId,
   }) async => (data: null, failure: null);
 }
-
