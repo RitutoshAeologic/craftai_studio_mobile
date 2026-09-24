@@ -5,6 +5,7 @@ import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
+import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/download_paywall_sheet.dart';
@@ -132,6 +133,18 @@ class StudioImageEditActionsSheet extends StatelessWidget {
               },
             ),
 
+            // Option 5: Delete from Library & Storage
+            _buildActionItem(
+              icon: Icons.delete_outline_rounded,
+              iconColor: AppColors.accentError,
+              title: 'Delete from Library & Storage',
+              subtitle: 'Permanently remove from cloud storage & records',
+              onTap: () {
+                Get.back();
+                _confirmDeleteSheet(context);
+              },
+            ),
+
             SizedBox(height: 12.h),
 
             // Cancel Button
@@ -212,6 +225,81 @@ class StudioImageEditActionsSheet extends StatelessWidget {
             ),
             Icon(Icons.chevron_right, size: 18.sp, color: AppColors.textMuted),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteSheet(BuildContext context) {
+    Get.dialog(
+      Dialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        child: Padding(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: AppColors.accentError.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.delete_forever_rounded, color: AppColors.accentError, size: 28.sp),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                'Delete Creation?',
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 16.sp, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                'Permanently remove this creation from your cloud library and storage? This cannot be undone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp, height: 1.4),
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.border),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                      ),
+                      child: Text('Cancel', style: TextStyle(color: AppColors.textPrimary, fontSize: 12.sp, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.back(); // close dialog
+                        final libCtrl = Get.isRegistered<LibraryController>()
+                            ? Get.find<LibraryController>()
+                            : Get.put(LibraryController());
+                        libCtrl.deleteCreation(job);
+                        if (Get.currentRoute.contains('CreationDetail') || Get.isOverlaysOpen) {
+                          Get.back();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentError,
+                        foregroundColor: AppColors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                      ),
+                      child: Text('Delete', style: TextStyle(color: AppColors.white, fontSize: 12.sp, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

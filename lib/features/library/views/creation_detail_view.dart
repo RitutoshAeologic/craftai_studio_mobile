@@ -7,6 +7,7 @@ import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
+import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/publish_creation_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/download_paywall_sheet.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/widgets/studio_image_edit_actions_sheet.dart';
@@ -48,6 +49,79 @@ class _CreationDetailViewState extends State<CreationDetailView> {
       backgroundColor: AppColors.surface,
       colorText: AppColors.primary,
       duration: const Duration(seconds: 2),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    Get.dialog(
+      Dialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        child: Padding(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: AppColors.accentError.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.delete_forever_rounded, color: AppColors.accentError, size: 28.sp),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                'Delete Creation?',
+                style: AppTextStyles.bodyLargeBold.copyWith(color: AppColors.textPrimary),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                'This will permanently delete this image from your cloud library and Supabase storage. This action cannot be undone.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, height: 1.4),
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.border),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                      ),
+                      child: Text('Cancel', style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary)),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Get.back(); // close dialog
+                        final libCtrl = Get.isRegistered<LibraryController>()
+                            ? Get.find<LibraryController>()
+                            : Get.put(LibraryController());
+                        await libCtrl.deleteCreation(widget.job);
+                        Get.back(); // pop back from CreationDetailView to Library
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentError,
+                        foregroundColor: AppColors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                      ),
+                      child: Text('Delete', style: AppTextStyles.captionBold.copyWith(color: AppColors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -174,6 +248,13 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                         ),
 
                         const Spacer(),
+
+                        // Delete button
+                        IconButton(
+                          onPressed: () => _showDeleteConfirmation(context),
+                          icon: Icon(Icons.delete_outline_rounded, size: 22.sp, color: AppColors.accentError),
+                          tooltip: 'Delete Creation',
+                        ),
 
                         // More options
                         IconButton(
