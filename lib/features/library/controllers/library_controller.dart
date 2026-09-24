@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
@@ -163,7 +164,7 @@ class LibraryController extends GetxController {
   }
 
   /// Permanently deletes an image from Cloud Storage, database records, and local state.
-  Future<bool> deleteCreation(JobModel job) async {
+  Future<bool> deleteCreation(JobModel job, {bool showSnackbar = true}) async {
     try {
       // 1. Optimistically remove from local reactive state for instantaneous UI response
       myCreations.removeWhere((j) => j.jobId == job.jobId);
@@ -176,8 +177,8 @@ class LibraryController extends GetxController {
         final token = SupabaseService.client.auth.currentSession?.accessToken;
         final dio = Dio(BaseOptions(
           baseUrl: ApiConfig.baseUrl,
-          connectTimeout: const Duration(seconds: 4),
-          receiveTimeout: const Duration(seconds: 4),
+          connectTimeout: const Duration(seconds: 3),
+          receiveTimeout: const Duration(seconds: 3),
           headers: {
             if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
           },
@@ -209,13 +210,16 @@ class LibraryController extends GetxController {
         AppLogger.d('Direct Supabase delete skipped or pending migration: $dbErr', tag: 'LIBRARY');
       }
 
-      if (Get.context != null) {
+      if (showSnackbar && Get.overlayContext != null && !Get.testMode) {
         Get.snackbar(
-          'Creation Deleted 🗑️',
+          'Image Deleted 🗑️',
           'Image removed from your library and cloud storage.',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: AppColors.surface,
-          colorText: AppColors.primary,
+          colorText: AppColors.textPrimary,
+          icon: const Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 12,
           duration: const Duration(seconds: 2),
         );
       }
