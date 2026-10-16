@@ -319,12 +319,33 @@ void main() {
           ),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 100));
-
       expect(find.text('AI Expand'), findsOneWidget);
       expect(find.text('Target Ratio: 16:9 • 1k'), findsOneWidget);
       expect(find.byType(BeforeAfterSlider), findsNothing);
       expect(find.text('⚡ Remix in Lab (Chat)'), findsOneWidget);
+    });
+
+    testWidgets('Renders BeforeAfterSlider with local file path for originalImageUrl', (tester) async {
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const ToolResultPreviewSheet(
+            title: '4K Super-Resolution',
+            resultImageUrl: 'https://images.unsplash.com/mock-result',
+            originalImageUrl: '/data/user/0/com.craftai.studio/cache/local_image.jpg',
+            creditsUsed: 2.0,
+            badgeText: 'Scale: 4X • Ultra HD',
+            enableBeforeAfter: true,
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('4K Super-Resolution'), findsOneWidget);
+      expect(find.text('Scale: 4X • Ultra HD'), findsOneWidget);
+      expect(find.byType(BeforeAfterSlider), findsOneWidget);
+      expect(find.text('ORIGINAL'), findsOneWidget);
+      expect(find.text('AI RESULT'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

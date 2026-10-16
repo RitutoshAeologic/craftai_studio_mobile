@@ -84,7 +84,7 @@ class _BeforeAfterSliderState extends State<BeforeAfterSlider> {
                 Positioned(
                   top: 10.h,
                   left: 10.w,
-                  child: _buildBadge(widget.beforeLabel, AppColors.surface.withValues(alpha: 0.8)),
+                  child: _buildBadge(widget.beforeLabel, Colors.black.withValues(alpha: 0.65)),
                 ),
                 Positioned(
                   top: 10.h,
@@ -164,7 +164,7 @@ class _BeforeAfterSliderState extends State<BeforeAfterSlider> {
                         borderRadius: BorderRadius.circular(AppDimens.radiusRound),
                       ),
                       child: Text(
-                        _isHoldingOriginal ? 'Viewing Anchor' : 'Drag divider or hold to view original',
+                        _isHoldingOriginal ? 'Viewing ${widget.beforeLabel}' : 'Drag divider or hold to view original',
                         style: AppTextStyles.captionXs.copyWith(
                           color: Colors.white70,
                           fontSize: 10.sp,

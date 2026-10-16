@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// Centralized API and environment configuration for CraftAI Studio mobile.
 ///
-/// Follows rules.md §3: No hardcoded secrets, staging URLs, or ephemeral
+/// Follows rules.md A 3: No hardcoded secrets, staging URLs, or ephemeral
 /// tunnel domains in source control. All URLs are injected via --dart-define
 /// (e.g. `dart_defines/dev.json`).
 class ApiConfig {
@@ -20,13 +20,12 @@ class ApiConfig {
       return envUrl;
     }
 
-    // Default fallback when no environment define is passed:
-    // On native mobile (iOS/Android), connect to the active HTTPS tunnel
-    // so physical devices connect seamlessly without Wi-Fi AP isolation or timeout issues.
-    if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-      return 'https://craftwork-gizmo-engraved.ngrok-free.dev/api/v1';
+    const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+    if (apiBaseUrl.isNotEmpty) {
+      return apiBaseUrl;
     }
 
+    // Default fallback when no environment define is passed (works seamlessly with adb reverse):
     return 'http://127.0.0.1:8000/api/v1';
   }
 

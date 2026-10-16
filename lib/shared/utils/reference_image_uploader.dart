@@ -45,9 +45,13 @@ class ReferenceImageUploader {
     // 1. Try Backend Upload Gateways (Configured baseUrl + optional fallback)
     final candidateUrls = <String>{
       ApiConfig.baseUrl,
-      'https://craftwork-gizmo-engraved.ngrok-free.dev/api/v1',
       if (ApiConfig.fallbackUrl != null) ApiConfig.fallbackUrl!,
-      'http://192.168.68.124:8000/api/v1',
+      if (ApiConfig.isAndroidDevice &&
+          (ApiConfig.baseUrl.contains('127.0.0.1') ||
+              ApiConfig.baseUrl.contains('localhost')))
+        ApiConfig.baseUrl
+            .replaceAll('127.0.0.1', '10.0.2.2')
+            .replaceAll('localhost', '10.0.2.2'),
     }.toList();
 
     for (final backendUrl in candidateUrls) {
