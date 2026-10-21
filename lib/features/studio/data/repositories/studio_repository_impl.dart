@@ -27,7 +27,7 @@ class StudioRepositoryImpl implements IStudioRepository {
       case DioExceptionType.connectionError:
         if (ApiConfig.isLocalHost && ApiConfig.isAndroidDevice) {
           return const StudioNetworkFailure(
-            'Cannot connect to local backend (127.0.0.1:8000). On physical Android devices, run "adb reverse tcp:8000 tcp:8000" on your Mac, or check that your backend server is running.',
+            'Cannot connect to local backend (127.0.0.1:8000). On physical Android devices, run "adb reverse tcp:8000 tcp:8000" in your terminal, or check that your backend server is running.',
           );
         } else if (ApiConfig.isLocalHost) {
           return StudioNetworkFailure(
