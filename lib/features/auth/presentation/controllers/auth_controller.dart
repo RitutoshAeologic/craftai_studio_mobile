@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import '../../../../core/network/api_config.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/auth_repository.dart';
@@ -302,6 +304,21 @@ class AuthController extends GetxController {
 
   Future<void> signOut() async {
     AppLogger.i('Signing out user: ${currentUser.value?.email ?? "anonymous"}', tag: 'AUTH_UI');
+    try {
+      final token = Supabase.instance.client.auth.currentSession?.accessToken;
+      if (token != null && token.isNotEmpty) {
+        final dio = Dio(BaseOptions(
+          connectTimeout: const Duration(milliseconds: 1500),
+          receiveTimeout: const Duration(milliseconds: 1500),
+        ));
+        await dio.post(
+          '${ApiConfig.baseUrl}/auth/signout',
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        );
+      }
+    } catch (e) {
+      AppLogger.w('Backend signout notification notice: $e', tag: 'AUTH_UI');
+    }
     await _repo.signOut();
     currentUser.value = null;
     AppLogger.s('User signed out -> Navigating to Login', tag: 'AUTH_UI');
