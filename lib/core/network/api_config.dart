@@ -25,8 +25,8 @@ class ApiConfig {
       return apiBaseUrl;
     }
 
-    // Default fallback when no environment define is passed (works seamlessly with adb reverse):
-    return 'http://127.0.0.1:8000/api/v1';
+    // Default fallback pointing to the active public ngrok backend tunnel:
+    return 'https://recast-landmass-sedan.ngrok-free.dev/api/v1';
   }
 
   /// Optional remote fallback URL (e.g. an active ngrok tunnel or remote staging server).
@@ -36,7 +36,9 @@ class ApiConfig {
   /// Returns null if not provided, preventing noisy requests to dead tunnels.
   static String? get fallbackUrl {
     const envFallback = String.fromEnvironment('FALLBACK_BACKEND_URL');
-    return envFallback.trim().isNotEmpty ? envFallback.trim() : null;
+    if (envFallback.trim().isNotEmpty) return envFallback.trim();
+    // Default local loopback fallback for physical USB debugging:
+    return 'http://127.0.0.1:8001/api/v1';
   }
 
   /// Whether the current configured backend targets a local machine loopback.

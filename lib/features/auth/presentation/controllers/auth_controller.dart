@@ -313,7 +313,10 @@ class AuthController extends GetxController {
         ));
         await dio.post(
           '${ApiConfig.baseUrl}/auth/signout',
-          options: Options(headers: {'Authorization': 'Bearer $token'}),
+          options: Options(headers: {
+            'Authorization': 'Bearer $token',
+            'ngrok-skip-browser-warning': 'true',
+          }),
         );
       }
     } catch (e) {
