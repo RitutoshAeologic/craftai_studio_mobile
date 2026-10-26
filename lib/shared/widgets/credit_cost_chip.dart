@@ -53,8 +53,8 @@ class CreditCostChip extends StatelessWidget {
 
     Widget buildContent(double amount) {
       final text = amount == amount.roundToDouble()
-          ? '${amount.toInt()} ${AppStrings.cr}'
-          : '${amount.toStringAsFixed(1)} ${AppStrings.cr}';
+          ? '${amount.toInt()}'
+          : '${amount.toStringAsFixed(1)}';
 
       return GestureDetector(
         onTap: onTap,

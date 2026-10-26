@@ -50,10 +50,10 @@ class CreationStudioView extends StatelessWidget {
                     AppStrings.studioTitle,
                     style: AppTextStyles.h1,
                   ),
-                  CreditCostChip(
-                    creditsRx: shellCtrl.userCredits,
-                    onTap: () => shellCtrl.switchTab(4),
-                  ),
+                  // CreditCostChip(
+                  //   creditsRx: shellCtrl.userCredits,
+                  //   onTap: () => shellCtrl.switchTab(4),
+                  // ),
                 ],
               ),
               SizedBox(height: AppDimens.vSpacingMd),

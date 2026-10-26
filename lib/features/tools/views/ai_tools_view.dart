@@ -65,25 +65,25 @@ class AiToolsView extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 8.w),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.bolt, color: AppColors.primary, size: 14.sp),
-                          SizedBox(width: 4.w),
-                          Obx(() => Text(
-                            '${shellCtrl.userCredits.value.toStringAsFixed(0)} Cr',
-                            style: AppTextStyles.captionBold.copyWith(color: AppColors.primary),
-                          )),
-                        ],
-                      ),
-                    ),
+                    // Container(
+                    //   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    //   decoration: BoxDecoration(
+                    //     color: AppColors.surface,
+                    //     borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                    //     border: Border.all(color: AppColors.border),
+                    //   ),
+                    //   child: Row(
+                    //     mainAxisSize: MainAxisSize.min,
+                    //     children: [
+                    //       Icon(Icons.bolt, color: AppColors.primary, size: 14.sp),
+                    //       SizedBox(width: 4.w),
+                    //       Obx(() => Text(
+                    //         '${shellCtrl.userCredits.value.toStringAsFixed(0)} Cr',
+                    //         style: AppTextStyles.captionBold.copyWith(color: AppColors.primary),
+                    //       )),
+                    //     ],
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
