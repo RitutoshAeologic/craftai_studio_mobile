@@ -5,6 +5,8 @@ import '../../features/auth/presentation/views/login_view.dart';
 import '../../features/auth/presentation/views/signup_view.dart';
 import '../../features/auth/presentation/views/forgot_password_view.dart';
 import '../../features/shell/views/home_shell_view.dart';
+import '../../features/profile/views/profile_view.dart';
+import '../../features/wallet/views/wallet_view.dart';
 import 'app_routes.dart';
 
 /// Single source of truth for every named [GetPage] in the app.
@@ -45,6 +47,18 @@ class AppPages {
       transitionDuration: const Duration(milliseconds: 300),
       // Re-register AuthController binding for home so Get.find() works there too.
       binding: BindingsBuilder.put(() => Get.find<AuthController>()),
+    ),
+    GetPage(
+      name: AppRoutes.profile,
+      page: () => const ProfileView(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: AppRoutes.wallet,
+      page: () => const WalletView(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
     ),
   ];
 }

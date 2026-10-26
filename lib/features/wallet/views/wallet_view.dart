@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
+import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/wallet_controller.dart';
 
@@ -15,6 +16,26 @@ class WalletView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: Navigator.canPop(context)
+          ? AppBar(
+              backgroundColor: AppColors.background,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 18),
+                onPressed: () => Get.back(),
+              ),
+              title: Text(
+                'Wallet & Credits',
+                style: AppTextStyles.h2,
+              ),
+              centerTitle: false,
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(1.h),
+                child: Container(color: AppColors.border, height: 1.h),
+              ),
+            )
+          : null,
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.w),
         child: Column(

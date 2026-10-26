@@ -13,7 +13,7 @@ import 'package:craftai_studio_mobile/features/studio/presentation/controllers/s
 class ShellController extends GetxController {
   static ShellController get to => Get.find<ShellController>();
 
-  /// Active tab index: 0 = Explore, 1 = Studio, 2 = AI Tools, 3 = Library, 4 = Wallet.
+  /// Active tab index: 0 = Explore, 1 = Studio, 2 = AI Tools, 3 = Library, 4 = Profile.
   final RxInt currentIndex = 0.obs;
 
   /// Observable wallet credit balance.
@@ -50,7 +50,7 @@ class ShellController extends GetxController {
   }
 
   /// Programmatically switches the active bottom bar tab.
-  /// [index]: 0 (Explore), 1 (Studio), 2 (AI Tools), 3 (Library), 4 (Wallet).
+  /// [index]: 0 (Explore), 1 (Studio), 2 (AI Tools), 3 (Library), 4 (Profile).
   void switchTab(int index) {
     if (Get.isRegistered<StudioController>()) {
       final studioCtrl = Get.find<StudioController>();

@@ -5,6 +5,7 @@ class AppStrings {
   static const String tabStudio = "Studio";
   static const String tabLibrary = "Library";
   static const String tabWallet = "Wallet";
+  static const String tabProfile = "Profile";
 
   // Studio & Creation
   static const String studioTitle = "Studio";
