@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
@@ -190,6 +191,35 @@ class PromptChatCopilotController extends GetxController {
     );
 
     isLoading.value = false;
+  }
+
+  void applyPromptToStudio({String? promptToUse}) {
+    final target = (promptToUse != null && promptToUse.trim().isNotEmpty)
+        ? promptToUse.trim()
+        : activeBasePrompt.value.trim();
+
+    if (target.isEmpty) {
+      Get.back();
+      return;
+    }
+
+    if (Get.isRegistered<StudioController>()) {
+      final studioCtrl = Get.find<StudioController>();
+      studioCtrl.promptController.text = target;
+    }
+
+    Get.back();
+
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      Get.snackbar(
+        AppStrings.promptAppliedToStudio,
+        AppStrings.promptAppliedToStudioSub,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.accentSuccess,
+        duration: const Duration(seconds: 2),
+      );
+    }
   }
 
   void syncToStudioAndGenerate() {

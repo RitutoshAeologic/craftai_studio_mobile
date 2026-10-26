@@ -52,6 +52,10 @@ class AppStrings {
   static const String noPromptSet = "No prompt set";
   static const String copilotInputHint = 'e.g. "rain add karo, lighting dark karo"';
   static const String btnGenerateWithRefined = "Generate With Refined Prompt";
+  static const String btnGenerateWithRefinedShort = "Generate Now";
+  static const String btnUseInStudio = "Use in Studio";
+  static const String promptAppliedToStudio = "Prompt Applied to Studio 🎨";
+  static const String promptAppliedToStudioSub = "Prompt copied to Studio. Adjust settings or tap Generate.";
   static const String refinementCapReached = "Refinement Cap Reached";
   static const String refinementCapReachedMsg = "Free prompt refinement limit reached for this session. Tap 'Generate Image' to commit changes.";
   static const String copilotWelcomeEmpty = "Hello! Tell me what changes you want to make, or tap any 1-click action chip below.";
