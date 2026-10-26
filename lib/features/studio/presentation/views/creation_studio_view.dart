@@ -75,36 +75,63 @@ class CreationStudioView extends StatelessWidget {
                       SizedBox(
                         height: 32.h,
                         child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: controller.starterTemplates.length,
-                  separatorBuilder: (_, __) => SizedBox(width: AppDimens.spacingSm),
-                  itemBuilder: (context, index) {
-                    final t = controller.starterTemplates[index];
-                    return GestureDetector(
-                      onTap: () => controller.selectStarterTemplate(t),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(t['icon']!, style: TextStyle(fontSize: 11.sp)),
-                            SizedBox(width: 4.w),
-                            Text(
-                              t['title']!,
-                              style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary),
-                            ),
-                          ],
+                          scrollDirection: Axis.horizontal,
+                          itemCount: controller.starterTemplates.length,
+                          separatorBuilder: (_, __) => SizedBox(width: AppDimens.spacingSm),
+                          itemBuilder: (context, index) {
+                            final t = controller.starterTemplates[index];
+                            return Obx(() {
+                              final isSelected = controller.selectedStarterTemplate.value == t['title'];
+                              return GestureDetector(
+                                onTap: () => controller.selectStarterTemplate(t),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? AppColors.primary : AppColors.surface,
+                                    borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                                    border: Border.all(
+                                      color: isSelected ? AppColors.primary : AppColors.border,
+                                      width: isSelected ? 1.5 : 1.0,
+                                    ),
+                                    boxShadow: isSelected
+                                        ? [
+                                            BoxShadow(
+                                              color: AppColors.primary.withValues(alpha: 0.18),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(t['icon']!, style: TextStyle(fontSize: 11.sp)),
+                                      SizedBox(width: 4.w),
+                                      Text(
+                                        t['title']!,
+                                        style: AppTextStyles.captionXs.copyWith(
+                                          color: isSelected ? AppColors.white : AppColors.textSecondary,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                        ),
+                                      ),
+                                      if (isSelected) ...[
+                                        SizedBox(width: 4.w),
+                                        Icon(
+                                          Icons.check_rounded,
+                                          size: 11.sp,
+                                          color: AppColors.white,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              );
+                            });
+                          },
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
               SizedBox(height: AppDimens.vSpacingMd),
 
               // =========================================================================

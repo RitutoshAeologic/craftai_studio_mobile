@@ -147,11 +147,24 @@ class StudioController extends GetxController {
   final RxString lastDispatchedModel = ''.obs;
   final RxString lastDispatchedDimensions = ''.obs;
 
+  /// Currently selected starter template title (null if custom prompt or none selected).
+  final RxnString selectedStarterTemplate = RxnString();
+
   @override
   void onInit() {
     super.onInit();
     promptController.addListener(() {
       promptLength.value = promptController.text.length;
+
+      final currentText = promptController.text.trim();
+      Map<String, String>? match;
+      for (final t in starterTemplates) {
+        if ((t['prompt'] ?? '').trim() == currentText) {
+          match = t;
+          break;
+        }
+      }
+      selectedStarterTemplate.value = match?['title'];
     });
   }
 
@@ -228,28 +241,56 @@ class StudioController extends GetxController {
     selectedModel.value = modelId;
   }
 
-  /// Populates the prompt field with a curated starter template prompt.
+  /// Populates the prompt field with a curated starter template prompt,
+  /// or deselects it and clears the prompt if the same template is tapped again.
   void selectStarterTemplate(Map<String, String> template) {
     if (isBusy) {
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        Get.snackbar(
+          'Studio is Busy ⏳',
+          'Please wait for the current task to finish before loading a template.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.surface,
+          colorText: AppColors.primary,
+          duration: const Duration(seconds: 2),
+        );
+      }
+      return;
+    }
+
+    final title = template['title'] ?? '';
+    final prompt = template['prompt'] ?? '';
+
+    // If already selected with the exact same prompt, tap again to deselect & clear
+    if (selectedStarterTemplate.value == title &&
+        promptController.text.trim() == prompt.trim()) {
+      selectedStarterTemplate.value = null;
+      promptController.clear();
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        Get.snackbar(
+          'Template Deselected',
+          'Prompt cleared.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.surface,
+          colorText: AppColors.textSecondary,
+          duration: const Duration(seconds: 2),
+        );
+      }
+      return;
+    }
+
+    selectedStarterTemplate.value = title;
+    promptController.text = prompt;
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
       Get.snackbar(
-        'Studio is Busy ⏳',
-        'Please wait for the current task to finish before loading a template.',
+        '${template['icon']} $title ${AppStrings.templateLoadedSuffix}',
+        AppStrings.templateAppliedMsg,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.surface,
         colorText: AppColors.primary,
         duration: const Duration(seconds: 2),
       );
-      return;
     }
-    promptController.text = template['prompt'] ?? '';
-    Get.snackbar(
-      '${template['icon']} ${template['title']} ${AppStrings.templateLoadedSuffix}',
-      AppStrings.templateAppliedMsg,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.surface,
-      colorText: AppColors.primary,
-      duration: const Duration(seconds: 2),
-    );
   }
 
   /// Opens the conversational AI prompt refinement copilot modal sheet.
