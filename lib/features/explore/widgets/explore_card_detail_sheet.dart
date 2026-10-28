@@ -1025,7 +1025,7 @@ class ExploreCardDetailSheet extends StatelessWidget {
                         border: Border.all(color: AppColors.border, width: 1),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
+                            color: AppColors.black.withValues(alpha: 0.08),
                             blurRadius: 2,
                             offset: const Offset(0, 1),
                           ),

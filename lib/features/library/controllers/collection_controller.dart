@@ -51,7 +51,7 @@ class CollectionController extends GetxController {
   Future<void> fetchCollections() async {
     try {
       final client = SupabaseService.client;
-      if (client == null || client.auth.currentUser == null) return;
+      if (client.auth.currentUser == null) return;
 
       final res = await client
           .from('collections')
@@ -92,8 +92,8 @@ class CollectionController extends GetxController {
     // Sync to Supabase in background
     try {
       final client = SupabaseService.client;
-      final userId = client?.auth.currentUser?.id;
-      if (client != null && userId != null) {
+      final userId = client.auth.currentUser?.id;
+      if (userId != null) {
         await client.from('collections').insert({
           'name': newCol.name,
           'description': newCol.description,
@@ -151,8 +151,8 @@ class CollectionController extends GetxController {
     // Supabase sync
     try {
       final client = SupabaseService.client;
-      final userId = client?.auth.currentUser?.id;
-      if (client != null && userId != null) {
+      final userId = client.auth.currentUser?.id;
+      if (userId != null) {
         if (isAlreadySaved) {
           await client
               .from('collection_items')
