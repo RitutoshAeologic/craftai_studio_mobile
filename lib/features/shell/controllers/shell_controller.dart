@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
+import 'package:craftai_studio_mobile/data/models/wallet_model.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
 
 /// [ShellController] manages the root navigation shell of the application.
@@ -38,9 +39,8 @@ class ShellController extends GetxController {
             .maybeSingle();
 
         if (res != null) {
-          final freeBal = (res['free_daily_balance'] as num?)?.toDouble() ?? 500.0;
-          final purBal = (res['purchased_balance'] as num?)?.toDouble() ?? 0.0;
-          userCredits.value = freeBal + purBal;
+          final wallet = WalletModel.fromJson(res);
+          userCredits.value = wallet.purchasedBalance + wallet.freeDailyBalance;
           AppLogger.s('Synced wallet balance from Supabase: ${userCredits.value} Cr', tag: 'WALLET');
         }
       }

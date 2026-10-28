@@ -8,6 +8,7 @@ import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import '../controllers/explore_controller.dart';
 import 'more_like_this_sheet.dart';
+import 'image_details_bottom_sheet.dart';
 import '../../remix/views/remix_chat_view.dart';
 
 class ExploreCardDetailSheet extends StatelessWidget {
@@ -15,12 +16,7 @@ class ExploreCardDetailSheet extends StatelessWidget {
   const ExploreCardDetailSheet({super.key, required this.card});
 
   static void show(BuildContext context, ExploreCardModel card) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => ExploreCardDetailSheet(card: card),
-    );
+    ImageDetailsBottomSheet.show(context, card);
   }
 
   @override
@@ -236,16 +232,16 @@ class ExploreCardDetailSheet extends StatelessWidget {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
+                              foregroundColor: AppColors.surface,
                               padding: EdgeInsets.symmetric(vertical: 12.h),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(AppDimens.radiusSm),
                               ),
                             ),
-                            icon: Icon(Icons.auto_awesome, size: 16.sp, color: Colors.white),
+                            icon: Icon(Icons.auto_awesome, size: 16.sp, color: AppColors.white),
                             label: Text(
                               'Use as Prompt',
-                              style: AppTextStyles.captionBold.copyWith(color: Colors.white),
+                              style: AppTextStyles.captionBold.copyWith(color: AppColors.white),
                             ),
                           ),
                         ),

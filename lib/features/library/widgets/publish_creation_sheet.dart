@@ -95,9 +95,9 @@ class _PublishCreationSheetState extends State<PublishCreationSheet> {
             'title': title,
             'preview_url': widget.job.previewUrl,
             'category': _selectedCategory,
-            'masked_summary': widget.job.prompt,
-            'remix_fee': 4.0,
-            'creator_royalty_cut': 1.6,
+            'masked_prompt_summary': widget.job.prompt,
+            'base_remix_fee': 4.0,
+            'author_royalty_cut': 1.6,
           });
           AppLogger.s('Published creation to Supabase explore_prompts table', tag: 'EXPLORE_PUBLISH');
         }

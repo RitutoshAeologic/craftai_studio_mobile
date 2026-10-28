@@ -1,22 +1,23 @@
-# CraftAI Studio — Web Team API Integration Specification
+# CraftAI Studio — Web & Mobile API Integration Specification
 
-> **Target Audience:** Next.js 15 Web Engineering Team  
-> **Backend Architecture:** FastAPI (Python 3.9+) + Supabase (PostgreSQL, Storage, Auth)  
-> **Backend Git Branch:** `feature/structured-prompt-engine` (Includes all gateway fixes + Multi-Model Structured Engine)  
+> **Target Audience:** Next.js 15 Web & Flutter Mobile Engineering Teams  
+> **Backend Architecture:** FastAPI (Python 3.10+) + Supabase (PostgreSQL, Storage, Auth) + Local Metal MPS / Sidecar  
+> **Backend Git Branch:** `feature/multi-llm-configurable-gateway` (Base: `feature/production-clean-architecture`)  
 > **Backend Repository:** `git@github.com:RitutoshAeologic/craftai_studio_backend.git`  
-> **PR Link:** [Create PR on GitHub](https://github.com/RitutoshAeologic/craftai_studio_backend/pull/new/feature/structured-prompt-engine)  
+> **PR Link:** [Create PR on GitHub](https://github.com/RitutoshAeologic/craftai_studio_backend/pull/new/feature/multi-llm-configurable-gateway)  
 > **Mobile Parity:** Flutter Mobile App (iOS / Android)  
 > **Local Base URL (Recommended):** `http://127.0.0.1:8000/api/v1` *(or root `http://127.0.0.1:8000`)*  
-> **Public HTTPS Tunnel (Remote Web Testing):** `https://craftwork-gizmo-engraved.ngrok-free.dev/api/v1` *(Header: `ngrok-skip-browser-warning: true`)*  
+> **Public HTTPS Tunnel (Remote Testing):** `https://heavy-baths-dig.loca.lt/api/v1` *(Header: `ngrok-skip-browser-warning: true`)*  
 > **Swagger UI (Interactive Playground):** `http://127.0.0.1:8000/docs`  
 > **ReDoc Documentation:** `http://127.0.0.1:8000/redoc`  
-> **OpenAPI JSON Schema:** `http://127.0.0.1:8000/openapi.json`
+> **OpenAPI JSON Schema:** `http://127.0.0.1:8000/openapi.json`  
+> **Direct Route Aliasing:** All tools, vision, and auth routes support both `/api/v1/prompt-engineering/...` and direct `/api/v1/...` paths to eliminate 404s.
 
 ---
 
 ## 1. Authentication & Security Headers
 
-All requests from Next.js (Client Components or Server Actions) should pass the Supabase JWT access token obtained via `@supabase/ssr` / `@supabase/supabase-js`.
+All requests from Next.js (Client Components or Server Actions) and Flutter Mobile should pass the Supabase JWT access token obtained via `@supabase/ssr` / `supabase_flutter`.
 
 ```http
 Authorization: Bearer <SUPABASE_ACCESS_TOKEN>
@@ -28,8 +29,8 @@ Content-Type: application/json
 ## 2. Core Operational Endpoints (FastAPI)
 
 ### 2.1 Visual Generation Dispatch
-- **Endpoint:** `POST /api/v1/prompt-engineering/generation/dispatch`
-- **Description:** Dispatches a visual image generation task to serverless workers (FLUX.1-schnell or InstantID Face-Lock).
+- **Endpoint:** `POST /api/v1/prompt-engineering/generation/dispatch` *(or `/api/v1/generation/dispatch`)*
+- **Description:** Dispatches a visual image generation task to serverless workers (Local SDXL-Lightning RealVisXL v4.0 on Apple Silicon MPS / Sidecar on Port 8001, Hugging Face FLUX.1-schnell, or InstantID Face-Lock).
 
 #### Request Payload:
 ```json
@@ -37,7 +38,7 @@ Content-Type: application/json
   "prompt": "An adorable 3D isometric diorama of a cyberpunk gaming room, miniature aesthetic, Octane Render lighting, 8k...",
   "character_id": null,
   "face_reference_urls": null,
-  "negative_prompt": null,
+  "negative_prompt": "blurry, low quality, distorted artifacts",
   "structured_metadata": null,
   "width": 1024,
   "height": 1024,
@@ -50,7 +51,7 @@ Content-Type: application/json
 - `prompt` (string, 1–4000 characters): Supports rich master prompts.
 - `negative_prompt` (string, optional): Explicit negative tokens to eliminate unwanted artifacts (used directly by SDXL / compiled engines).
 - `structured_metadata` (object, optional): Visual Director metadata (`subject`, `environment`, `lighting`, `camera_optics`, `avoid`). When passed, the backend automatically compiles model-specific prompts for the target engine.
-- `model` (string, optional): `"flux"` (default), `"gemini"`, or `"chatgpt"`.
+- `model` (string, optional): `"flux"` (default), `"sdxl"`, `"gemini"`, or `"chatgpt"`.
 - `width` / `height` (int, 512–2048): `1024x1024` (1:1), `768x1344` (9:16), `1344x768` (16:9).
 - `face_reference_urls` (array of strings, optional): If 1–3 photo URLs are passed, engine auto-promotes to **Tier 1 (InstantID Face-Lock)**.
 - `remixed_from_prompt_id` (string, optional): Pass original Explore card ID if user is remixing a community prompt for creator royalty split.
@@ -59,12 +60,13 @@ Content-Type: application/json
 ```json
 {
   "task_id": "gen_1dca6620",
-  "tier": "Tier 0 (FLUX.1-schnell via Hugging Face)",
+  "tier": "Tier 0 (SDXL-Lightning RealVisXL Engine)",
   "status": "ready",
-  "estimated_seconds": 5,
-  "direct_image_url": "https://txiuwtrmfvceddqsjvhk.supabase.co/storage/v1/object/public/user_generations/generations/flux_5681d376fa734038960f7d46fe96efaa.png"
+  "estimated_seconds": 6,
+  "direct_image_url": "https://txiuwtrmfvceddqsjvhk.supabase.co/storage/v1/object/public/user_generations/sdxl_5681d376fa734038960f7d46fe96efaa.png"
 }
 ```
+*(Note: If local MPS/sidecar is unavailable, backend seamlessly cascades to `Tier 0 (FLUX.1-schnell via Hugging Face)` or safe gateway)*
 
 ---
 
@@ -236,28 +238,155 @@ export interface PromptExpandResponse {
 
 ---
 
-### 2.5 Creative Skills Toolbox (Quick Tools)
+### 2.5 Creative Skills Toolbox (AI Tools Suite)
+All tools feature direct root aliasing: can be invoked with `/api/v1/prompt-engineering/tools/<tool>` or `/api/v1/tools/<tool>`.
 
 #### A. AI Background Remover:
-- **Endpoint:** `POST /api/v1/prompt-engineering/tools/remove-background`
+- **Endpoint:** `POST /api/v1/prompt-engineering/tools/remove-background` *(or `/api/v1/tools/remove-background`)*
 - **Request:** (Supports both HTTPS URL and Base64 Data URL)
 ```json
 {
   "image_url": "https://.../photo.png"
 }
 ```
-- **Response:** (Returns both `output_url` and `cutout_url` with identical values)
+- **Response:** (Returns both `output_url`, `cutout_url`, and `image_url` for web/mobile compatibility)
 ```json
 {
   "task_id": "tool_rmbg_abc123",
   "status": "completed",
   "output_url": "https://.../photo_transparent.png",
-  "cutout_url": "https://.../photo_transparent.png"
+  "cutout_url": "https://.../photo_transparent.png",
+  "image_url": "https://.../photo_transparent.png",
+  "tokens_consumed": 0,
+  "credits_deducted": 0
 }
 ```
 
-#### B. Tool Presets (Relight, Blur, Upscale):
-- **Endpoint:** `POST /api/v1/prompt-engineering/tools/edit-preset`
+#### B. Zero-Token Optical Super-Resolution Upscaler (2X / 4X):
+- **Endpoint:** `POST /api/v1/prompt-engineering/tools/upscale` *(or `/api/v1/tools/upscale`)*
+- **Description:** Super-resolution optical upscaler. Takes input image and scales resolution up to 4K.
+- **Request:**
+```json
+{
+  "image_url": "https://.../photo.png",
+  "scale": 2,
+  "mode": "photo"
+}
+```
+*Field Notes:*
+- `scale` or `scale_factor` (int): `2` (2X HD) or `4` (4X Ultra 4K).
+- `mode` (string, optional): `"photo"`, `"portrait"`, `"anime"`, or `"fast"`.
+- `image_id` (string, optional): Look up from Supabase `jobs` table if `image_url` is omitted.
+- **Response:**
+```json
+{
+  "task_id": "tool_upscale_123",
+  "status": "completed",
+  "scale": 2,
+  "mode": "photo",
+  "original_resolution": "1024x1024",
+  "upscaled_resolution": "2048x2048",
+  "output_url": "https://.../upscaled.png",
+  "image_url": "https://.../upscaled.png",
+  "is_free": true,
+  "engine": "Optical Photo Super-Resolution (CPU)"
+}
+```
+
+#### C. AI Background Inpainting:
+- **Endpoint:** `POST /api/v1/prompt-engineering/tools/ai-background` *(or `/api/v1/tools/ai-background`)*
+- **Request:**
+```json
+{
+  "image_url": "https://.../product.png",
+  "mode": "studio",
+  "custom_backdrop": "minimalist pastel marble pedestal with soft sunlight",
+  "aspect_ratio": "1:1"
+}
+```
+- **Response:**
+```json
+{
+  "task_id": "tool_bg_123",
+  "status": "completed",
+  "output_url": "https://.../studio_backdrop.png",
+  "image_url": "https://.../studio_backdrop.png",
+  "mode": "studio",
+  "is_free": true
+}
+```
+
+#### D. AI Canvas Expansion (Outpainting):
+- **Endpoint:** `POST /api/v1/prompt-engineering/tools/ai-expand` *(or `/api/v1/tools/ai-expand`)*
+- **Request:**
+```json
+{
+  "image_url": "https://.../photo.png",
+  "target_ratio": "16:9",
+  "quality": "1k"
+}
+```
+- **Response:**
+```json
+{
+  "task_id": "tool_expand_123",
+  "status": "completed",
+  "output_url": "https://.../expanded_16_9.png",
+  "image_url": "https://.../expanded_16_9.png",
+  "target_ratio": "16:9",
+  "is_free": true
+}
+```
+
+#### E. Commercial Product Detail Showcase:
+- **Endpoint:** `POST /api/v1/prompt-engineering/tools/product-detail` *(or `/api/v1/tools/product-detail`)*
+- **Request:**
+```json
+{
+  "image_url": "https://.../shoe.png",
+  "product_name": "Ultra Velocity Sneaker",
+  "aspect_ratio": "4:5",
+  "language": "Auto"
+}
+```
+- **Response:**
+```json
+{
+  "task_id": "tool_product_123",
+  "status": "completed",
+  "output_url": "https://.../product_card.png",
+  "image_url": "https://.../product_card.png",
+  "product_name": "Ultra Velocity Sneaker",
+  "is_free": true
+}
+```
+
+#### F. Marketing Promotional Poster Composition:
+- **Endpoint:** `POST /api/v1/prompt-engineering/tools/marketing-poster` *(or `/api/v1/tools/marketing-poster`)*
+- **Request:**
+```json
+{
+  "image_url": "https://.../item.png",
+  "topic": "Summer Solstice Special 50% Off",
+  "category": "Promotion",
+  "aspect_ratio": "4:5",
+  "headline": "Limitless Radiance"
+}
+```
+- **Response:**
+```json
+{
+  "task_id": "tool_poster_123",
+  "status": "completed",
+  "output_url": "https://.../marketing_poster.png",
+  "image_url": "https://.../marketing_poster.png",
+  "topic": "Summer Solstice Special 50% Off",
+  "is_free": true
+}
+```
+
+#### G. Tool Presets (Relight, Blur, Custom Preset):
+- **Endpoint:** `POST /api/v1/prompt-engineering/tools/edit-preset` *(or `/api/v1/tools/edit-preset`)*
 - **Request:** (`image_url` is optional; if omitted, backend looks up `image_id` in `jobs` table)
 ```json
 {
@@ -268,7 +397,7 @@ export interface PromptExpandResponse {
   "lock_subject": true
 }
 ```
-- **Response:** (Returns both `output_url` and `image_url`)
+- **Response:**
 ```json
 {
   "task_id": "tool_job_123_abc",
@@ -324,7 +453,46 @@ export interface PromptExpandResponse {
 
 ---
 
-### 2.9 Standardized API Error Response Contract
+### 2.9 Session Signout & Cache Invalidation
+- **Endpoint:** `POST /api/v1/auth/signout` *(or `/api/v1/prompt-engineering/auth/signout`)*
+- **Description:** Idempotent endpoint that clears token cache in server memory and revokes Supabase session. Safe for both authenticated users and anonymous sessions.
+- **Headers:** `Authorization: Bearer <token>` (optional)
+- **Response (HTTP 200):**
+```json
+{
+  "status": "success",
+  "message": "Signed out successfully",
+  "cache_cleared": true
+}
+```
+
+---
+
+### 2.10 Local Diffusion Engine & Sidecar Worker (Zero-Cost Inference)
+CraftAI Studio supports 100% free, high-performance image generation using **SDXL-Lightning + RealVisXL v4.0** on Apple Silicon Metal Performance Shaders (`mps`).
+
+To prevent heavy model weights (~6.5GB) from slowing down FastAPI development reload cycles (`uvicorn --reload`), the diffusion engine runs in an isolated sidecar microservice:
+
+#### Sidecar Architecture:
+- **Port 8001:** `scripts/diffusion_sidecar.py` loads the PyTorch / Diffusers pipeline in a separate process.
+- **Port 8000:** FastAPI gateway checks if the sidecar is active at `http://127.0.0.1:8001/generate`.
+- **Auto-Failover Hierarchy:**
+  1. **Primary:** Diffusion Sidecar Worker (Port 8001) / Local MPS
+  2. **Secondary:** Hugging Face FLUX.1-schnell cloud inference
+  3. **Tertiary:** Direct safe diffusion gateway
+
+#### Starting the Backend Locally with Sidecar:
+```bash
+# Terminal 1: Start isolated Diffusion Sidecar (Port 8001)
+.venv/bin/python scripts/diffusion_sidecar.py
+
+# Terminal 2: Start Main FastAPI Gateway (Port 8000)
+.venv/bin/uvicorn app.main:app --reload --port 8000
+```
+
+---
+
+### 2.11 Standardized API Error Response Contract
 FastAPI has been enhanced with unified global exception handlers. All errors consistently return JSON formatted for seamless frontend consumption:
 
 #### A. Pydantic Validation Error (HTTP 422):

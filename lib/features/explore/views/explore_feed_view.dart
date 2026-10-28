@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
@@ -7,7 +8,11 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import '../controllers/explore_controller.dart';
 import '../widgets/explore_card_widget.dart';
+import '../widgets/filter_bottom_sheet.dart';
 
+/// [ExploreFeedView] represents Screen 1 of the TL Explore Funnel:
+/// Displays artwork in an organic Scattered Masonry grid with chunked category pills
+/// and direct 1-tap navigation into [ExploreDiscoveryView].
 class ExploreFeedView extends StatelessWidget {
   const ExploreFeedView({super.key});
 
@@ -17,16 +22,45 @@ class ExploreFeedView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        title: Text(
+          'Explore Feed',
+          style: AppTextStyles.titleMedium.copyWith(
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune, color: AppColors.textPrimary),
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            tooltip: 'Filter Creations',
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              FilterBottomSheet.show(context);
+            },
+          ),
+          SizedBox(width: 4.w),
+        ],
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.h),
+          child: Container(color: AppColors.border, height: 1.h),
+        ),
+      ),
       body: SafeArea(
+        top: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // =================================================================
-            // HEADER BAR: Category Filter Pills (Horizontal Scroller)
+            // CHUNKED CATEGORY FILTER PILLS (Miller's Law 7 +/- 2)
             // =================================================================
             Container(
-              height: 48.h,
-              padding: EdgeInsets.symmetric(vertical: 6.h),
+              height: 54.h,
+              color: AppColors.surface,
+              padding: EdgeInsets.symmetric(vertical: 8.h),
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -37,12 +71,16 @@ class ExploreFeedView extends StatelessWidget {
                   return Obx(() {
                     final isSelected = controller.selectedCategory.value == cat;
                     return GestureDetector(
-                      onTap: () => controller.setCategory(cat),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        controller.setCategory(cat);
+                      },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+                        constraints: const BoxConstraints(minHeight: 44),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : AppColors.surface,
+                          color: isSelected ? AppColors.primary : AppColors.surfaceLight,
                           borderRadius: BorderRadius.circular(AppDimens.radiusRound),
                           border: Border.all(
                             color: isSelected ? AppColors.primary : AppColors.border,
@@ -51,8 +89,8 @@ class ExploreFeedView extends StatelessWidget {
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.35),
-                                    blurRadius: 10,
+                                    color: AppColors.primary.withValues(alpha: 0.25),
+                                    blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
                                 ]
@@ -62,7 +100,7 @@ class ExploreFeedView extends StatelessWidget {
                           child: Text(
                             cat,
                             style: AppTextStyles.captionBold.copyWith(
-                              color: isSelected ? Colors.white : AppColors.textSecondary,
+                              color: isSelected ? AppColors.surface : AppColors.textSecondary,
                               fontSize: 12.sp,
                               fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                             ),
@@ -75,8 +113,10 @@ class ExploreFeedView extends StatelessWidget {
               ),
             ),
 
+            Divider(height: 1, color: AppColors.border),
+
             // =================================================================
-            // 2-COLUMN STAGGERED MASONRY GRID FEED (Pinterest-Style Parity)
+            // SCATTERED MASONRY GRID (Pinterest / Collage Aesthetic)
             // =================================================================
             Expanded(
               child: Obx(() {
@@ -98,14 +138,17 @@ class ExploreFeedView extends StatelessWidget {
                 }
 
                 return MasonryGridView.count(
-                  padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
+                  padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
                   crossAxisCount: 2,
                   mainAxisSpacing: 12.h,
                   crossAxisSpacing: 12.w,
                   itemCount: list.length,
                   itemBuilder: (context, idx) {
                     final card = list[idx];
-                    return ExploreCardWidget(card: card);
+                    return ExploreCardWidget(
+                      card: card,
+                      index: idx,
+                    );
                   },
                 );
               }),

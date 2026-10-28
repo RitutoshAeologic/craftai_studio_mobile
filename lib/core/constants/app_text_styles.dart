@@ -22,6 +22,9 @@ class AppTextStyles {
         color: AppColors.textPrimary,
       );
 
+  static TextStyle get titleMedium => h2;
+  static TextStyle get titleSmall => h3;
+
   static TextStyle get bodyLarge => GoogleFonts.inter(
         fontSize: 14.sp,
         fontWeight: FontWeight.w400,

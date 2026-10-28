@@ -33,16 +33,9 @@ class LibraryController extends GetxController {
             .order('created_at', ascending: false);
 
         if (res.isNotEmpty) {
-          final loaded = (res as List).map((r) => JobModel(
-            jobId: (r['job_id'] ?? r['id'] ?? 'job_${DateTime.now().millisecondsSinceEpoch}').toString(),
-            type: r['type'] as String? ?? 'IMAGE_GEN',
-            status: r['status'] as String? ?? 'completed',
-            prompt: r['prompt'] as String? ?? '',
-            previewUrl: r['preview_url'] as String? ?? '',
-            creditsDeducted: (r['credits_deducted'] as num?)?.toDouble() ?? 2.0,
-            isDownloadUnlocked: r['is_download_unlocked'] as bool? ?? false,
-            createdAt: DateTime.tryParse(r['created_at'] as String? ?? '') ?? DateTime.now(),
-          )).toList();
+          final loaded = (res as List)
+              .map((r) => JobModel.fromJson(r as Map<String, dynamic>))
+              .toList();
           myCreations.assignAll(loaded);
           AppLogger.s('Loaded ${loaded.length} cloud generations from Supabase jobs', tag: 'LIBRARY');
           isLoading.value = false;
