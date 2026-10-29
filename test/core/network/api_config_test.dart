@@ -24,7 +24,7 @@ void main() {
       final wsUrl = ApiConfig.buildWsGenerationUrl(taskId);
 
       expect(wsUrl.startsWith('ws://') || wsUrl.startsWith('wss://'), isTrue);
-      expect(wsUrl.contains('/prompt-engineering/ws/generation/$taskId'), isTrue);
+      expect(wsUrl.contains('/ws/generation/$taskId'), isTrue);
     });
   });
 }

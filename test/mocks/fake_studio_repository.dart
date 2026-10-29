@@ -31,6 +31,7 @@ class FakeStudioRepository implements IStudioRepository {
     required String imageId,
     required String action,
     required String targetPreset,
+    String? imageUrl,
   }) async => (data: null, failure: null);
 
   @override
@@ -41,6 +42,9 @@ class FakeStudioRepository implements IStudioRepository {
     required String prompt,
     String? characterId,
     List<String>? faceReferenceUrls,
+    String? negativePrompt,
+    int? seed,
+    Map<String, dynamic>? structuredMetadata,
     int width = 1024,
     int height = 1024,
     String? model,
@@ -121,4 +125,33 @@ class FakeStudioRepository implements IStudioRepository {
     String quality = '1k',
     String? userId,
   }) async => (data: null, failure: null);
+
+  @override
+  Future<StudioResult<String>> eraseObject({
+    required String imageUrl,
+    required String maskBase64,
+    String? imageBase64,
+  }) async => (data: 'https://images.unsplash.com/mock-erased.png', failure: null);
+
+  @override
+  Future<StudioResult<String>> colorizePhoto({
+    required String imageUrl,
+    double saturation = 1.2,
+    String? imageBase64,
+  }) async => (data: 'https://images.unsplash.com/mock-colorized.png', failure: null);
+
+  @override
+  Future<StudioResult<Map<String, dynamic>>> scanVisionImage({
+    required String imageUrl,
+  }) async => (data: {'extracted_prompt': 'A mock visual scene'}, failure: null);
+
+  @override
+  Future<void> cleanupReferencePhoto(String imageUrl) async {}
+
+  @override
+  Future<StudioResult<Map<String, dynamic>>> fetchLlmConfig() async => (data: <String, dynamic>{}, failure: null);
+
+  @override
+  Future<bool> checkSystemHealth() async => true;
 }
+

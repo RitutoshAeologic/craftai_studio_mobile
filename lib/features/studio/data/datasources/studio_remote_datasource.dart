@@ -301,7 +301,9 @@ class StudioRemoteDataSource {
             if (!isCompleted) startRealPolling();
           },
         );
-      }).catchError((_) => startRealPolling());
+      }).catchError((_) {
+        startRealPolling();
+      });
     } catch (_) {
       startRealPolling();
     }

@@ -945,8 +945,10 @@ class CreationStudioView extends StatelessWidget {
               ),
 
               // Right: Clear Button + Copilot + AI Engine Selector + Polish Button
-              Row(
-                mainAxisSize: MainAxisSize.min,
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                 children: [
                   Obx(() {
                     if (controller.promptLength.value == 0) return const SizedBox.shrink();
@@ -1059,8 +1061,9 @@ class CreationStudioView extends StatelessWidget {
                   }),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
         ],
       ),
     );

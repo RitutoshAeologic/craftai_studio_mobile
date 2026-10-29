@@ -40,6 +40,9 @@ class MockControlledStudioRepository extends FakeStudioRepository {
     required String prompt,
     String? characterId,
     List<String>? faceReferenceUrls,
+    String? negativePrompt,
+    int? seed,
+    Map<String, dynamic>? structuredMetadata,
     int width = 1024,
     int height = 1024,
     String? model,
@@ -79,6 +82,7 @@ class MockControlledStudioRepository extends FakeStudioRepository {
     required String imageId,
     required String action,
     required String targetPreset,
+    String? imageUrl,
   }) async => (data: 'task_1', failure: null);
 
   @override

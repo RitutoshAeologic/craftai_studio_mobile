@@ -156,7 +156,9 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
 
       // Transform path from viewport coordinate space to original image pixel coordinates
       final matrix = Matrix4.identity()
+        // ignore: deprecated_member_use
         ..scale(1 / scale, 1 / scale)
+        // ignore: deprecated_member_use
         ..translate(-offsetX, -offsetY);
 
       final transformedPath = stroke.path.transform(matrix.storage);

@@ -57,6 +57,7 @@ class MockStudioRepository extends FakeStudioRepository {
     required String imageId,
     required String action,
     required String targetPreset,
+    String? imageUrl,
   }) async {
     return (data: 'task_mock_123', failure: null);
   }
@@ -71,6 +72,9 @@ class MockStudioRepository extends FakeStudioRepository {
     required String prompt,
     String? characterId,
     List<String>? faceReferenceUrls,
+    String? negativePrompt,
+    int? seed,
+    Map<String, dynamic>? structuredMetadata,
     int width = 1024,
     int height = 1024,
     String? model,
