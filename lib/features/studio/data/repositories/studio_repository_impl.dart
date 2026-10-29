@@ -100,16 +100,10 @@ class StudioRepositoryImpl implements IStudioRepository {
       return (data: data, failure: null);
     } on DioException catch (e) {
       AppLogger.w('expandPrompt API exception (${e.type}): ${e.message}', tag: 'STUDIO_REPO');
-      return (
-        data: null,
-        failure: _mapDioException(e),
-      );
+      return (data: null, failure: _mapDioException(e));
     } catch (e, st) {
       AppLogger.e('Unexpected error expanding prompt', tag: 'STUDIO_REPO', error: e, stackTrace: st);
-      return (
-        data: null,
-        failure: StudioUnknownFailure(e.toString()),
-      );
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
 
@@ -131,16 +125,10 @@ class StudioRepositoryImpl implements IStudioRepository {
       return (data: data, failure: null);
     } on DioException catch (e) {
       AppLogger.w('compileChatDelta API exception (${e.type}): ${e.message}', tag: 'STUDIO_REPO');
-      return (
-        data: null,
-        failure: _mapDioException(e),
-      );
+      return (data: null, failure: _mapDioException(e));
     } catch (e, st) {
       AppLogger.e('Unexpected error compiling chat delta', tag: 'STUDIO_REPO', error: e, stackTrace: st);
-      return (
-        data: null,
-        failure: StudioUnknownFailure(e.toString()),
-      );
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
 
@@ -149,27 +137,23 @@ class StudioRepositoryImpl implements IStudioRepository {
     required String imageId,
     required String action,
     required String targetPreset,
+    String? imageUrl,
   }) async {
     try {
       final taskId = await _remoteDataSource.applyQuickTool(
         imageId: imageId,
         action: action,
         targetPreset: targetPreset,
+        imageUrl: imageUrl,
       );
       AppLogger.s('Quick tool applied: action=$action, targetPreset=$targetPreset', tag: 'STUDIO_REPO');
       return (data: taskId, failure: null);
     } on DioException catch (e) {
       AppLogger.w('applyQuickTool API exception (${e.type}): ${e.message}', tag: 'STUDIO_REPO');
-      return (
-        data: null,
-        failure: _mapDioException(e),
-      );
+      return (data: null, failure: _mapDioException(e));
     } catch (e, st) {
       AppLogger.e('Unexpected error applying quick tool', tag: 'STUDIO_REPO', error: e, stackTrace: st);
-      return (
-        data: null,
-        failure: StudioUnknownFailure(e.toString()),
-      );
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
 
@@ -196,6 +180,9 @@ class StudioRepositoryImpl implements IStudioRepository {
     required String prompt,
     String? characterId,
     List<String>? faceReferenceUrls,
+    String? negativePrompt,
+    int? seed,
+    Map<String, dynamic>? structuredMetadata,
     int width = 1024,
     int height = 1024,
     String? model,
@@ -206,6 +193,9 @@ class StudioRepositoryImpl implements IStudioRepository {
         prompt: prompt,
         characterId: characterId,
         faceReferenceUrls: faceReferenceUrls,
+        negativePrompt: negativePrompt,
+        seed: seed,
+        structuredMetadata: structuredMetadata,
         width: width,
         height: height,
         model: model,
@@ -219,16 +209,10 @@ class StudioRepositoryImpl implements IStudioRepository {
       } else {
         AppLogger.w('dispatchGeneration API exception (${e.type}): ${e.message}', tag: 'STUDIO_REPO');
       }
-      return (
-        data: null,
-        failure: _mapDioException(e),
-      );
+      return (data: null, failure: _mapDioException(e));
     } catch (e, st) {
       AppLogger.e('Unexpected error dispatching generation', tag: 'STUDIO_REPO', error: e, stackTrace: st);
-      return (
-        data: null,
-        failure: StudioUnknownFailure(e.toString()),
-      );
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
 
@@ -252,20 +236,17 @@ class StudioRepositoryImpl implements IStudioRepository {
     double styleWeight = 0.60,
   }) async {
     try {
-      final session = await _remoteDataSource.createRemixSession(
+      final data = await _remoteDataSource.createRemixSession(
         anchorImageUrl: anchorImageUrl,
         sourceType: sourceType,
         remixedFromPromptId: remixedFromPromptId,
         initialPrompt: initialPrompt,
         styleWeight: styleWeight,
       );
-      AppLogger.s('Remix session created successfully: id=${session.id}', tag: 'REMIX_REPO');
-      return (data: session, failure: null);
+      return (data: data, failure: null);
     } on DioException catch (e) {
-      AppLogger.w('createRemixSession API exception (${e.type}): ${e.message}', tag: 'REMIX_REPO');
       return (data: null, failure: _mapDioException(e));
-    } catch (e, st) {
-      AppLogger.e('Unexpected error creating remix session', tag: 'REMIX_REPO', error: e, stackTrace: st);
+    } catch (e) {
       return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
@@ -275,13 +256,11 @@ class StudioRepositoryImpl implements IStudioRepository {
     required String sessionId,
   }) async {
     try {
-      final session = await _remoteDataSource.getRemixSession(sessionId: sessionId);
-      return (data: session, failure: null);
+      final data = await _remoteDataSource.getRemixSession(sessionId: sessionId);
+      return (data: data, failure: null);
     } on DioException catch (e) {
-      AppLogger.w('getRemixSession API exception (${e.type}): ${e.message}', tag: 'REMIX_REPO');
       return (data: null, failure: _mapDioException(e));
-    } catch (e, st) {
-      AppLogger.e('Unexpected error fetching remix session', tag: 'REMIX_REPO', error: e, stackTrace: st);
+    } catch (e) {
       return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
@@ -294,27 +273,19 @@ class StudioRepositoryImpl implements IStudioRepository {
     double? styleWeight,
   }) async {
     try {
-      final json = await _remoteDataSource.sendRemixChatMessage(
+      final data = await _remoteDataSource.sendRemixChatMessage(
         sessionId: sessionId,
         userInstruction: userInstruction,
         aiModel: aiModel,
         styleWeight: styleWeight,
       );
-      final turnResult = RemixChatTurnResult.fromJson(json);
-      AppLogger.s('Remix chat turn compiled: compiledPrompt="${turnResult.compiledPrompt}" | latency=${turnResult.latencyMs}ms', tag: 'REMIX_REPO');
-      return (data: turnResult, failure: null);
+      return (data: RemixChatTurnResult.fromJson(data), failure: null);
     } on DioException catch (e) {
-      AppLogger.w('sendRemixChatMessage API exception (${e.type}): ${e.message}', tag: 'REMIX_REPO');
       return (data: null, failure: _mapDioException(e));
-    } catch (e, st) {
-      AppLogger.e('Unexpected error in sendRemixChatMessage', tag: 'REMIX_REPO', error: e, stackTrace: st);
+    } catch (e) {
       return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MEIGEN SKILLS REPOSITORY IMPLEMENTATION
-  // ═══════════════════════════════════════════════════════════════════════════
 
   @override
   Future<StudioResult<String>> generateAiBackground({
@@ -334,14 +305,11 @@ class StudioRepositoryImpl implements IStudioRepository {
         quality: quality,
         userId: userId,
       );
-      final outUrl = res['output_url'] as String? ?? '';
-      AppLogger.s('AI Background generated: mode=$mode, url=$outUrl', tag: 'STUDIO_REPO');
+      final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? '';
       return (data: outUrl, failure: null);
     } on DioException catch (e) {
-      AppLogger.w('generateAiBackground DioException: ${e.message}', tag: 'STUDIO_REPO');
       return (data: null, failure: _mapDioException(e));
-    } catch (e, st) {
-      AppLogger.e('Unexpected error generating AI Background', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+    } catch (e) {
       return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
@@ -360,14 +328,11 @@ class StudioRepositoryImpl implements IStudioRepository {
         quality: quality,
         userId: userId,
       );
-      final outUrl = res['output_url'] as String? ?? '';
-      AppLogger.s('AI Expand completed: ratio=$targetRatio, url=$outUrl', tag: 'STUDIO_REPO');
+      final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? '';
       return (data: outUrl, failure: null);
     } on DioException catch (e) {
-      AppLogger.w('executeAiExpand DioException: ${e.message}', tag: 'STUDIO_REPO');
       return (data: null, failure: _mapDioException(e));
-    } catch (e, st) {
-      AppLogger.e('Unexpected error in executeAiExpand', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+    } catch (e) {
       return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
@@ -384,14 +349,11 @@ class StudioRepositoryImpl implements IStudioRepository {
         scaleFactor: scaleFactor,
         userId: userId,
       );
-      final outUrl = res['output_url'] as String? ?? '';
-      AppLogger.s('Upscale 4K completed: factor=$scaleFactor, url=$outUrl', tag: 'STUDIO_REPO');
+      final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? '';
       return (data: outUrl, failure: null);
     } on DioException catch (e) {
-      AppLogger.w('upscaleImage DioException: ${e.message}', tag: 'STUDIO_REPO');
       return (data: null, failure: _mapDioException(e));
-    } catch (e, st) {
-      AppLogger.e('Unexpected error in upscaleImage', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+    } catch (e) {
       return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
@@ -414,14 +376,11 @@ class StudioRepositoryImpl implements IStudioRepository {
         quality: quality,
         userId: userId,
       );
-      final outUrl = res['output_url'] as String? ?? '';
-      AppLogger.s('Product Detail generated: product=$productName, url=$outUrl', tag: 'STUDIO_REPO');
+      final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? '';
       return (data: outUrl, failure: null);
     } on DioException catch (e) {
-      AppLogger.w('executeProductDetail DioException: ${e.message}', tag: 'STUDIO_REPO');
       return (data: null, failure: _mapDioException(e));
-    } catch (e, st) {
-      AppLogger.e('Unexpected error in executeProductDetail', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+    } catch (e) {
       return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
@@ -448,16 +407,90 @@ class StudioRepositoryImpl implements IStudioRepository {
         quality: quality,
         userId: userId,
       );
-      final outUrl = res['output_url'] as String? ?? '';
-      AppLogger.s('Marketing Poster generated: topic=$topic, url=$outUrl', tag: 'STUDIO_REPO');
+      final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? '';
       return (data: outUrl, failure: null);
     } on DioException catch (e) {
-      AppLogger.w('generateMarketingPoster DioException: ${e.message}', tag: 'STUDIO_REPO');
       return (data: null, failure: _mapDioException(e));
-    } catch (e, st) {
-      AppLogger.e('Unexpected error in generateMarketingPoster', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+    } catch (e) {
       return (data: null, failure: StudioUnknownFailure(e.toString()));
     }
   }
-}
 
+  @override
+  Future<StudioResult<String>> eraseObject({
+    required String imageUrl,
+    required String maskBase64,
+    String? imageBase64,
+  }) async {
+    try {
+      final res = await _remoteDataSource.eraseObject(
+        imageUrl: imageUrl,
+        maskBase64: maskBase64,
+        imageBase64: imageBase64,
+      );
+      final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? res['url'] as String? ?? '';
+      return (data: outUrl, failure: null);
+    } on DioException catch (e) {
+      return (data: null, failure: _mapDioException(e));
+    } catch (e) {
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<StudioResult<String>> colorizePhoto({
+    required String imageUrl,
+    double saturation = 1.2,
+    String? imageBase64,
+  }) async {
+    try {
+      final res = await _remoteDataSource.colorizePhoto(
+        imageUrl: imageUrl,
+        saturation: saturation,
+        imageBase64: imageBase64,
+      );
+      final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? res['url'] as String? ?? '';
+      return (data: outUrl, failure: null);
+    } on DioException catch (e) {
+      return (data: null, failure: _mapDioException(e));
+    } catch (e) {
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<StudioResult<Map<String, dynamic>>> scanVisionImage({
+    required String imageUrl,
+  }) async {
+    try {
+      final res = await _remoteDataSource.scanVisionImage(imageUrl);
+      return (data: res, failure: null);
+    } on DioException catch (e) {
+      return (data: null, failure: _mapDioException(e));
+    } catch (e) {
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<void> cleanupReferencePhoto(String imageUrl) async {
+    await _remoteDataSource.cleanupReferencePhoto(imageUrl);
+  }
+
+  @override
+  Future<StudioResult<Map<String, dynamic>>> fetchLlmConfig() async {
+    try {
+      final res = await _remoteDataSource.fetchLlmConfig();
+      return (data: res, failure: null);
+    } on DioException catch (e) {
+      return (data: null, failure: _mapDioException(e));
+    } catch (e) {
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<bool> checkSystemHealth() async {
+    return _remoteDataSource.checkSystemHealth();
+  }
+}

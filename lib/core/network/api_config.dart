@@ -51,17 +51,18 @@ class ApiConfig {
   static bool get isAndroidDevice => !kIsWeb && Platform.isAndroid;
 
   /// Builds a WebSocket URL for streaming generation progress.
+  /// Matches API_INTEGRATION_SPEC.md §2.2:
+  /// ws://.../api/v1/prompt-engineering/generation/ws/generation/{task_id}
   static String buildWsGenerationUrl(String taskId) {
     final base = baseUrl;
     final wsBase = base
         .replaceFirst('http://', 'ws://')
         .replaceFirst('https://', 'wss://');
 
-    if (wsBase.endsWith('/api/v1')) {
-      return '$wsBase/prompt-engineering/ws/generation/$taskId';
-    } else if (wsBase.endsWith('/api/v1/')) {
-      return '${wsBase}prompt-engineering/ws/generation/$taskId';
+    final cleanBase = wsBase.endsWith('/') ? wsBase.substring(0, wsBase.length - 1) : wsBase;
+    if (cleanBase.endsWith('/api/v1')) {
+      return '$cleanBase/prompt-engineering/generation/ws/generation/$taskId';
     }
-    return '$wsBase/api/v1/prompt-engineering/ws/generation/$taskId';
+    return '$cleanBase/api/v1/prompt-engineering/generation/ws/generation/$taskId';
   }
 }

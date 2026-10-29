@@ -19,6 +19,8 @@ import '../widgets/ai_expand_sheet.dart';
 import '../widgets/marketing_poster_sheet.dart';
 import '../widgets/product_detail_sheet.dart';
 import '../widgets/upscale_sheet.dart';
+import 'magic_object_eraser_view.dart';
+import 'photo_colorizer_view.dart';
 
 class AiToolsView extends StatelessWidget {
   const AiToolsView({super.key});
@@ -488,6 +490,12 @@ class AiToolsView extends StatelessWidget {
     return InkWell(
       onTap: () {
         switch (toolId) {
+          case 'magic_eraser':
+            Get.to(() => const MagicObjectEraserView());
+            break;
+          case 'photo_colorizer':
+            Get.to(() => const PhotoColorizerView());
+            break;
           case 'bg_remover':
             _showImageSourceSheet(context, controller);
             break;

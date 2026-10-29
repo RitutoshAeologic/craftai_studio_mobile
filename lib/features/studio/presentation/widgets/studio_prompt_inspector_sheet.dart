@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_dimens.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../domain/models/structured_prompt_metadata.dart';
 import '../controllers/studio_controller.dart';
 
 /// [StudioPromptInspectorSheet] provides complete lifecycle transparency:
@@ -168,6 +169,18 @@ class StudioPromptInspectorSheet extends StatelessWidget {
 
                     SizedBox(height: AppDimens.vSpacingLg),
 
+                    // Visual Director Breakdown (Structured Metadata)
+                    Obx(() {
+                      final meta = controller.activeStructuredMetadata.value;
+                      if (meta == null || meta.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        children: [
+                          _buildVisualDirectorCard(meta),
+                          SizedBox(height: AppDimens.vSpacingLg),
+                        ],
+                      );
+                    }),
+
                     // STAGE 3: What Sent for Generation
                     Obx(() {
                       final dispatched = controller.lastDispatchedPrompt.value;
@@ -219,6 +232,87 @@ class StudioPromptInspectorSheet extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildVisualDirectorCard(StructuredPromptMetadata meta) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+        border: Border.all(color: AppColors.copilotAccent.withValues(alpha: 0.3)),
+      ),
+      padding: EdgeInsets.all(AppDimens.spacingMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.movie_creation_outlined, color: AppColors.copilotAccent, size: 16.sp),
+              SizedBox(width: AppDimens.spacingSm),
+              Expanded(
+                child: Text(
+                  'Visual Director Breakdown',
+                  style: AppTextStyles.captionBold.copyWith(
+                    color: AppColors.copilotAccent,
+                    fontSize: 12.sp,
+                  ),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: AppColors.copilotAccent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppDimens.radiusXs),
+                  border: Border.all(color: AppColors.copilotAccent.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  'Structured Elements',
+                  style: AppTextStyles.captionXs.copyWith(
+                    color: AppColors.copilotAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 9.sp,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppDimens.vSpacingMd),
+          if (meta.subject.isNotEmpty) _buildMetaRow('Subject', meta.subject, Icons.person_outline),
+          if (meta.environment.isNotEmpty) _buildMetaRow('Environment', meta.environment, Icons.landscape_outlined),
+          if (meta.lighting.isNotEmpty) _buildMetaRow('Lighting', meta.lighting, Icons.wb_sunny_outlined),
+          if (meta.cameraOptics.isNotEmpty) _buildMetaRow('Camera / Optics', meta.cameraOptics, Icons.camera_alt_outlined),
+          if (meta.artStyle.isNotEmpty) _buildMetaRow('Art Style', meta.artStyle, Icons.palette_outlined),
+          if (meta.preservedElements.isNotEmpty)
+            _buildMetaRow('🔒 Preserved Identity', meta.preservedElements.join(', '), Icons.lock_outline, color: AppColors.accentSuccess),
+          if (meta.avoid.isNotEmpty)
+            _buildMetaRow('Avoid Filter', meta.avoid.join(', '), Icons.block_outlined, color: AppColors.accentError),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetaRow(String label, String value, IconData icon, {Color? color}) {
+    final textColor = color ?? AppColors.textPrimary;
+    return Padding(
+      padding: EdgeInsets.only(bottom: 6.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 12.sp, color: color ?? AppColors.textSecondary),
+          SizedBox(width: 6.w),
+          Text(
+            '$label: ',
+            style: AppTextStyles.captionBold.copyWith(fontSize: 11.sp, color: color ?? AppColors.textSecondary),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: AppTextStyles.captionXs.copyWith(fontSize: 11.sp, color: textColor),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -30,6 +30,7 @@ abstract class IStudioRepository {
     required String imageId,
     required String action,
     required String targetPreset,
+    String? imageUrl,
   });
 
   /// Real zero-token local CPU background removal (outputs transparent PNG URL)
@@ -40,6 +41,9 @@ abstract class IStudioRepository {
     required String prompt,
     String? characterId,
     List<String>? faceReferenceUrls,
+    String? negativePrompt,
+    int? seed,
+    Map<String, dynamic>? structuredMetadata,
     int width = 1024,
     int height = 1024,
     String? model,
@@ -120,5 +124,32 @@ abstract class IStudioRepository {
     String quality = '1k',
     String? userId,
   }) async => (data: null, failure: null);
-}
 
+  /// Skill 7: Magic Object Eraser (Zero-Hallucination LaMa Inpainting)
+  Future<StudioResult<String>> eraseObject({
+    required String imageUrl,
+    required String maskBase64,
+    String? imageBase64,
+  }) async => (data: null, failure: null);
+
+  /// Skill 8: Vintage Photo Colorizer (DDColor High-Fidelity Restorer)
+  Future<StudioResult<String>> colorizePhoto({
+    required String imageUrl,
+    double saturation = 1.2,
+    String? imageBase64,
+  }) async => (data: null, failure: null);
+
+  /// Multimodal Aesthetic Vision Scanner
+  Future<StudioResult<Map<String, dynamic>>> scanVisionImage({
+    required String imageUrl,
+  }) async => (data: null, failure: null);
+
+  /// Ephemeral face-lock reference cleanup
+  Future<void> cleanupReferencePhoto(String imageUrl) async {}
+
+  /// Dynamic Multi-LLM runtime configuration
+  Future<StudioResult<Map<String, dynamic>>> fetchLlmConfig() async => (data: null, failure: null);
+
+  /// System health verification
+  Future<bool> checkSystemHealth() async => false;
+}

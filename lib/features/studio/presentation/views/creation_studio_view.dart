@@ -11,6 +11,7 @@ import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
+import 'package:craftai_studio_mobile/shared/utils/reference_image_uploader.dart';
 import '../controllers/studio_controller.dart';
 import '../widgets/studio_model_sheet.dart';
 import '../widgets/studio_advanced_settings_sheet.dart';
@@ -964,6 +965,13 @@ class CreationStudioView extends StatelessWidget {
                     tooltip: AppStrings.btnCopilot,
                     onPressed: controller.openPromptChatCopilot,
                   ),
+                  IconButton(
+                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                    icon: Icon(Icons.document_scanner_outlined, color: AppColors.primary, size: 16.sp),
+                    tooltip: 'Scan Photo to Prompt (Vision)',
+                    onPressed: () => _handleVisionScan(context, controller),
+                  ),
                   SizedBox(width: 4.w),
                   // AI Engine Selector Chip (Gemini, Groq, Claude, GPT)
                   Obx(() {
@@ -1859,6 +1867,25 @@ class CreationStudioView extends StatelessWidget {
       ),
       isScrollControlled: true,
     );
+  }
+
+  Future<void> _handleVisionScan(BuildContext context, StudioController controller) async {
+    final picker = ImagePicker();
+    final xfile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85, maxWidth: 1920, maxHeight: 1920);
+    if (xfile != null) {
+      Get.snackbar(
+        'Analyzing Photo 🔍',
+        'Gemini 2.5 Flash is reverse-engineering style & aesthetics...',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.primary,
+        duration: const Duration(seconds: 2),
+      );
+      final upRes = await ReferenceImageUploader.uploadReferenceImage(File(xfile.path));
+      if (upRes.url != null) {
+        await controller.scanPhotoToPrompt(upRes.url!);
+      }
+    }
   }
 
   Widget _buildSampleSlot({

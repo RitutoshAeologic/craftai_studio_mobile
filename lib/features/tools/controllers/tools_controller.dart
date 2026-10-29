@@ -54,6 +54,30 @@ class ToolsController extends GetxController {
       'category': 'Edit',
     },
     {
+      'id': 'magic_eraser',
+      'title': 'Magic Object Eraser',
+      'desc': 'Erase unwanted objects & text',
+      'icon': '🪄',
+      'badge': 'Zero-Token • LaMa',
+      'credits': '0 Cr',
+      'cost': 0.0,
+      'bgTint': Color(0xFFF3E8FF),
+      'accentColor': Color(0xFF9333EA),
+      'category': 'Edit',
+    },
+    {
+      'id': 'photo_colorizer',
+      'title': 'Vintage Photo Colorizer',
+      'desc': 'Restore B&W photos to vivid color',
+      'icon': '🎨',
+      'badge': 'DDColor • Neural',
+      'credits': '0 Cr',
+      'cost': 0.0,
+      'bgTint': Color(0xFFFFF7ED),
+      'accentColor': Color(0xFFEA580C),
+      'category': 'Edit',
+    },
+    {
       'id': 'ai_background',
       'title': 'AI Backgrounds',
       'desc': 'Swap backgrounds, your way',
@@ -483,6 +507,84 @@ class ToolsController extends GetxController {
       }
     } catch (e) {
       AppLogger.e('Error in Marketing Poster: $e', tag: 'TOOLS');
+      _showNotice('Notice', e.toString().replaceAll('Exception: ', ''));
+      return null;
+    } finally {
+      isProcessing.value = false;
+      processingMessage.value = '';
+    }
+  }
+
+  /// Skill 7: Magic Object Eraser (Zero-Hallucination LaMa Inpainting)
+  Future<String?> runObjectErase({
+    required String path,
+    required String maskBase64,
+  }) async {
+    isProcessing.value = true;
+    processingMessage.value = 'Erasing object with LaMa neural inpainting...';
+    try {
+      final remoteUrl = await _ensureRemoteUrl(path);
+      final result = await _repository.eraseObject(
+        imageUrl: remoteUrl,
+        maskBase64: maskBase64,
+      );
+
+      if (result.data != null && result.data!.isNotEmpty) {
+        resultImageUrl.value = result.data!;
+        if (Get.isRegistered<LibraryController>()) {
+          LibraryController.to.addNewCreation(
+            prompt: 'Magic Object Eraser Inpainting',
+            credits: 0.0,
+            previewUrl: result.data!,
+            type: 'OBJECT_ERASER',
+            metadata: {'source_url': remoteUrl},
+          );
+        }
+        return result.data;
+      } else {
+        throw Exception(result.failure?.message ?? 'Failed to erase object');
+      }
+    } catch (e) {
+      AppLogger.e('Error in Magic Object Eraser: $e', tag: 'TOOLS');
+      _showNotice('Notice', e.toString().replaceAll('Exception: ', ''));
+      return null;
+    } finally {
+      isProcessing.value = false;
+      processingMessage.value = '';
+    }
+  }
+
+  /// Skill 8: Vintage Photo Colorizer (DDColor Neural Restorer)
+  Future<String?> runPhotoColorize({
+    required String path,
+    double saturation = 1.2,
+  }) async {
+    isProcessing.value = true;
+    processingMessage.value = 'Restoring authentic colors with DDColor...';
+    try {
+      final remoteUrl = await _ensureRemoteUrl(path);
+      final result = await _repository.colorizePhoto(
+        imageUrl: remoteUrl,
+        saturation: saturation,
+      );
+
+      if (result.data != null && result.data!.isNotEmpty) {
+        resultImageUrl.value = result.data!;
+        if (Get.isRegistered<LibraryController>()) {
+          LibraryController.to.addNewCreation(
+            prompt: 'Vintage Photo Colorizer (${saturation}x saturation)',
+            credits: 0.0,
+            previewUrl: result.data!,
+            type: 'PHOTO_COLORIZER',
+            metadata: {'source_url': remoteUrl, 'saturation': saturation},
+          );
+        }
+        return result.data;
+      } else {
+        throw Exception(result.failure?.message ?? 'Failed to colorize photo');
+      }
+    } catch (e) {
+      AppLogger.e('Error in Photo Colorizer: $e', tag: 'TOOLS');
       _showNotice('Notice', e.toString().replaceAll('Exception: ', ''));
       return null;
     } finally {

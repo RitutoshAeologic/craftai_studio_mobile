@@ -10,6 +10,7 @@ import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/data/models/character_model.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
+import '../../domain/models/structured_prompt_metadata.dart';
 import '../../domain/repositories/i_studio_repository.dart';
 import '../../domain/failures/studio_failure.dart';
 import '../../data/repositories/studio_repository_impl.dart';
@@ -46,6 +47,7 @@ class StudioController extends GetxController {
 
   /// Whether the diffusion seed should remain locked across successive generations.
   final RxBool isSeedLocked = false.obs;
+  final RxInt seedValue = 42.obs;
 
   /// Target aspect ratio for generation ('1:1', '9:16', '16:9', '4:5', 'Auto').
   final RxString selectedAspectRatio = '1:1'.obs;
@@ -141,6 +143,7 @@ class StudioController extends GetxController {
   final RxString geminiRefinedPrompt = ''.obs;
   final RxString geminiNegativePrompt = ''.obs;
   final RxString geminiModelUsed = ''.obs;
+  final Rxn<StructuredPromptMetadata> activeStructuredMetadata = Rxn<StructuredPromptMetadata>();
 
   /// 3. What is sent for image generation (exact diffusion payload)
   final RxString lastDispatchedPrompt = ''.obs;
@@ -271,9 +274,23 @@ class StudioController extends GetxController {
 
   int _surpriseIndex = 0;
 
+  Future<void> _fetchDynamicLlmConfig() async {
+    try {
+      final res = await _repository.fetchLlmConfig();
+      if (res.data != null) {
+        final active = res.data!['active_provider'] as String?;
+        if (active != null && active.isNotEmpty) {
+          selectedPromptEngine.value = active;
+          AppLogger.i('Dynamic LLM provider hot-reloaded: $active', tag: 'STUDIO_CONFIG');
+        }
+      }
+    } catch (_) {}
+  }
+
   @override
   void onInit() {
     super.onInit();
+    _fetchDynamicLlmConfig();
     promptController.addListener(() {
       promptLength.value = promptController.text.length;
 
@@ -575,7 +592,6 @@ class StudioController extends GetxController {
     }
   }
 
-
   /// Removes background of a reference photo at [index] using zero-token local CPU rembg.
   Future<void> removeBackgroundFromReference(int index) async {
     if (isBusy) return;
@@ -698,6 +714,7 @@ class StudioController extends GetxController {
         }
         geminiNegativePrompt.value = result.data!.negativePrompt;
         geminiModelUsed.value = result.data!.modelUsed;
+        activeStructuredMetadata.value = result.data!.structuredMetadata;
 
         // Option A: Clean UI Prompt Preservation
         // We preserve the user's clean prompt in the input field (do not overwrite with 700-char formula).
@@ -799,6 +816,7 @@ class StudioController extends GetxController {
     geminiRefinedPrompt.value = '';
     geminiNegativePrompt.value = '';
     geminiModelUsed.value = '';
+    activeStructuredMetadata.value = null;
     Get.snackbar(
       'AI Formula Disarmed ↩️',
       'Generation will use your exact raw prompt text.',
@@ -1020,9 +1038,9 @@ class StudioController extends GetxController {
     shellCtrl.deductCredits(cost);
     creditsDeducted = true;
 
+    final List<String> remoteReferenceUrls = [];
     try {
       // 1. Lazy upload any local reference files first, reflecting upload state in UI
-      final List<String> remoteReferenceUrls = [];
       if (referenceImages.isNotEmpty) {
         generationProgress.value = 18;
         generationPhase.value = 'Uploading reference photo...';
@@ -1043,25 +1061,14 @@ class StudioController extends GetxController {
         }
       }
 
-      // 2. Start progress subscription and dispatch generation
-      final taskId = 'task_${DateTime.now().millisecondsSinceEpoch}';
-
-      _progressSubscription?.cancel();
-      _progressSubscription = _repository.listenToGenerationProgress(
-        taskId: taskId,
-        onProgress: (progress, status, message) {
-          if (isGenerating.value) {
-            generationProgress.value = progress;
-            generationPhase.value = message.isNotEmpty ? message : 'Denoising latents...';
-            AppLogger.d('[$taskId] Progress: $progress% ($message)', tag: 'STUDIO_GEN');
-          }
-        },
-      );
-
+      // 2. Dispatch generation job with complete payload contracts
       final dispatchRes = await _repository.dispatchGeneration(
         prompt: promptToDispatch,
         characterId: selectedCharacter.value?.id,
         faceReferenceUrls: remoteReferenceUrls.isNotEmpty ? remoteReferenceUrls : null,
+        negativePrompt: geminiNegativePrompt.value.isNotEmpty ? geminiNegativePrompt.value : null,
+        seed: isSeedLocked.value ? (seedValue.value.clamp(0, 2147483647).toInt()) : null,
+        structuredMetadata: activeStructuredMetadata.value?.toJson(),
         width: w,
         height: h,
         model: selectedModel.value,
@@ -1088,7 +1095,24 @@ class StudioController extends GetxController {
         return;
       }
 
+      final generatedTaskId = dispatchRes.data?.taskId ?? 'job_${DateTime.now().millisecondsSinceEpoch}';
+
+      // 4. Attach progress listener to returned authoritative task ID if direct image not immediately ready
       final rawUrl = dispatchRes.data?.directImageUrl;
+      if (rawUrl == null || rawUrl.trim().isEmpty || !rawUrl.startsWith('http')) {
+        _progressSubscription?.cancel();
+        _progressSubscription = _repository.listenToGenerationProgress(
+          taskId: generatedTaskId,
+          onProgress: (progress, status, message) {
+            if (isGenerating.value) {
+              generationProgress.value = progress;
+              generationPhase.value = message.isNotEmpty ? message : 'Denoising latents...';
+              AppLogger.d('[$generatedTaskId] Progress: $progress% ($message)', tag: 'STUDIO_GEN');
+            }
+          },
+        );
+      }
+
       if (rawUrl == null || rawUrl.trim().isEmpty || !rawUrl.startsWith('http')) {
         _progressSubscription?.cancel();
         _resetLoadingState();
@@ -1106,7 +1130,6 @@ class StudioController extends GetxController {
       }
 
       final outputUrl = rawUrl;
-      final generatedTaskId = dispatchRes.data?.taskId ?? 'job_${DateTime.now().millisecondsSinceEpoch}';
 
       final libCtrl = Get.find<LibraryController>();
       libCtrl.addNewCreation(
@@ -1143,7 +1166,7 @@ class StudioController extends GetxController {
         AppLogger.i('Free edit attempt consumed. Remaining: ${freeEditAttemptsRemaining.value}', tag: 'STUDIO_GEN');
       }
 
-      // 4. Smooth Loading Completion and Reveal Result in Studio Hero Card
+      // 5. Smooth Loading Completion and Reveal Result in Studio Hero Card
       _progressSubscription?.cancel();
       generationProgress.value = 100;
       generationPhase.value = '✨ Complete!';
@@ -1179,6 +1202,44 @@ class StudioController extends GetxController {
       if (isGenerating.value) {
         _resetLoadingState();
       }
+      // Zero-Retention Privacy Policy: Purge reference photos asynchronously
+      for (final refUrl in remoteReferenceUrls) {
+        unawaited(_repository.cleanupReferencePhoto(refUrl));
+      }
+    }
+  }
+
+  /// Vision Scan: Reverse-engineers aesthetic concepts, style tags, and camera optics from photo (API_INTEGRATION_SPEC.md §2.6)
+  Future<void> scanPhotoToPrompt(String imageUrl) async {
+    if (isBusy) return;
+    isEnhancing.value = true;
+    try {
+      final res = await _repository.scanVisionImage(imageUrl: imageUrl);
+      if (res.data != null) {
+        final extracted = res.data!['extracted_prompt'] as String? ?? '';
+        final detectedStyle = res.data!['detected_style'] as String? ?? '';
+        if (extracted.isNotEmpty) {
+          promptController.text = extracted;
+        }
+        if (detectedStyle.isNotEmpty) {
+          final match = visualStyles.firstWhereOrNull((s) => s['name'] == detectedStyle);
+          if (match != null) {
+            selectedStylePreset.value = detectedStyle;
+          }
+        }
+        if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+          Get.snackbar(
+            'Vision Scan Complete 📷',
+            'Reverse-engineered prompt & style loaded into Studio canvas!',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.surface,
+            colorText: AppColors.primary,
+          );
+        }
+      }
+    } catch (_) {
+    } finally {
+      isEnhancing.value = false;
     }
   }
 
