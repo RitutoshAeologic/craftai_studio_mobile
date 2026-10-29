@@ -79,5 +79,9 @@
 	<string>CraftAI Studio requires access to your photo library to select reference photos and save generated artwork.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>CraftAI Studio requires access to your camera to capture reference portraits.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>CraftAI Studio needs access to your microphone to let you speak prompt ideas in your language.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>CraftAI Studio uses speech recognition to convert your spoken words into high-detail AI prompts.</string>
 </dict>
 </plist>

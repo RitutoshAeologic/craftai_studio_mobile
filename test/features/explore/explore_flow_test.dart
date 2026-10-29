@@ -7,7 +7,6 @@ import 'package:craftai_studio_mobile/features/explore/controllers/explore_contr
 import 'package:craftai_studio_mobile/features/explore/views/explore_feed_view.dart';
 import 'package:craftai_studio_mobile/features/explore/views/explore_discovery_view.dart';
 import 'package:craftai_studio_mobile/features/explore/widgets/image_details_bottom_sheet.dart';
-import 'package:craftai_studio_mobile/features/explore/widgets/filter_bottom_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/save_to_collection_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/collection_controller.dart';
 

@@ -56,7 +56,7 @@ class StudioErrorSheet extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusRound)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -95,7 +95,7 @@ class StudioErrorSheet extends StatelessWidget {
                   width: 42.w,
                   height: 42.h,
                   decoration: BoxDecoration(
-                    color: AppColors.accentWarning.withOpacity(0.12),
+                    color: AppColors.accentWarning.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppDimens.radiusLg),
                   ),
                   child: Icon(
@@ -150,9 +150,9 @@ class StudioErrorSheet extends StatelessWidget {
                   vertical: AppDimens.spacingSm,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.accentSuccess.withOpacity(0.08),
+                  color: AppColors.accentSuccess.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                  border: Border.all(color: AppColors.accentSuccess.withOpacity(0.2)),
+                  border: Border.all(color: AppColors.accentSuccess.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
@@ -181,7 +181,7 @@ class StudioErrorSheet extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(AppDimens.spacingMd),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.04),
+                  color: AppColors.primary.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                   border: Border.all(color: AppColors.border),
                 ),

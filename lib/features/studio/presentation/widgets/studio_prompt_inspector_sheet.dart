@@ -47,7 +47,7 @@ class StudioPromptInspectorSheet extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusRound)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -88,7 +88,7 @@ class StudioPromptInspectorSheet extends StatelessWidget {
                   width: 38.w,
                   height: 38.h,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: AppColors.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(AppDimens.radiusLg),
                   ),
                   child: Icon(Icons.manage_search_rounded, color: AppColors.primary, size: 20.sp),
@@ -285,9 +285,9 @@ class StudioPromptInspectorSheet extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                   decoration: BoxDecoration(
-                    color: badgeColor.withOpacity(0.1),
+                    color: badgeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppDimens.radiusXs),
-                    border: Border.all(color: badgeColor.withOpacity(0.3)),
+                    border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     badgeText,
@@ -313,7 +313,7 @@ class StudioPromptInspectorSheet extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-              border: Border.all(color: AppColors.border.withOpacity(0.5)),
+              border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
             ),
             child: SelectableText(
               content,
@@ -340,9 +340,9 @@ class StudioPromptInspectorSheet extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.all(AppDimens.spacingSm),
               decoration: BoxDecoration(
-                color: AppColors.accentWarning.withOpacity(0.04),
+                color: AppColors.accentWarning.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                border: Border.all(color: AppColors.accentWarning.withOpacity(0.2)),
+                border: Border.all(color: AppColors.accentWarning.withValues(alpha: 0.2)),
               ),
               child: SelectableText(
                 subContent,

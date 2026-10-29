@@ -318,7 +318,7 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
           Text('Output ratio', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
           SizedBox(height: 8.h),
           DropdownButtonFormField<String>(
-            value: _selectedRatio,
+            initialValue: _selectedRatio,
             decoration: InputDecoration(
               isDense: true,
               border: OutlineInputBorder(

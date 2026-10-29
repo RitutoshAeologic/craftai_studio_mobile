@@ -6,6 +6,7 @@ import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import '../controllers/studio_controller.dart';
+import 'studio_prompt_engine_sheet.dart';
 
 class StudioAdvancedSettingsSheet extends StatelessWidget {
   const StudioAdvancedSettingsSheet({super.key});
@@ -152,6 +153,76 @@ class StudioAdvancedSettingsSheet extends StatelessWidget {
                     activeTrackColor: AppColors.primary.withValues(alpha: 0.3),
                     onChanged: (_) => controller.toggleSeedLock(),
                   )),
+                ],
+              ),
+            ),
+
+            SizedBox(height: AppDimens.vSpacingMd),
+
+            // AI Prompt Engine Row
+            Container(
+              padding: EdgeInsets.all(AppDimens.spacingMd),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('AI Prompt Engine', style: AppTextStyles.bodyMediumBold),
+                        SizedBox(height: AppDimens.vSpacingXxs),
+                        Text(
+                          'LLM used to polish & expand ideas',
+                          style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: AppDimens.spacingSm),
+                  Obx(() {
+                    final currentId = controller.selectedPromptEngine.value;
+                    final engine = controller.availablePromptEngines.firstWhere(
+                      (e) => e['id'] == currentId,
+                      orElse: () => controller.availablePromptEngines.first,
+                    );
+                    return GestureDetector(
+                      onTap: () {
+                        Get.back();
+                        StudioPromptEngineSheet.show(context);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(engine['icon'] ?? '♊', style: TextStyle(fontSize: 12.sp)),
+                            SizedBox(width: 4.w),
+                            Text(
+                              engine['id'] == 'gemini'
+                                  ? 'Gemini'
+                                  : engine['id'] == 'groq'
+                                      ? 'Groq'
+                                      : engine['id'] == 'claude'
+                                          ? 'Claude'
+                                          : 'GPT-4o',
+                              style: AppTextStyles.captionBold.copyWith(color: AppColors.primary),
+                            ),
+                            Icon(Icons.arrow_drop_down_rounded, size: 16.sp, color: AppColors.textMuted),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),

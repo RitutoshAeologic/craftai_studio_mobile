@@ -150,6 +150,127 @@ class StudioController extends GetxController {
   /// Currently selected starter template title (null if custom prompt or none selected).
   final RxnString selectedStarterTemplate = RxnString();
 
+  /// The most recently generated image URL (displayed in-studio hero reveal card).
+  final RxnString lastGeneratedImageUrl = RxnString();
+
+  /// Whether the hero result view is currently showing in the Studio.
+  final RxBool showResultHero = false.obs;
+
+  /// Active visual style preset (e.g., 'Realistic Photo', '3D Cartoon', 'Anime / Manga', etc.)
+  final RxString selectedStylePreset = 'Realistic Photo'.obs;
+
+  /// Curated visual style presets for zero-typing 1-tap aesthetic direction (Pinterest/PromptHero tier)
+  final List<Map<String, dynamic>> visualStyles = const [
+    {
+      'name': 'Realistic Photo',
+      'subtitle': '8K DSLR Optics',
+      'category': 'Photoreal',
+      'iconName': 'camera',
+      'gradientStart': 0xFF1E2022,
+      'gradientEnd': 0xFF3B3E42,
+      'promptSuffix': ', professional 8k photography, 85mm portrait lens, ultra-detailed textures, realistic lighting',
+      'aspectRatio': '1:1',
+    },
+    {
+      'name': '3D Cartoon',
+      'subtitle': 'Cute Claymation',
+      'category': 'Pixar 3D',
+      'iconName': '3d',
+      'gradientStart': 0xFF9A3412,
+      'gradientEnd': 0xFFEA580C,
+      'promptSuffix': ', cute 3D animation style, Pixar inspired, soft clay render, ambient occlusion, bright vibrant colors',
+      'aspectRatio': '1:1',
+    },
+    {
+      'name': 'Anime / Manga',
+      'subtitle': 'Makoto Shinkai',
+      'category': 'Anime Cel',
+      'iconName': 'anime',
+      'gradientStart': 0xFF4C1D95,
+      'gradientEnd': 0xFF7C3AED,
+      'promptSuffix': ', Makoto Shinkai anime aesthetic, cel shaded, expressive eyes, vibrant detailed background',
+      'aspectRatio': '9:16',
+    },
+    {
+      'name': 'Cyberpunk Neon',
+      'subtitle': 'Blade Runner 2049',
+      'category': 'Sci-Fi Neon',
+      'iconName': 'neon',
+      'gradientStart': 0xFF0E7490,
+      'gradientEnd': 0xFF0284C7,
+      'promptSuffix': ', cyberpunk aesthetic, glowing neon lights, rain reflections, futuristic tech, dramatic volumetric fog',
+      'aspectRatio': '9:16',
+    },
+    {
+      'name': 'Cinematic Art',
+      'subtitle': '35mm Film Grain',
+      'category': 'Hollywood',
+      'iconName': 'film',
+      'gradientStart': 0xFF78350F,
+      'gradientEnd': 0xFFB45309,
+      'promptSuffix': ', cinematic movie still, anamorphic widescreen, atmospheric lighting, Hollywood blockbuster composition',
+      'aspectRatio': '16:9',
+    },
+    {
+      'name': 'Oil Painting',
+      'subtitle': 'Textured Canvas',
+      'category': 'Renaissance',
+      'iconName': 'paint',
+      'gradientStart': 0xFF312E81,
+      'gradientEnd': 0xFF4338CA,
+      'promptSuffix': ', classical Renaissance oil painting, rich visible brush strokes, textured canvas, dramatic chiaroscuro',
+      'aspectRatio': '4:5',
+    },
+  ];
+
+  /// Fun surprise prompts for non-typing / illiterate users.
+  final List<Map<String, String>> surprisePrompts = const [
+    {
+      'title': 'Royal Golden Lion',
+      'icon': '🦁',
+      'prompt': 'A majestic royal lion wearing an ornate golden crown, dramatic studio lighting, 8k resolution',
+      'style': 'Realistic Photo',
+      'ratio': '1:1',
+    },
+    {
+      'title': 'Neon Cyberpunk Cat',
+      'icon': '🐱',
+      'prompt': 'A cute cyber kitten with glowing neon goggles sitting on a Tokyo rooftop in rain',
+      'style': 'Cyberpunk Neon',
+      'ratio': '9:16',
+    },
+    {
+      'title': 'Cute 3D Anime Chef',
+      'icon': '🧑‍🍳',
+      'prompt': 'Adorably cute 3D Pixar style anime chef cooking magical glowing pancakes in cozy kitchen',
+      'style': '3D Cartoon',
+      'ratio': '1:1',
+    },
+    {
+      'title': 'Futuristic Flying Car',
+      'icon': '🏎️',
+      'prompt': 'Sleek luxury flying sports car gliding through futuristic sky clouds at golden sunset',
+      'style': 'Cinematic Art',
+      'ratio': '16:9',
+    },
+    {
+      'title': 'Magical Fairytale Castle',
+      'icon': '🏰',
+      'prompt': 'Enchanted fairytale castle surrounded by glowing cherry blossoms and waterfalls, fantasy art',
+      'style': 'Anime / Manga',
+      'ratio': '9:16',
+    },
+    {
+      'title': 'Gourmet Chocolate Cake',
+      'icon': '🍰',
+      'prompt': 'Delicious luxury Belgian chocolate lava cake with fresh raspberries and powdered sugar, food photography',
+      'style': 'Realistic Photo',
+      'ratio': '4:5',
+    },
+  ];
+
+  int _surpriseIndex = 0;
+
   @override
   void onInit() {
     super.onInit();
@@ -239,6 +360,41 @@ class StudioController extends GetxController {
   void setModel(String modelId) {
     if (isBusy) return;
     selectedModel.value = modelId;
+  }
+
+  /// Triggers a surprise creative idea for simple / non-typing users.
+  void triggerSurpriseMe() {
+    HapticFeedback.mediumImpact();
+    final item = surprisePrompts[_surpriseIndex % surprisePrompts.length];
+    _surpriseIndex++;
+    promptController.text = item['prompt']!;
+    selectedStylePreset.value = item['style']!;
+    setAspectRatio(item['ratio']!);
+    selectedStarterTemplate.value = item['title'];
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      Get.snackbar(
+        'Idea Loaded! 💡',
+        'Selected "${item['title']}". Tap "Create Image" to generate!',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.primary,
+        duration: const Duration(seconds: 2),
+      );
+    }
+  }
+
+  /// Sets the active visual style preset (e.g. Realistic Photo, 3D Cartoon)
+  void selectVisualStyle(Map<String, dynamic> style) {
+    HapticFeedback.selectionClick();
+    selectedStylePreset.value = style['name'] as String;
+    if (style['aspectRatio'] != null) {
+      setAspectRatio(style['aspectRatio'] as String);
+    }
+  }
+
+  /// Closes the in-studio result hero card
+  void closeResultHero() {
+    showResultHero.value = false;
   }
 
   /// Populates the prompt field with a curated starter template prompt,
@@ -491,13 +647,28 @@ class StudioController extends GetxController {
       AppLogger.w('Enhance prompt blocked: Studio is currently busy', tag: 'STUDIO_PROMPT');
       return;
     }
+    final current = promptController.text.trim();
+    if (current.isEmpty) {
+      AppLogger.w('Enhance prompt blocked: Prompt field is empty', tag: 'STUDIO_PROMPT');
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        Get.snackbar(
+          'Idea Required 💡',
+          'Please type a word or idea before enhancing with AI, or tap 🎲 Surprise Me.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.surface,
+          colorText: AppColors.accentWarning,
+          duration: const Duration(seconds: 3),
+        );
+      }
+      return;
+    }
+
     isEnhancing.value = true;
 
     try {
-      final current = promptController.text.trim();
       userTypedPrompt.value = current; // Capture what user typed (Stage 1)
 
-      String promptToSendToAi = current.isEmpty ? 'Cyberpunk visual masterpiece' : current;
+      String promptToSendToAi = current;
       String? editPrefix;
 
       // Option A for Image Edit Mode:
@@ -647,6 +818,18 @@ class StudioController extends GetxController {
   void aiEditSubjectLock() {
     if (isBusy) return;
     final current = promptController.text.trim();
+    if (current.isEmpty) {
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        Get.snackbar(
+          'Idea Required 🔒',
+          'Please type a prompt first before activating Subject Lock.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.surface,
+          colorText: AppColors.accentWarning,
+        );
+      }
+      return;
+    }
     promptController.text =
         'DO NOT CHANGE THE HUMAN SUBJECT. HUMAN SUBJECT — ABSOLUTE LOCK. $current';
     Get.snackbar(
@@ -767,13 +950,17 @@ class StudioController extends GetxController {
 
     final promptUsed = promptController.text.trim();
     if (promptUsed.isEmpty) {
-      Get.snackbar(
-        AppStrings.promptRequired,
-        AppStrings.promptEmptyError,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.surface,
-        colorText: AppColors.accentWarning,
-      );
+      AppLogger.w('Generation dispatch blocked: Prompt field is empty', tag: 'STUDIO_GEN');
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        Get.snackbar(
+          'Idea Required 🎨',
+          'Please enter an idea or tap 🎲 Surprise Me before generating.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.surface,
+          colorText: AppColors.accentWarning,
+          duration: const Duration(seconds: 3),
+        );
+      }
       return;
     }
 
@@ -781,8 +968,16 @@ class StudioController extends GetxController {
       userTypedPrompt.value = promptUsed;
     }
 
+    // Blend selected visual style preset keywords if not already included
+    final selectedStyle = visualStyles.firstWhere(
+      (s) => s['name'] == selectedStylePreset.value,
+      orElse: () => visualStyles.first,
+    );
+    final styleSuffix = selectedStyle['promptSuffix'] as String? ?? '';
+    final styledPrompt = promptUsed.contains(styleSuffix) ? promptUsed : '$promptUsed$styleSuffix';
+
     // Option A: If enhanced, dispatch the secret master recipe to the engine!
-    final rawPrompt = isPromptEnhanced ? geminiRefinedPrompt.value : promptUsed;
+    final rawPrompt = isPromptEnhanced ? geminiRefinedPrompt.value : styledPrompt;
     final promptToDispatch = rawPrompt.length > 4000 ? rawPrompt.substring(0, 4000) : rawPrompt;
 
     lastDispatchedPrompt.value = promptToDispatch; // Stage 3: sent for generation
@@ -948,39 +1143,22 @@ class StudioController extends GetxController {
         AppLogger.i('Free edit attempt consumed. Remaining: ${freeEditAttemptsRemaining.value}', tag: 'STUDIO_GEN');
       }
 
-      // 4. Smooth Loading Completion and Reset After Success
+      // 4. Smooth Loading Completion and Reveal Result in Studio Hero Card
       _progressSubscription?.cancel();
       generationProgress.value = 100;
-      generationPhase.value = '✨ Complete! Opening Library...';
+      generationPhase.value = '✨ Complete!';
+      lastGeneratedImageUrl.value = outputUrl;
+      showResultHero.value = true;
       if (!Platform.environment.containsKey('FLUTTER_TEST')) {
-        await Future.delayed(const Duration(milliseconds: 400));
+        await Future.delayed(const Duration(milliseconds: 300));
       }
 
-      // Reset loading progress cleanly so canvas is fresh when user returns
+      // Reset loading progress cleanly
       _resetLoadingState();
 
       if (!Platform.environment.containsKey('FLUTTER_TEST')) {
-        Get.snackbar(
-          AppStrings.generationCompleted,
-          AppStrings.generationCompletedSub,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppColors.surface,
-          colorText: AppColors.primary,
-          duration: const Duration(seconds: 4),
-          mainButton: TextButton(
-            onPressed: () => openPromptChatCopilot(),
-            child: Text(
-              AppStrings.btnRefineInChat,
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        );
+        HapticFeedback.heavyImpact();
       }
-
-      shellCtrl.switchTab(3); // navigate to library
     } catch (e, st) {
       AppLogger.e('Unexpected error in generateVisual', tag: 'STUDIO_GEN', error: e, stackTrace: st);
       _progressSubscription?.cancel();

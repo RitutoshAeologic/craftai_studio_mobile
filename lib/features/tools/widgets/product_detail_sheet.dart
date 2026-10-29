@@ -271,7 +271,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           Text('Size / ratio', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
           SizedBox(height: 8.h),
           DropdownButtonFormField<String>(
-            value: _selectedRatio,
+            initialValue: _selectedRatio,
             decoration: InputDecoration(
               isDense: true,
               border: OutlineInputBorder(
@@ -304,7 +304,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           Text('Detail Copy Language', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
           SizedBox(height: 8.h),
           DropdownButtonFormField<String>(
-            value: _selectedLanguage,
+            initialValue: _selectedLanguage,
             decoration: InputDecoration(
               isDense: true,
               border: OutlineInputBorder(

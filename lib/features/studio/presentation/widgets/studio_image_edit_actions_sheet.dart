@@ -9,7 +9,6 @@ import 'package:craftai_studio_mobile/features/library/controllers/library_contr
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/download_paywall_sheet.dart';
-import 'package:craftai_studio_mobile/features/remix/views/remix_chat_view.dart';
 
 /// [StudioImageEditActionsSheet] presents the MeiGen 4-option image editing modal.
 /// Options:

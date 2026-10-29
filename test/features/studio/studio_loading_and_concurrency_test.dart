@@ -182,7 +182,8 @@ void main() {
         directImageUrl: 'https://example.com/controlled.png',
       ));
       await genFuture;
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // 6. Verify loading state is cleanly RESET on success
       expect(studioController.isGenerating.value, isFalse);

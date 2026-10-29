@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimens.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_text_styles.dart';
 
 /// [CreditCostChip] is a shared, reusable credit badge component used across
@@ -53,8 +52,8 @@ class CreditCostChip extends StatelessWidget {
 
     Widget buildContent(double amount) {
       final text = amount == amount.roundToDouble()
-          ? '${amount.toInt()}'
-          : '${amount.toStringAsFixed(1)}';
+          ? amount.toInt().toString()
+          : amount.toStringAsFixed(1);
 
       return GestureDetector(
         onTap: onTap,

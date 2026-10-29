@@ -480,61 +480,61 @@ class PromptChatCopilotView extends StatelessWidget {
             ],
           ),
           SizedBox(height: AppDimens.vSpacingSm),
-          // Row(
-          //   children: [
-          //     Expanded(
-          //       flex: 1,
-          //       child: SizedBox(
-          //         height: 44.h,
-          //         child: OutlinedButton.icon(
-          //           onPressed: () => controller.applyPromptToStudio(),
-          //           style: OutlinedButton.styleFrom(
-          //             foregroundColor: AppColors.primary,
-          //             side: const BorderSide(color: AppColors.primary, width: 1.2),
-          //             shape: RoundedRectangleBorder(
-          //               borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-          //             ),
-          //             padding: EdgeInsets.symmetric(horizontal: 6.w),
-          //           ),
-          //           icon: Icon(Icons.arrow_back, color: AppColors.primary, size: AppDimens.iconSm),
-          //           label: FittedBox(
-          //             fit: BoxFit.scaleDown,
-          //             child: Text(
-          //               AppStrings.btnUseInStudio,
-          //               style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
-          //             ),
-          //           ),
-          //         ),
-          //       ),
-          //     ),
-          //     SizedBox(width: AppDimens.spacingSm),
-          //     Expanded(
-          //       flex: 1,
-          //       child: SizedBox(
-          //         height: 44.h,
-          //         child: ElevatedButton.icon(
-          //           onPressed: controller.syncToStudioAndGenerate,
-          //           style: ElevatedButton.styleFrom(
-          //             backgroundColor: AppColors.primary,
-          //             foregroundColor: Colors.white,
-          //             shape: RoundedRectangleBorder(
-          //               borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-          //             ),
-          //             padding: EdgeInsets.symmetric(horizontal: 6.w),
-          //           ),
-          //           icon: Icon(Icons.auto_awesome, color: Colors.white, size: AppDimens.iconSm),
-          //           label: FittedBox(
-          //             fit: BoxFit.scaleDown,
-          //             child: Text(
-          //               AppStrings.btnGenerateWithRefinedShort,
-          //               style: AppTextStyles.buttonMedium.copyWith(color: Colors.white),
-          //             ),
-          //           ),
-          //         ),
-          //       ),
-          //     ),
-          //   ],
-          // ),
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: SizedBox(
+                  height: 44.h,
+                  child: OutlinedButton.icon(
+                    onPressed: () => controller.applyPromptToStudio(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary, width: 1.2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 6.w),
+                    ),
+                    icon: Icon(Icons.arrow_back, color: AppColors.primary, size: AppDimens.iconSm),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        AppStrings.btnUseInStudio,
+                        style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: AppDimens.spacingSm),
+              Expanded(
+                flex: 1,
+                child: SizedBox(
+                  height: 44.h,
+                  child: ElevatedButton.icon(
+                    onPressed: controller.syncToStudioAndGenerate,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 6.w),
+                    ),
+                    icon: Icon(Icons.auto_awesome, color: Colors.white, size: AppDimens.iconSm),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        AppStrings.btnGenerateWithRefinedShort,
+                        style: AppTextStyles.buttonMedium.copyWith(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

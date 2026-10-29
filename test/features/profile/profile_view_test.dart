@@ -39,14 +39,13 @@ class MockAuthRepository extends AuthRepository {
 void main() {
   late MockAuthRepository mockRepo;
   late AuthController authController;
-  late ShellController shellController;
 
   setUp(() {
     Get.reset();
     mockRepo = MockAuthRepository();
     authController = Get.put(AuthController(repository: mockRepo), permanent: true);
     authController.currentUser.value = mockRepo.currentUser;
-    shellController = Get.put(ShellController());
+    Get.put(ShellController());
   });
 
   tearDown(() {

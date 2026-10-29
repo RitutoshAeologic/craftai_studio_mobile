@@ -28,9 +28,6 @@ class AiToolsView extends StatelessWidget {
     final ToolsController controller = Get.isRegistered<ToolsController>()
         ? Get.find<ToolsController>()
         : Get.put(ToolsController());
-    final ShellController shellCtrl = Get.isRegistered<ShellController>()
-        ? Get.find<ShellController>()
-        : Get.put(ShellController());
 
     return Scaffold(
       backgroundColor: AppColors.background,

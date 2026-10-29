@@ -310,7 +310,7 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
           Text('Aspect ratio', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
           SizedBox(height: 8.h),
           DropdownButtonFormField<String>(
-            value: _selectedRatio,
+            initialValue: _selectedRatio,
             decoration: InputDecoration(
               isDense: true,
               border: OutlineInputBorder(
@@ -343,7 +343,7 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
           Text('Poster text language', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
           SizedBox(height: 8.h),
           DropdownButtonFormField<String>(
-            value: _selectedLanguage,
+            initialValue: _selectedLanguage,
             decoration: InputDecoration(
               isDense: true,
               border: OutlineInputBorder(
