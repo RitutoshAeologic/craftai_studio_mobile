@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
@@ -69,9 +70,8 @@ class ReferenceImageUploader {
           'file': await dio.MultipartFile.fromFile(file.path, filename: fileName),
         });
 
-        final uploadPath = backendUrl.endsWith('/api/v1')
-            ? '/api/v1/prompt-engineering/upload-reference'
-            : '/prompt-engineering/upload-reference';
+        // Correct relative path resolved against client's baseUrl
+        final uploadPath = '/prompt-engineering/upload-reference';
         final res = await client.post(uploadPath, data: formData);
         if (res.statusCode == 200 && res.data is Map && res.data['url'] != null) {
           final publicUrl = res.data['url'] as String;
@@ -83,33 +83,41 @@ class ReferenceImageUploader {
       }
     }
 
-    // 2. Direct Supabase Storage Client fallback
+    // 2. Direct Supabase Storage Client fallback to 'user_generations'
     try {
       final client = SupabaseService.client;
       final userId = client.auth.currentUser?.id ?? 'demo_guest_user';
       final ext = file.path.split('.').last.toLowerCase();
-      final storagePath = '$userId/${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final storagePath = 'user_refs/$userId/${DateTime.now().millisecondsSinceEpoch}.$ext';
 
-      await client.storage.from('reference-images').upload(
+      await client.storage.from('user_generations').upload(
             storagePath,
             file,
             fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
           );
 
-      final publicUrl = client.storage.from('reference-images').getPublicUrl(storagePath);
+      final publicUrl = client.storage.from('user_generations').getPublicUrl(storagePath);
       AppLogger.s('Reference uploaded directly to Supabase: $publicUrl', tag: 'UPLOADER');
       return (url: publicUrl, failure: null);
     } on StorageException catch (e) {
-      AppLogger.e('Supabase Storage exception: ${e.message}', tag: 'UPLOADER');
-      return (
-        url: null,
-        failure: StudioServerFailure('Storage upload error: ${e.message}'),
-      );
+      AppLogger.w('Supabase Storage notice: ${e.message}. Using Data URI fallback.', tag: 'UPLOADER');
     } catch (e) {
-      AppLogger.e('Unexpected upload exception: $e', tag: 'UPLOADER');
+      AppLogger.w('Direct storage notice: $e. Using Data URI fallback.', tag: 'UPLOADER');
+    }
+
+    // 3. Guaranteed in-memory Data URI fallback
+    try {
+      final bytes = await file.readAsBytes();
+      final ext = file.path.split('.').last.toLowerCase();
+      final mime = ext == 'png' ? 'image/png' : 'image/jpeg';
+      final b64 = base64Encode(bytes);
+      final dataUri = 'data:$mime;base64,$b64';
+      AppLogger.s('Photo encoded to resilient in-memory Data URI', tag: 'UPLOADER');
+      return (url: dataUri, failure: null);
+    } catch (e) {
       return (
         url: null,
-        failure: StudioUnknownFailure('Upload error: $e'),
+        failure: StudioUnknownFailure('Photo read failure: $e'),
       );
     }
   }

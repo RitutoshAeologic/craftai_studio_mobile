@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -182,15 +183,30 @@ class ToolsController extends GetxController {
     }
   }
 
-  /// Helper to ensure image is a remote URL before API dispatch
+  /// Helper to ensure image is a remote URL or data URI before API dispatch
   Future<String> _ensureRemoteUrl(String path) async {
-    if (path.startsWith('http')) return path;
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
     processingMessage.value = 'Uploading photo to secure gateway...';
-    final upRes = await ReferenceImageUploader.uploadReferenceImage(File(path));
-    if (upRes.url == null) {
-      throw Exception(upRes.failure?.message ?? 'Failed to upload photo for processing');
+    try {
+      final upRes = await ReferenceImageUploader.uploadReferenceImage(File(path));
+      if (upRes.url != null) {
+        return upRes.url!;
+      }
+    } catch (e) {
+      AppLogger.w('Gateway upload notice: $e. Encoding in-memory Data URI.', tag: 'TOOLS');
     }
-    return upRes.url!;
+    // Resilient fallback: Data URI
+    try {
+      final file = File(path);
+      if (file.existsSync()) {
+        final bytes = await file.readAsBytes();
+        final ext = path.split('.').last.toLowerCase();
+        final mime = ext == 'png' ? 'image/png' : 'image/jpeg';
+        final b64 = base64Encode(bytes);
+        return 'data:$mime;base64,$b64';
+      }
+    } catch (_) {}
+    throw Exception('Failed to prepare photo for processing.');
   }
 
   /// Pre-flight guard for connectivity and credits

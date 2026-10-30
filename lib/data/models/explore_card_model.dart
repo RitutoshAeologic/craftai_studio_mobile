@@ -120,7 +120,7 @@ class ExploreCardModel {
           0,
       isLiked: json['is_liked'] as bool? ?? false,
       isBookmarked: json['is_bookmarked'] as bool? ?? false,
-      modelUsed: json['model_used'] as String? ?? 'FLUX.1 Pro',
+      modelUsed: json['model_used'] as String? ?? json['model_name'] as String? ?? 'FLUX.1 Schnell',
       toolApplied: json['tool_applied'] as String? ?? 'Text to Image',
       aspectRatio: json['aspect_ratio'] as String? ?? '16:9',
       dimensions: json['dimensions'] as String? ?? '1344x768',

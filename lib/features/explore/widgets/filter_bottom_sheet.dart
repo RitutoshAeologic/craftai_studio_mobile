@@ -39,11 +39,18 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   void initState() {
     super.initState();
     _tempCategory = _controller.selectedCategory.value;
+    _selectedModel = _controller.selectedModel.value;
+    _selectedAspectRatios.clear();
+    _selectedAspectRatios.addAll(_controller.selectedAspectRatios);
   }
 
   void _applyFilters() {
     HapticFeedback.mediumImpact();
-    _controller.setCategory(_tempCategory);
+    _controller.applyFilters(
+      category: _tempCategory,
+      model: _selectedModel,
+      aspectRatios: _selectedAspectRatios,
+    );
     Navigator.of(context).pop();
   }
 
@@ -55,6 +62,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       _selectedAspectRatios.clear();
       _selectedAspectRatios.add('All');
     });
+    _controller.resetFilters();
   }
 
   @override

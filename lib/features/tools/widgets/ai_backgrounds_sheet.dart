@@ -30,12 +30,76 @@ class AiBackgroundsSheet extends StatefulWidget {
 class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
   final ToolsController controller = Get.find<ToolsController>();
   String? _selectedImagePath;
-  String _selectedMode = 'smart'; // 'pure_white', 'smart', 'custom'
+  String _selectedMode = 'smart'; // 'pure_white', 'smart', 'marble', 'wood', 'neon', 'custom'
+  String _selectedTemplateId = 'smart';
   String _selectedRatio = 'Auto';
   String _selectedQuality = '1k'; // '1k', '2k'
   final TextEditingController _customBackdropCtrl = TextEditingController();
 
   final List<String> _ratios = ['Auto', '1:1', '4:5', '9:16', '16:9'];
+
+  final List<Map<String, dynamic>> _backdropTemplates = const [
+    {
+      'id': 'pure_white',
+      'title': 'Pure white',
+      'subtitle': 'Commercial Cyclo',
+      'icon': '⚪',
+      'mode': 'pure_white',
+      'backdrop': '',
+      'isFree': true,
+      'accent': Color(0xFF64748B),
+    },
+    {
+      'id': 'smart',
+      'title': 'Smart',
+      'subtitle': 'Product Keylight',
+      'icon': '🏢',
+      'mode': 'smart',
+      'backdrop': 'commercial photorealistic studio keylight',
+      'isFree': false,
+      'accent': Color(0xFF6366F1),
+    },
+    {
+      'id': 'marble',
+      'title': 'Luxury Marble',
+      'subtitle': 'Studio Pedestal',
+      'icon': '🏛️',
+      'mode': 'marble',
+      'backdrop': 'luxury marble pedestal overhead soft spotlight',
+      'isFree': false,
+      'accent': Color(0xFFD97706),
+    },
+    {
+      'id': 'wood',
+      'title': 'Warm Wood',
+      'subtitle': 'Cozy Cafe Table',
+      'icon': '🪵',
+      'mode': 'wood',
+      'backdrop': 'warm wooden tabletop cafe ambient lighting',
+      'isFree': false,
+      'accent': Color(0xFFB45309),
+    },
+    {
+      'id': 'neon',
+      'title': 'Cyber Neon',
+      'subtitle': 'Futuristic Glow',
+      'icon': '🌆',
+      'mode': 'neon',
+      'backdrop': 'cyberpunk neon city illumination reflections',
+      'isFree': false,
+      'accent': Color(0xFF06B6D4),
+    },
+    {
+      'id': 'custom',
+      'title': 'Custom Backdrop',
+      'subtitle': 'Write Any Prompt',
+      'icon': '✍️',
+      'mode': 'custom',
+      'backdrop': '',
+      'isFree': false,
+      'accent': Color(0xFF10B981),
+    },
+  ];
 
   @override
   void dispose() {
@@ -97,13 +161,24 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
                 _buildModeSelector(),
                 SizedBox(height: 16.h),
 
-                // 3. Custom Backdrop Input (if custom selected)
-                if (_selectedMode == 'custom') ...[
+                // 3. Custom Backdrop / Prompt Refinement Input
+                if (_selectedMode != 'pure_white') ...[
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 6.h),
+                    child: Text(
+                      _selectedTemplateId == 'custom'
+                          ? 'Describe Desired Scene'
+                          : 'Refine Scene Prompt (Optional)',
+                      style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ),
                   TextField(
                     controller: _customBackdropCtrl,
                     style: AppTextStyles.bodySmall,
                     decoration: InputDecoration(
-                      hintText: 'e.g. Modern marble podium with sunlight',
+                      hintText: _selectedTemplateId == 'custom'
+                          ? 'e.g. Modern marble podium with sunlight'
+                          : 'Tweak lighting, materials or background details...',
                       hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
                       filled: true,
                       fillColor: AppColors.surface,
@@ -247,59 +322,128 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Choose a background', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
-          SizedBox(height: 10.h),
-          Container(
-            padding: EdgeInsets.all(4.r),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-            ),
-            child: Row(
-              children: [
-                _buildModeTab('pure_white', 'Pure white'),
-                _buildModeTab('smart', 'Smart'),
-                _buildModeTab('custom', 'Custom'),
-              ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text('Choose a background', style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary)),
+              ),
+              Text('6 Curated Presets', style: AppTextStyles.captionXs.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          SizedBox(
+            height: 108.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _backdropTemplates.length,
+              separatorBuilder: (_, __) => SizedBox(width: 8.w),
+              itemBuilder: (_, idx) {
+                final t = _backdropTemplates[idx];
+                final isSelected = _selectedTemplateId == t['id'];
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedTemplateId = t['id'] as String;
+                      _selectedMode = t['mode'] as String;
+                      if (t['id'] != 'custom') {
+                        _customBackdropCtrl.text = t['backdrop'] as String;
+                      } else {
+                        _customBackdropCtrl.clear();
+                      }
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 112.w,
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.surfaceLight : AppColors.background,
+                      borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                      border: Border.all(
+                        color: isSelected ? (t['accent'] as Color) : AppColors.border,
+                        width: isSelected ? 2.0 : 1.0,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: (t['accent'] as Color).withValues(alpha: 0.15),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              )
+                            ]
+                          : null,
+                    ),
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(t['icon'] as String, style: TextStyle(fontSize: 16.sp)),
+                              if (t['isFree'] == true)
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accentSuccess.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                                  ),
+                                  child: Text(
+                                    'FREE',
+                                    style: AppTextStyles.captionXs.copyWith(
+                                      color: AppColors.accentSuccess,
+                                      fontSize: 9.sp,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 6.h),
+                          Text(
+                            t['title'] as String,
+                            style: AppTextStyles.captionBold.copyWith(
+                              color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+                              fontSize: 11.sp,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            t['subtitle'] as String,
+                            style: AppTextStyles.captionXs.copyWith(
+                              color: AppColors.textTertiary,
+                              fontSize: 9.sp,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: 10.h),
           Text(
-            _selectedMode == 'pure_white'
-                ? 'Instant 100% white studio background with natural shadow (Zero Tokens / Free).'
-                : _selectedMode == 'smart'
-                    ? 'Smartly adds a background to white-background or transparent images and refines lighting.'
-                    : 'Describe your custom desired background backdrop.',
+            _selectedTemplateId == 'pure_white'
+                ? '⚪ Pure White Cyclo: Clean seamless studio background with double occlusion shadow (Free).'
+                : _selectedTemplateId == 'marble'
+                    ? '🏛️ Luxury Marble: High-end display block with overhead spotlight.'
+                    : _selectedTemplateId == 'wood'
+                        ? '🪵 Warm Wood: Cozy cafe tabletop with sunlight and ambient glow.'
+                        : _selectedTemplateId == 'neon'
+                            ? '🌆 Cyber Neon: Atmospheric cyan and magenta studio backlight.'
+                            : _selectedTemplateId == 'studio'
+                                ? '🏢 Modern Studio: Professional commercial product lighting.'
+                                : '✍️ Custom Backdrop: Enter your specific artistic scene description below.',
             style: AppTextStyles.captionXs.copyWith(color: AppColors.textTertiary),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildModeTab(String modeKey, String label) {
-    final isSelected = _selectedMode == modeKey;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedMode = modeKey),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 8.h),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-            boxShadow: isSelected
-                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: AppTextStyles.captionBold.copyWith(
-              color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
-              fontSize: 12.sp,
-            ),
-          ),
-        ),
       ),
     );
   }

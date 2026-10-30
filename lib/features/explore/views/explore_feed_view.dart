@@ -33,15 +33,36 @@ class ExploreFeedView extends StatelessWidget {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.tune, color: AppColors.textPrimary),
-            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            tooltip: 'Filter Creations',
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              FilterBottomSheet.show(context);
-            },
-          ),
+          Obx(() {
+            final hasFilters = controller.hasActiveFilters;
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.tune, color: AppColors.textPrimary),
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  tooltip: 'Filter Creations',
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    FilterBottomSheet.show(context);
+                  },
+                ),
+                if (hasFilters)
+                  Positioned(
+                    top: 10.h,
+                    right: 10.w,
+                    child: Container(
+                      width: 8.w,
+                      height: 8.h,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          }),
           SizedBox(width: 4.w),
         ],
         bottom: PreferredSize(
