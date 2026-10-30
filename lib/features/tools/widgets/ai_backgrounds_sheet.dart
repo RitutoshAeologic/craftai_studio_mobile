@@ -15,6 +15,9 @@ class AiBackgroundsSheet extends StatefulWidget {
   const AiBackgroundsSheet({super.key});
 
   static void show(BuildContext context) {
+    if (Get.isRegistered<ToolsController>()) {
+      Get.find<ToolsController>().clearActiveSession();
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -102,8 +105,15 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    controller.clearActiveSession();
+  }
+
+  @override
   void dispose() {
     _customBackdropCtrl.dispose();
+    controller.clearActiveSession();
     super.dispose();
   }
 

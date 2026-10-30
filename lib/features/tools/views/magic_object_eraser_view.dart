@@ -48,10 +48,17 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
   @override
   void initState() {
     super.initState();
-    _imagePath = widget.initialImagePath ?? controller.inputImagePath.value;
+    controller.clearActiveSession();
+    _imagePath = widget.initialImagePath;
     if (_imagePath != null && _imagePath!.isNotEmpty) {
       _loadImage(_imagePath!);
     }
+  }
+
+  @override
+  void dispose() {
+    controller.clearActiveSession();
+    super.dispose();
   }
 
   Future<void> _loadImage(String path) async {
@@ -352,26 +359,32 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.undo_rounded),
-                            color: _strokes.isNotEmpty ? AppColors.textPrimary : AppColors.textMuted,
-                            onPressed: _strokes.isNotEmpty ? _undo : null,
-                            tooltip: 'Undo',
+                      Flexible(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.undo_rounded),
+                                color: _strokes.isNotEmpty ? AppColors.textPrimary : AppColors.textMuted,
+                                onPressed: _strokes.isNotEmpty ? _undo : null,
+                                tooltip: 'Undo',
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.redo_rounded),
+                                color: _undoStack.isNotEmpty ? AppColors.textPrimary : AppColors.textMuted,
+                                onPressed: _undoStack.isNotEmpty ? _redo : null,
+                                tooltip: 'Redo',
+                              ),
+                              TextButton.icon(
+                                onPressed: _strokes.isNotEmpty ? _clearMask : null,
+                                icon: Icon(Icons.clear_all, size: 16.sp, color: AppColors.accentError),
+                                label: Text('Clear', style: TextStyle(color: AppColors.accentError, fontSize: 12.sp)),
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.redo_rounded),
-                            color: _undoStack.isNotEmpty ? AppColors.textPrimary : AppColors.textMuted,
-                            onPressed: _undoStack.isNotEmpty ? _redo : null,
-                            tooltip: 'Redo',
-                          ),
-                          TextButton.icon(
-                            onPressed: _strokes.isNotEmpty ? _clearMask : null,
-                            icon: Icon(Icons.clear_all, size: 16.sp, color: AppColors.accentError),
-                            label: Text('Clear', style: TextStyle(color: AppColors.accentError, fontSize: 12.sp)),
-                          ),
-                        ],
+                        ),
                       ),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),

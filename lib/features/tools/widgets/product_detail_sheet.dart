@@ -14,6 +14,9 @@ class ProductDetailSheet extends StatefulWidget {
   const ProductDetailSheet({super.key});
 
   static void show(BuildContext context) {
+    if (Get.isRegistered<ToolsController>()) {
+      Get.find<ToolsController>().clearActiveSession();
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -37,8 +40,15 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   final List<String> _languages = ['Auto (match my input)', 'English', 'Spanish', 'German', 'Japanese'];
 
   @override
+  void initState() {
+    super.initState();
+    controller.clearActiveSession();
+  }
+
+  @override
   void dispose() {
     _nameCtrl.dispose();
+    controller.clearActiveSession();
     super.dispose();
   }
 

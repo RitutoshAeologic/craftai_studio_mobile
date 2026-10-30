@@ -14,6 +14,9 @@ class MarketingPosterSheet extends StatefulWidget {
   const MarketingPosterSheet({super.key});
 
   static void show(BuildContext context) {
+    if (Get.isRegistered<ToolsController>()) {
+      Get.find<ToolsController>().clearActiveSession();
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -42,9 +45,16 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
   final List<String> _languages = ['Auto (match my input)', 'English', 'Spanish', 'French', 'Hindi'];
 
   @override
+  void initState() {
+    super.initState();
+    controller.clearActiveSession();
+  }
+
+  @override
   void dispose() {
     _topicCtrl.dispose();
     _headlineCtrl.dispose();
+    controller.clearActiveSession();
     super.dispose();
   }
 

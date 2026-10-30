@@ -14,6 +14,9 @@ class AiExpandSheet extends StatefulWidget {
   const AiExpandSheet({super.key});
 
   static void show(BuildContext context) {
+    if (Get.isRegistered<ToolsController>()) {
+      Get.find<ToolsController>().clearActiveSession();
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -35,6 +38,18 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
   final List<String> _ratios = [
     '1:1', '3:4', '4:3', '9:16', '16:9', '2:3', '3:2', '2:1', '1:2'
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    controller.clearActiveSession();
+  }
+
+  @override
+  void dispose() {
+    controller.clearActiveSession();
+    super.dispose();
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     final file = await controller.pickImage(source);

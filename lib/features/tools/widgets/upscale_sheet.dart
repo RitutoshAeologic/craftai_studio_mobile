@@ -15,6 +15,9 @@ class UpscaleSheet extends StatefulWidget {
   const UpscaleSheet({super.key});
 
   static void show(BuildContext context) {
+    if (Get.isRegistered<ToolsController>()) {
+      Get.find<ToolsController>().clearActiveSession();
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -31,6 +34,18 @@ class _UpscaleSheetState extends State<UpscaleSheet> {
   final ToolsController controller = Get.find<ToolsController>();
   String? _selectedImagePath;
   int _selectedScale = 2;
+
+  @override
+  void initState() {
+    super.initState();
+    controller.clearActiveSession();
+  }
+
+  @override
+  void dispose() {
+    controller.clearActiveSession();
+    super.dispose();
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     final file = await controller.pickImage(source);

@@ -489,6 +489,7 @@ class AiToolsView extends StatelessWidget {
 
     return InkWell(
       onTap: () {
+        controller.clearActiveSession();
         switch (toolId) {
           case 'magic_eraser':
             Get.to(() => const MagicObjectEraserView());
@@ -835,6 +836,7 @@ class AiToolsView extends StatelessWidget {
   }
 
   void _showImageSourceSheet(BuildContext context, ToolsController controller) {
+    controller.clearActiveSession();
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,

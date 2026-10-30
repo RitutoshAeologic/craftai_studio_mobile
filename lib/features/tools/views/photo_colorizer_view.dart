@@ -40,7 +40,14 @@ class _PhotoColorizerViewState extends State<PhotoColorizerView> {
   @override
   void initState() {
     super.initState();
-    _imagePath = widget.initialImagePath ?? controller.inputImagePath.value;
+    controller.clearActiveSession();
+    _imagePath = widget.initialImagePath;
+  }
+
+  @override
+  void dispose() {
+    controller.clearActiveSession();
+    super.dispose();
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -125,9 +132,12 @@ class _PhotoColorizerViewState extends State<PhotoColorizerView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Saturation Intensity',
-                        style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                      Flexible(
+                        child: Text(
+                          'Saturation Intensity',
+                          style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
