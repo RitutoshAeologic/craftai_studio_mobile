@@ -22,6 +22,11 @@ class AppTheme {
         onSurface: AppColors.textPrimary,
         onPrimary: Colors.white,
       ),
+      snackBarTheme: const SnackBarThemeData(
+        backgroundColor: AppColors.surface,
+        contentTextStyle: TextStyle(color: AppColors.textPrimary),
+        actionTextColor: AppColors.primary,
+      ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,

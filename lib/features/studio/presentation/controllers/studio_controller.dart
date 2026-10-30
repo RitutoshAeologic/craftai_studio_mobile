@@ -542,9 +542,15 @@ class StudioController extends GetxController {
       Get.snackbar(
         AppStrings.referenceAdded,
         'Photo selected. Ready for generation.',
+        borderColor: AppColors.border,
+        borderWidth: 1,
+        borderRadius: 12,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        duration: const Duration(seconds: 2),
+        icon: const Icon(Icons.check_circle_outline, color: AppColors.accentSuccess),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.surface,
-        colorText: AppColors.white,
+        colorText: AppColors.textPrimary,
       );
     }
   }
@@ -557,9 +563,15 @@ class StudioController extends GetxController {
       Get.snackbar(
         AppStrings.referenceAdded,
         AppStrings.referenceAddedMsg,
+        borderColor: AppColors.border,
+        borderWidth: 1,
+        borderRadius: 12,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        duration: const Duration(seconds: 2),
+        icon: const Icon(Icons.check_circle_outline, color: AppColors.accentSuccess),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.surface,
-        colorText: AppColors.white,
+        colorText: AppColors.textPrimary,
       );
     }
   }
@@ -577,6 +589,12 @@ class StudioController extends GetxController {
       Get.snackbar(
         'Upload Notice',
         result.failure!.message,
+        borderColor: AppColors.border,
+        borderWidth: 1,
+        borderRadius: 12,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.warning_amber_rounded, color: AppColors.accentWarning),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.surface,
         colorText: AppColors.accentWarning,
@@ -745,6 +763,12 @@ class StudioController extends GetxController {
           Get.snackbar(
             'Enhancement Notice',
             result.failure!.message,
+        borderColor: AppColors.border,
+        borderWidth: 1,
+        borderRadius: 12,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.warning_amber_rounded, color: AppColors.accentWarning),
             snackPosition: SnackPosition.BOTTOM,
             backgroundColor: AppColors.surface,
             colorText: AppColors.accentWarning,
