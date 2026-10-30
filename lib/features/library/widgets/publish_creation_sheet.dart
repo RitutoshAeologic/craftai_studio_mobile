@@ -94,8 +94,10 @@ class _PublishCreationSheetState extends State<PublishCreationSheet> {
             'author_id': user.id,
             'title': title,
             'preview_url': widget.job.previewUrl,
+            'preview_image_url': widget.job.previewUrl,
             'category': _selectedCategory,
             'masked_prompt_summary': widget.job.prompt,
+            'masked_summary': widget.job.prompt,
             'base_remix_fee': 4.0,
             'author_royalty_cut': 1.6,
           });

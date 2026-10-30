@@ -10,6 +10,8 @@ import 'package:craftai_studio_mobile/features/studio/presentation/controllers/s
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/download_paywall_sheet.dart';
 import 'package:craftai_studio_mobile/features/remix/views/remix_chat_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/magic_object_eraser_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/photo_colorizer_view.dart';
 
 /// [StudioImageEditActionsSheet] presents the comprehensive image editing and workflow modal.
 /// Options:
@@ -109,6 +111,38 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 onTap: () {
                   Get.back();
                   shellCtrl.switchTab(2); // AI Tools
+                },
+              ),
+
+              // Option 3b: Magic Object Eraser
+              _buildActionItem(
+                icon: Icons.auto_fix_high_rounded,
+                iconColor: AppColors.accentWarning,
+                title: 'Magic Object Eraser',
+                subtitle: 'Erase unwanted people, text, or objects seamlessly',
+                badge: 'LaMa Neural',
+                onTap: () {
+                  Get.back();
+                  Get.to(
+                    () => MagicObjectEraserView(initialImagePath: job.previewUrl),
+                    transition: Transition.rightToLeft,
+                  );
+                },
+              ),
+
+              // Option 3c: Vintage Photo Colorizer
+              _buildActionItem(
+                icon: Icons.color_lens_rounded,
+                iconColor: AppColors.accentSuccess,
+                title: 'Colorize Photo',
+                subtitle: 'Restore natural vibrant chromaticity to monochrome photo',
+                badge: 'DDColor',
+                onTap: () {
+                  Get.back();
+                  Get.to(
+                    () => PhotoColorizerView(initialImagePath: job.previewUrl),
+                    transition: Transition.rightToLeft,
+                  );
                 },
               ),
 

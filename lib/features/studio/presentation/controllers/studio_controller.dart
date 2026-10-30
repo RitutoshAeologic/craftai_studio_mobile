@@ -1148,7 +1148,9 @@ class StudioController extends GetxController {
             'type': 'IMAGE_GEN',
             'status': 'completed',
             'prompt': promptUsed,
+            'prompt_text': promptUsed,
             'preview_url': outputUrl,
+            'preview_image_url': outputUrl,
             'credits_deducted': cost,
             'is_download_unlocked': false,
           }, onConflict: 'job_id');
