@@ -78,30 +78,64 @@ class _PublishCreationSheetState extends State<PublishCreationSheet> {
           ? Get.find<ExploreController>()
           : Get.put(ExploreController());
 
-      // 1. Add to local Explore feed state
+      final user = SupabaseService.client.auth.currentUser;
+      final authorName = user?.userMetadata?['name'] as String? ??
+          user?.userMetadata?['full_name'] as String? ??
+          user?.email?.split('@').first ??
+          'Creator';
+      final authorHandle = '@${user?.userMetadata?['user_name'] ?? user?.email?.split('@').first ?? 'creator'}';
+      final modelUsed = widget.job.metadata?['model'] as String? ??
+          widget.job.metadata?['engine'] as String? ??
+          'FLUX.1 Schnell';
+
+      // 1. Add to local Explore feed state with real job specs
       exploreCtrl.publishCreation(
         title: title,
         prompt: widget.job.prompt,
         previewUrl: widget.job.previewUrl,
         category: _selectedCategory,
+        modelUsed: modelUsed,
+        aspectRatio: widget.job.aspectRatio,
+        dimensions: widget.job.dimensions,
+        seed: widget.job.seed,
+        authorName: authorName,
+        authorHandle: authorHandle,
+        remixFee: 4.0,
+        creatorRoyaltyCut: 1.6,
       );
 
-      // 2. Persist to Supabase explore_prompts if authenticated
+      // 2. Persist to Supabase explore_prompts with full metadata parity
       try {
-        final user = SupabaseService.client.auth.currentUser;
         if (user != null) {
           await SupabaseService.client.from('explore_prompts').insert({
             'author_id': user.id,
+            'user_id': user.id,
             'title': title,
+            'author_name': authorName,
+            'author_handle': authorHandle,
             'preview_url': widget.job.previewUrl,
             'preview_image_url': widget.job.previewUrl,
+            'image_url': widget.job.previewUrl,
             'category': _selectedCategory,
             'masked_prompt_summary': widget.job.prompt,
             'masked_summary': widget.job.prompt,
+            'prompt': widget.job.prompt,
+            'model_used': modelUsed,
+            'model': modelUsed,
+            'aspect_ratio': widget.job.aspectRatio,
+            'dimensions': widget.job.dimensions,
+            'seed': widget.job.seed,
+            'tool_applied': widget.job.toolApplied,
             'base_remix_fee': 4.0,
+            'remix_fee': 4.0,
             'author_royalty_cut': 1.6,
+            'creator_royalty_cut': 1.6,
+            'likes_count': 0,
+            'remixes_count': 0,
+            'total_remixes': 0,
+            'is_marketplace_public': true,
           });
-          AppLogger.s('Published creation to Supabase explore_prompts table', tag: 'EXPLORE_PUBLISH');
+          AppLogger.s('Published creation with full metadata to Supabase explore_prompts', tag: 'EXPLORE_PUBLISH');
         }
       } catch (e) {
         AppLogger.d('Cloud publish skipped or table pending migration: $e', tag: 'EXPLORE_PUBLISH');

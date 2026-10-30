@@ -52,6 +52,20 @@ class ToolResultPreviewSheet extends StatelessWidget {
     );
   }
 
+  double _resolveAspectRatio() {
+    final text = (badgeText ?? '').toLowerCase();
+    if (text.contains('16:9')) return 16 / 9;
+    if (text.contains('9:16')) return 9 / 16;
+    if (text.contains('4:5')) return 4 / 5;
+    if (text.contains('4:3')) return 4 / 3;
+    if (text.contains('3:4')) return 3 / 4;
+    if (text.contains('3:2')) return 3 / 2;
+    if (text.contains('2:3')) return 2 / 3;
+    if (text.contains('2:1')) return 2 / 1;
+    if (text.contains('1:2')) return 1 / 2;
+    return 1.0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final showSplit = enableBeforeAfter &&
@@ -167,24 +181,38 @@ class ToolResultPreviewSheet extends StatelessWidget {
                               afterLabel: 'AI RESULT',
                               height: 320,
                             )
-                          : AspectRatio(
-                              aspectRatio: 1.0,
-                              child: CachedNetworkImage(
-                                imageUrl: resultImageUrl,
-                                fit: BoxFit.contain,
-                                placeholder: (_, __) => Container(
-                                  color: AppColors.surface,
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.primary,
+                          : Container(
+                              constraints: BoxConstraints(
+                                minHeight: 200.h,
+                                maxHeight: 380.h,
+                              ),
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(16.r),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Center(
+                                child: AspectRatio(
+                                  aspectRatio: _resolveAspectRatio(),
+                                  child: CachedNetworkImage(
+                                    imageUrl: resultImageUrl,
+                                    fit: BoxFit.contain,
+                                    placeholder: (_, __) => Container(
+                                      color: AppColors.surface,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                errorWidget: (_, __, ___) => Container(
-                                  color: AppColors.surface,
-                                  child: const Center(
-                                    child: Icon(Icons.broken_image, color: AppColors.textMuted),
+                                    errorWidget: (_, __, ___) => Container(
+                                      color: AppColors.surface,
+                                      child: const Center(
+                                        child: Icon(Icons.broken_image, color: AppColors.textMuted),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),

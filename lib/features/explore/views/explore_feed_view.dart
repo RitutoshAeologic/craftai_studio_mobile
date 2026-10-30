@@ -25,14 +25,52 @@ class ExploreFeedView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        title: Text(
-          'Explore Feed',
-          style: AppTextStyles.titleMedium.copyWith(
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: Obx(() {
+          if (controller.isSearching.value) {
+            return TextField(
+              autofocus: true,
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Search prompts, artists, styles...',
+                hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: controller.setSearchQuery,
+            );
+          }
+          return Text(
+            'Explore Feed',
+            style: AppTextStyles.titleMedium.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          );
+        }),
         actions: [
+          Obx(() {
+            if (controller.isSearching.value) {
+              return IconButton(
+                icon: const Icon(Icons.close, color: AppColors.textPrimary),
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                tooltip: 'Clear search',
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  controller.clearSearch();
+                },
+              );
+            }
+            return IconButton(
+              icon: const Icon(Icons.search, color: AppColors.textPrimary),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              tooltip: 'Search creations',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                controller.isSearching.value = true;
+              },
+            );
+          }),
           Obx(() {
             final hasFilters = controller.hasActiveFilters;
             return Stack(
@@ -40,7 +78,7 @@ class ExploreFeedView extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.tune, color: AppColors.textPrimary),
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                   tooltip: 'Filter Creations',
                   onPressed: () {
                     HapticFeedback.lightImpact();
@@ -50,7 +88,7 @@ class ExploreFeedView extends StatelessWidget {
                 if (hasFilters)
                   Positioned(
                     top: 10.h,
-                    right: 10.w,
+                    right: 8.w,
                     child: Container(
                       width: 8.w,
                       height: 8.h,

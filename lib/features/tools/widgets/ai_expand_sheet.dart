@@ -257,7 +257,32 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
     );
   }
 
+  double _getTargetRatioValue() {
+    switch (_selectedRatio) {
+      case '16:9':
+        return 16 / 9;
+      case '9:16':
+        return 9 / 16;
+      case '4:5':
+        return 4 / 5;
+      case '1:1':
+        return 1.0;
+      case '4:3':
+        return 4 / 3;
+      case '3:4':
+        return 3 / 4;
+      case '2:3':
+        return 2 / 3;
+      case '3:2':
+        return 3 / 2;
+      default:
+        return 16 / 9;
+    }
+  }
+
   Widget _buildCanvasPreview() {
+    final targetAspect = _getTargetRatioValue();
+
     return Container(
       padding: EdgeInsets.all(12.r),
       decoration: BoxDecoration(
@@ -271,22 +296,39 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Canvas Preview', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
-              GestureDetector(
-                onTap: () => setState(() => _selectedImagePath = null),
-                child: Row(
-                  children: [
-                    Icon(Icons.refresh, size: 14.sp, color: AppColors.textSecondary),
-                    SizedBox(width: 4.w),
-                    Text('Reset', style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary)),
-                  ],
-                ),
+              Row(
+                children: [
+                  Text('Canvas Preview', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
+                  SizedBox(width: 8.w),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                    ),
+                    child: Text(
+                      'Target $_selectedRatio',
+                      style: AppTextStyles.captionXs.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
+              if (_selectedImagePath != null)
+                GestureDetector(
+                  onTap: () => setState(() => _selectedImagePath = null),
+                  child: Row(
+                    children: [
+                      Icon(Icons.refresh, size: 14.sp, color: AppColors.textSecondary),
+                      SizedBox(width: 4.w),
+                      Text('Reset', style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary)),
+                    ],
+                  ),
+                ),
             ],
           ),
           SizedBox(height: 10.h),
           Container(
-            height: 160.h,
+            height: 180.h,
             width: double.infinity,
             decoration: BoxDecoration(
               color: AppColors.background,
@@ -295,11 +337,39 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
             ),
             child: _selectedImagePath != null
                 ? Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                      child: _selectedImagePath!.startsWith('http')
-                          ? CachedNetworkImage(imageUrl: _selectedImagePath!, fit: BoxFit.contain)
-                          : Image.file(File(_selectedImagePath!), fit: BoxFit.contain),
+                    child: Container(
+                      margin: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.2),
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: targetAspect,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Canvas expansion zone guide
+                            Container(
+                              color: AppColors.surfaceLight.withValues(alpha: 0.4),
+                              child: Center(
+                                child: Icon(
+                                  Icons.all_out_rounded,
+                                  color: AppColors.primary.withValues(alpha: 0.25),
+                                  size: 32.sp,
+                                ),
+                              ),
+                            ),
+                            // Nested source image
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                              child: _selectedImagePath!.startsWith('http')
+                                  ? CachedNetworkImage(imageUrl: _selectedImagePath!, fit: BoxFit.contain)
+                                  : Image.file(File(_selectedImagePath!), fit: BoxFit.contain),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   )
                 : Center(

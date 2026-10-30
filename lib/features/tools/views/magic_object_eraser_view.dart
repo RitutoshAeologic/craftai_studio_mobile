@@ -131,25 +131,31 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
     });
   }
 
-  /// Exports binary mask at native image resolution (#000000 base, #FFFFFF strokes).
-  /// Mitigates Loophole 1 & 2 (coordinate distortion & mask polarity inversion).
+  /// Exports binary mask at normalized resolution (#000000 base, #FFFFFF strokes).
+  /// Normalizes large images to max 1280px to prevent 20MB base64 payload freezes while preserving sub-pixel precision.
   Future<String?> _generateMaskBase64(Size viewportSize) async {
     if (_decodedImage == null || _strokes.isEmpty) return null;
 
-    final imgW = _decodedImage!.width.toDouble();
-    final imgH = _decodedImage!.height.toDouble();
+    final origW = _decodedImage!.width.toDouble();
+    final origH = _decodedImage!.height.toDouble();
+
+    // Normalize max dimension to 1280px to avoid multi-megabyte base64 payloads
+    final double maxDim = max(origW, origH);
+    final double normFactor = maxDim > 1280 ? (1280.0 / maxDim) : 1.0;
+    final double targetW = (origW * normFactor).roundToDouble();
+    final double targetH = (origH * normFactor).roundToDouble();
 
     final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, imgW, imgH));
+    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, targetW, targetH));
 
     // 1. Fill base with solid black (#000000 = PRESERVE)
     final bgPaint = Paint()..color = const Color(0xFF000000);
-    canvas.drawRect(Rect.fromLTWH(0, 0, imgW, imgH), bgPaint);
+    canvas.drawRect(Rect.fromLTWH(0, 0, targetW, targetH), bgPaint);
 
     // 2. Compute exact scale & letterbox offsets from viewport
-    final double scale = min(viewportSize.width / imgW, viewportSize.height / imgH);
-    final double offsetX = (viewportSize.width - (imgW * scale)) / 2;
-    final double offsetY = (viewportSize.height - (imgH * scale)) / 2;
+    final double scale = min(viewportSize.width / origW, viewportSize.height / origH);
+    final double offsetX = (viewportSize.width - (origW * scale)) / 2;
+    final double offsetY = (viewportSize.height - (origH * scale)) / 2;
 
     // 3. Paint strokes in solid white (#FFFFFF = ERASE)
     final maskPaint = Paint()
@@ -158,13 +164,15 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    for (final stroke in _strokes) {
-      maskPaint.strokeWidth = stroke.strokeWidth / scale;
+    final double effectiveScale = scale / normFactor;
 
-      // Transform path from viewport coordinate space to original image pixel coordinates
+    for (final stroke in _strokes) {
+      maskPaint.strokeWidth = stroke.strokeWidth / effectiveScale;
+
+      // Transform path from viewport coordinate space to normalized mask pixel coordinates
       final matrix = Matrix4.identity()
         // ignore: deprecated_member_use
-        ..scale(1 / scale, 1 / scale)
+        ..scale(1 / effectiveScale, 1 / effectiveScale)
         // ignore: deprecated_member_use
         ..translate(-offsetX, -offsetY);
 
@@ -173,7 +181,7 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
     }
 
     final picture = recorder.endRecording();
-    final img = await picture.toImage(imgW.toInt(), imgH.toInt());
+    final img = await picture.toImage(targetW.toInt(), targetH.toInt());
     final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) return null;
     return 'data:image/png;base64,${base64Encode(byteData.buffer.asUint8List())}';

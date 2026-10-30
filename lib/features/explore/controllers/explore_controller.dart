@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
 import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
+import 'package:craftai_studio_mobile/core/network/api_config.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
@@ -18,6 +20,12 @@ class ExploreController extends GetxController {
 
   /// Currently active Aspect Ratio filter set (default: {'All'}).
   final RxSet<String> selectedAspectRatios = <String>{'All'}.obs;
+
+  /// Realtime search query for exploring community creations
+  final RxString searchQuery = ''.obs;
+
+  /// Whether search mode is active in the Explore feed
+  final RxBool isSearching = false.obs;
 
   /// Available style and prompt categories in the community feed.
   final RxList<String> categories = <String>[
@@ -259,9 +267,27 @@ class ExploreController extends GetxController {
     }
   }
 
-  /// Returns cards filtered across Category, AI Model, and Aspect Ratio
+  /// Returns cards filtered across Search Query, Category, AI Model, and Aspect Ratio
   List<ExploreCardModel> get filteredCards {
+    final query = searchQuery.value.trim().toLowerCase();
     return cards.where((c) {
+      // 0. Search Query Filter
+      if (query.isNotEmpty) {
+        final matchesTitle = c.title.toLowerCase().contains(query);
+        final matchesPrompt = c.maskedSummary.toLowerCase().contains(query);
+        final matchesCategory = c.category.toLowerCase().contains(query);
+        final matchesAuthor = c.authorName.toLowerCase().contains(query) ||
+            c.authorHandle.toLowerCase().contains(query);
+        final matchesModel = c.modelUsed.toLowerCase().contains(query);
+        if (!matchesTitle &&
+            !matchesPrompt &&
+            !matchesCategory &&
+            !matchesAuthor &&
+            !matchesModel) {
+          return false;
+        }
+      }
+
       // 1. Category Filter
       if (selectedCategory.value != 'All' && c.category != selectedCategory.value) {
         return false;
@@ -288,6 +314,17 @@ class ExploreController extends GetxController {
 
       return true;
     }).toList();
+  }
+
+  /// Updates active text search query
+  void setSearchQuery(String query) {
+    searchQuery.value = query;
+  }
+
+  /// Clears active search
+  void clearSearch() {
+    searchQuery.value = '';
+    isSearching.value = false;
   }
 
   /// Changes the active category filter and re-filters the feed.
@@ -317,7 +354,47 @@ class ExploreController extends GetxController {
   bool get hasActiveFilters {
     return selectedCategory.value != 'All' ||
         selectedModel.value != 'All Models' ||
-        !selectedAspectRatios.contains('All');
+        !selectedAspectRatios.contains('All') ||
+        searchQuery.value.isNotEmpty;
+  }
+
+  /// Fetches similar creations from backend pgvector/similar endpoint with offline fallback
+  Future<List<ExploreCardModel>> fetchSimilarCreations(String cardId) async {
+    try {
+      final dio = Dio(BaseOptions(
+        baseUrl: ApiConfig.baseUrl,
+        connectTimeout: const Duration(seconds: 4),
+        receiveTimeout: const Duration(seconds: 4),
+        headers: {
+          'Bypass-Tunnel-Reminder': 'true',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      ));
+      final res = await dio.get('/explore/similar/$cardId');
+      if (res.statusCode == 200 && res.data is List) {
+        final list = (res.data as List)
+            .map((item) => ExploreCardModel.fromJson(item as Map<String, dynamic>))
+            .toList();
+        if (list.isNotEmpty) {
+          AppLogger.s('Loaded ${list.length} similar creations from backend', tag: 'EXPLORE');
+          return list;
+        }
+      }
+    } catch (e) {
+      AppLogger.d('Backend similar creations fallback to local: $e', tag: 'EXPLORE');
+    }
+
+    // High-fidelity fallback: local category matching
+    final currentCard = cards.firstWhereOrNull((c) => c.id == cardId);
+    if (currentCard != null) {
+      final sameCategory = cards.where((c) => c.category == currentCard.category && c.id != cardId).toList();
+      if (sameCategory.length >= 4) {
+        return [currentCard, ...sameCategory].take(8).toList();
+      }
+      final backfill = cards.where((c) => c.category != currentCard.category && c.id != cardId).toList();
+      return [currentCard, ...sameCategory, ...backfill].take(8).toList();
+    }
+    return cards.take(8).toList();
   }
 
   /// Toggles like state and increments/decrements like counter on a card.
@@ -369,20 +446,30 @@ class ExploreController extends GetxController {
     required String prompt,
     required String previewUrl,
     required String category,
+    String? modelUsed,
+    String? aspectRatio,
+    String? dimensions,
+    int? seed,
+    String? authorName,
+    String? authorHandle,
+    double remixFee = 4.0,
+    double creatorRoyaltyCut = 1.6,
   }) {
     final newCard = ExploreCardModel(
       id: '00000000-0000-4000-8000-${DateTime.now().millisecondsSinceEpoch.toString().padLeft(12, '0')}',
-      authorName: 'You',
-      authorHandle: '@creator',
+      authorName: authorName ?? 'You',
+      authorHandle: authorHandle ?? '@creator',
       authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop',
       title: title,
       previewUrl: previewUrl,
       category: category,
-      modelUsed: 'FLUX.1 Schnell',
-      aspectRatio: '1:1',
+      modelUsed: modelUsed ?? 'FLUX.1 Schnell',
+      aspectRatio: aspectRatio ?? '1:1',
+      dimensions: dimensions ?? '1024x1024',
+      seed: seed ?? 42,
       maskedSummary: prompt,
-      remixFee: 4.0,
-      creatorRoyaltyCut: 1.6, // 40% royalty split
+      remixFee: remixFee,
+      creatorRoyaltyCut: creatorRoyaltyCut, // 40% royalty split
       remixCount: 0,
       likeCount: 1,
     );

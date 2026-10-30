@@ -77,20 +77,45 @@ class LibraryController extends GetxController {
         ? previewUrl
         : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop';
 
-    myCreations.insert(
-      0,
-      JobModel(
-        jobId: 'job_${DateTime.now().millisecondsSinceEpoch}',
-        type: type,
-        status: 'completed',
-        prompt: prompt,
-        previewUrl: validPreviewUrl,
-        creditsDeducted: credits,
-        isDownloadUnlocked: false,
-        metadata: metadata,
-        createdAt: DateTime.now(),
-      ),
+    final newJob = JobModel(
+      jobId: 'job_${DateTime.now().millisecondsSinceEpoch}',
+      type: type,
+      status: 'completed',
+      prompt: prompt,
+      previewUrl: validPreviewUrl,
+      creditsDeducted: credits,
+      isDownloadUnlocked: false,
+      metadata: metadata,
+      createdAt: DateTime.now(),
     );
+
+    myCreations.insert(0, newJob);
+
+    // Asynchronously persist to Supabase jobs table in the cloud
+    try {
+      final user = SupabaseService.client.auth.currentUser;
+      if (user != null && validPreviewUrl.startsWith('http')) {
+        SupabaseService.client.from('jobs').insert({
+          'job_id': newJob.jobId,
+          'user_id': user.id,
+          'type': type,
+          'status': 'completed',
+          'prompt': prompt,
+          'preview_url': validPreviewUrl,
+          'output_url': validPreviewUrl,
+          'credits_deducted': credits,
+          'is_download_unlocked': false,
+          'metadata': metadata ?? {},
+          'created_at': DateTime.now().toIso8601String(),
+        }).then((_) {
+          AppLogger.s('Persisted generation ${newJob.jobId} to Supabase jobs table', tag: 'LIBRARY');
+        }).catchError((e) {
+          AppLogger.d('Cloud persistence skipped or table pending migration: $e', tag: 'LIBRARY');
+        });
+      }
+    } catch (e) {
+      AppLogger.d('Supabase client check skipped: $e', tag: 'LIBRARY');
+    }
   }
 
   Future<void> unlock4KDownload(JobModel job) async {

@@ -231,17 +231,28 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16.r),
-                      child: AspectRatio(
-                        aspectRatio: 0.85,
-                        child: CachedNetworkImage(
-                          imageUrl: widget.job.previewUrl.isNotEmpty && widget.job.previewUrl.startsWith('http')
-                              ? widget.job.previewUrl
-                              : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop',
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(color: AppColors.surfaceLight),
-                          errorWidget: (_, __, ___) => Container(
-                            color: AppColors.surfaceLight,
-                            child: const Center(child: Icon(Icons.broken_image, color: AppColors.textMuted)),
+                      child: Container(
+                        constraints: BoxConstraints(
+                          minHeight: 220.h,
+                          maxHeight: 450.h,
+                        ),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16.r),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Center(
+                          child: CachedNetworkImage(
+                            imageUrl: widget.job.previewUrl.isNotEmpty && widget.job.previewUrl.startsWith('http')
+                                ? widget.job.previewUrl
+                                : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop',
+                            fit: BoxFit.contain,
+                            placeholder: (_, __) => Container(color: AppColors.surfaceLight),
+                            errorWidget: (_, __, ___) => Container(
+                              color: AppColors.surfaceLight,
+                              child: const Center(child: Icon(Icons.broken_image, color: AppColors.textMuted)),
+                            ),
                           ),
                         ),
                       ),

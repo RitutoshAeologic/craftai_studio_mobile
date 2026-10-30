@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -55,6 +56,22 @@ class _ExploreDiscoveryViewState extends State<ExploreDiscoveryView> {
     _otherCommunityCards = _controller.cards.where((c) => !similarIds.contains(c.id)).toList();
     if (_otherCommunityCards.isEmpty) {
       _otherCommunityCards.addAll(_controller.cards);
+    }
+
+    // 3. Asynchronously fetch pgvector/category similar creations from backend (guarded against test runners)
+    if (!Platform.environment.containsKey('FLUTTER_TEST') && !Get.testMode) {
+      _controller.fetchSimilarCreations(widget.selectedCard.id).then((cloudSimilar) {
+        if (mounted && cloudSimilar.isNotEmpty) {
+          setState(() {
+            _similarCards = cloudSimilar;
+            final newSimilarIds = _similarCards.map((c) => c.id).toSet();
+            _otherCommunityCards = _controller.cards.where((c) => !newSimilarIds.contains(c.id)).toList();
+            if (_otherCommunityCards.isEmpty) {
+              _otherCommunityCards.addAll(_controller.cards);
+            }
+          });
+        }
+      });
     }
   }
 

@@ -16,6 +16,7 @@ class BeforeAfterSlider extends StatefulWidget {
   final double initialPosition;
   final String beforeLabel;
   final String afterLabel;
+  final BoxFit fit;
 
   const BeforeAfterSlider({
     super.key,
@@ -25,6 +26,7 @@ class BeforeAfterSlider extends StatefulWidget {
     this.initialPosition = 0.50,
     this.beforeLabel = 'ANCHOR',
     this.afterLabel = 'REMIX',
+    this.fit = BoxFit.contain,
   });
 
   @override
@@ -192,7 +194,7 @@ class _BeforeAfterSliderState extends State<BeforeAfterSlider> {
     }
     return AppNetworkImage(
       imageUrl: url,
-      fit: BoxFit.cover,
+      fit: widget.fit,
       borderRadius: BorderRadius.zero,
       width: double.infinity,
       height: double.infinity,

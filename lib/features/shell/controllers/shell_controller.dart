@@ -42,6 +42,18 @@ class ShellController extends GetxController {
           final wallet = WalletModel.fromJson(res);
           userCredits.value = wallet.purchasedBalance + wallet.freeDailyBalance;
           AppLogger.s('Synced wallet balance from Supabase: ${userCredits.value} Cr', tag: 'WALLET');
+        } else {
+          // Brand new user: auto-create wallet row in Supabase with initial 500 credits
+          try {
+            await SupabaseService.client.from('wallets').upsert({
+              'user_id': user.id,
+              'free_daily_balance': 500.0,
+              'purchased_balance': 0.0,
+              'credits': 500.0,
+            }, onConflict: 'user_id');
+            userCredits.value = 500.0;
+            AppLogger.s('Initialized new user wallet with 500.0 Cr in Supabase', tag: 'WALLET');
+          } catch (_) {}
         }
       }
     } catch (e) {
@@ -90,8 +102,11 @@ class ShellController extends GetxController {
       if (user != null) {
         await SupabaseService.client
             .from('wallets')
-            .update({'free_daily_balance': userCredits.value})
-            .eq('user_id', user.id);
+            .upsert({
+              'user_id': user.id,
+              'free_daily_balance': userCredits.value,
+              'credits': userCredits.value,
+            }, onConflict: 'user_id');
       }
     } catch (_) {}
   }
