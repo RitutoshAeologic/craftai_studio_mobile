@@ -25,8 +25,8 @@ class ApiConfig {
       return apiBaseUrl;
     }
 
-    // Default fallback pointing to local backend (USB adb reverse or local emulator):
-    return 'http://127.0.0.1:8000/api/v1';
+    // Default fallback pointing to active tunnel:
+    return 'https://craftai-backend.loca.lt/api/v1';
   }
 
   /// Optional remote fallback URL (e.g. an active ngrok tunnel or remote staging server).
@@ -38,7 +38,7 @@ class ApiConfig {
     const envFallback = String.fromEnvironment('FALLBACK_BACKEND_URL');
     if (envFallback.trim().isNotEmpty) return envFallback.trim();
     // Default local loopback fallback for physical Wi-Fi debugging:
-    return 'http://192.168.68.113:8000/api/v1';
+    return 'http://192.168.29.26:8000/api/v1';
   }
 
   /// Whether the current configured backend targets a local machine loopback.
