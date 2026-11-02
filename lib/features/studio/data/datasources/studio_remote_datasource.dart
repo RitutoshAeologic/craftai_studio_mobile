@@ -6,103 +6,15 @@ import '../../domain/models/prompt_expand_model.dart';
 import '../../domain/models/prompt_compile_model.dart';
 import '../../domain/models/generation_dispatch_model.dart';
 import '../../../remix/domain/models/remix_session_model.dart';
-import '../../../../core/network/dio_logging_interceptor.dart';
-import '../../../../core/network/connectivity_interceptor.dart';
 import '../../../../core/network/api_config.dart';
-import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
+import '../../../../core/network/api_client.dart';
 
 /// [StudioRemoteDataSource] is the network gateway for all Studio generation,
 /// prompt enhancement, creative AI skills, and WebSocket streaming operations with FastAPI.
 class StudioRemoteDataSource {
   final Dio _dio;
 
-  StudioRemoteDataSource({Dio? dio}) : _dio = dio ?? _createConfiguredDio();
-
-  /// Configures Dio instance with centralized [ApiConfig.baseUrl], auto-injected
-  /// Supabase JWT Bearer tokens, and optional remote fallback if explicitly defined.
-  static Dio _createConfiguredDio() {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConfig.baseUrl,
-        connectTimeout: const Duration(seconds: 20),
-        receiveTimeout: const Duration(seconds: 90),
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-          'Bypass-Tunnel-Reminder': 'true',
-        },
-      ),
-    );
-
-    // Fast-fail if device is completely offline before waiting for network timeouts
-    dio.interceptors.add(ConnectivityInterceptor());
-
-    dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          try {
-            final token = SupabaseService.client.auth.currentSession?.accessToken;
-            if (token != null && token.isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer $token';
-            }
-          } catch (_) {}
-          return handler.next(options);
-        },
-        onError: (err, handler) async {
-          if (err.type == DioExceptionType.connectionError ||
-              err.type == DioExceptionType.connectionTimeout) {
-            final candidateFallbacks = [
-              if (ApiConfig.fallbackUrl != null) ApiConfig.fallbackUrl!,
-              if (ApiConfig.isAndroidDevice &&
-                  (err.requestOptions.baseUrl.contains('127.0.0.1') ||
-                      err.requestOptions.baseUrl.contains('localhost')))
-                err.requestOptions.baseUrl
-                    .replaceAll('127.0.0.1', '10.0.2.2')
-                    .replaceAll('localhost', '10.0.2.2'),
-              if (ApiConfig.isAndroidDevice &&
-                  err.requestOptions.baseUrl.contains('10.0.2.2'))
-                err.requestOptions.baseUrl.replaceAll('10.0.2.2', '127.0.0.1'),
-            ];
-
-            for (final fallbackUrl in candidateFallbacks) {
-              if (err.requestOptions.baseUrl.contains(fallbackUrl)) continue;
-
-              try {
-                final fallbackDio = Dio(
-                  BaseOptions(
-                    baseUrl: fallbackUrl,
-                    connectTimeout: const Duration(seconds: 15),
-                    receiveTimeout: const Duration(seconds: 40),
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'ngrok-skip-browser-warning': 'true',
-                    },
-                  ),
-                )..interceptors.add(DioLoggingInterceptor());
-
-                final res = await fallbackDio.request(
-                  err.requestOptions.path,
-                  data: err.requestOptions.data,
-                  queryParameters: err.requestOptions.queryParameters,
-                  options: Options(
-                    method: err.requestOptions.method,
-                    headers: err.requestOptions.headers,
-                  ),
-                );
-
-                return handler.resolve(res);
-              } catch (_) {}
-            }
-          }
-
-          return handler.next(err);
-        },
-      ),
-    );
-
-    dio.interceptors.add(DioLoggingInterceptor());
-    return dio;
-  }
+  StudioRemoteDataSource({Dio? dio}) : _dio = dio ?? ApiClient.instance.dio;
 
   /// Sends a raw prompt to the backend LLM expander (`/prompt-engineering/expand`).
   Future<PromptExpandModel> expandPrompt({

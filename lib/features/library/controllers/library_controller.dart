@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
-import 'package:craftai_studio_mobile/core/network/api_config.dart';
+import 'package:craftai_studio_mobile/core/network/api_client.dart';
 import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
@@ -192,21 +192,15 @@ class LibraryController extends GetxController {
 
       // 2. Call Backend API endpoint
       try {
-        final token = SupabaseService.client.auth.currentSession?.accessToken;
-        final dio = Dio(BaseOptions(
-          baseUrl: ApiConfig.baseUrl,
-          connectTimeout: const Duration(seconds: 3),
-          receiveTimeout: const Duration(seconds: 3),
-          headers: {
-            if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-          },
-        ));
-
-        await dio.delete(
+        await ApiClient.instance.delete(
           '/prompt-engineering/library/${job.jobId}',
           queryParameters: {
             if (job.previewUrl.isNotEmpty) 'image_url': job.previewUrl,
           },
+          options: Options(
+            connectTimeout: const Duration(seconds: 3),
+            receiveTimeout: const Duration(seconds: 3),
+          ),
         );
         AppLogger.s('Backend library delete API purged ${job.jobId}', tag: 'LIBRARY');
       } catch (apiErr) {

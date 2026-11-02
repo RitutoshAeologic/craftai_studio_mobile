@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import '../../../../core/network/api_config.dart';
+import '../../../../core/network/api_client.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/auth_repository.dart';
@@ -307,16 +307,12 @@ class AuthController extends GetxController {
     try {
       final token = Supabase.instance.client.auth.currentSession?.accessToken;
       if (token != null && token.isNotEmpty) {
-        final dio = Dio(BaseOptions(
-          connectTimeout: const Duration(milliseconds: 1500),
-          receiveTimeout: const Duration(milliseconds: 1500),
-        ));
-        await dio.post(
-          '${ApiConfig.baseUrl}/auth/signout',
-          options: Options(headers: {
-            'Authorization': 'Bearer $token',
-            'ngrok-skip-browser-warning': 'true',
-          }),
+        await ApiClient.instance.post(
+          '/auth/signout',
+          options: Options(
+            connectTimeout: const Duration(milliseconds: 1500),
+            receiveTimeout: const Duration(milliseconds: 1500),
+          ),
         );
       }
     } catch (e) {

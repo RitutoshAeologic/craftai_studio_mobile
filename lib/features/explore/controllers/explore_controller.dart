@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
 import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
-import 'package:craftai_studio_mobile/core/network/api_config.dart';
+import 'package:craftai_studio_mobile/core/network/api_client.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
@@ -390,16 +390,13 @@ class ExploreController extends GetxController {
   /// Fetches similar creations from backend pgvector/similar endpoint with offline fallback
   Future<List<ExploreCardModel>> fetchSimilarCreations(String cardId) async {
     try {
-      final dio = Dio(BaseOptions(
-        baseUrl: ApiConfig.baseUrl,
-        connectTimeout: const Duration(seconds: 4),
-        receiveTimeout: const Duration(seconds: 4),
-        headers: {
-          'Bypass-Tunnel-Reminder': 'true',
-          'ngrok-skip-browser-warning': 'true',
-        },
-      ));
-      final res = await dio.get('/explore/similar/$cardId');
+      final res = await ApiClient.instance.get(
+        '/explore/similar/$cardId',
+        options: Options(
+          connectTimeout: const Duration(seconds: 4),
+          receiveTimeout: const Duration(seconds: 4),
+        ),
+      );
       if (res.statusCode == 200 && res.data is List) {
         final list = (res.data as List)
             .map((item) => ExploreCardModel.fromJson(item as Map<String, dynamic>))

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart' as dio;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/supabase_service.dart';
-import '../../core/network/api_config.dart';
+import '../../core/network/api_client.dart';
 import '../../features/studio/domain/failures/studio_failure.dart';
 import '../../core/utils/app_logger.dart';
 
@@ -43,44 +43,23 @@ class ReferenceImageUploader {
       return (url: null, failure: validationError);
     }
 
-    // 1. Try Backend Upload Gateways (Configured baseUrl + optional fallback)
-    final candidateUrls = <String>{
-      ApiConfig.baseUrl,
-      if (ApiConfig.fallbackUrl != null) ApiConfig.fallbackUrl!,
-      if (ApiConfig.isAndroidDevice &&
-          (ApiConfig.baseUrl.contains('127.0.0.1') ||
-              ApiConfig.baseUrl.contains('localhost')))
-        ApiConfig.baseUrl
-            .replaceAll('127.0.0.1', '10.0.2.2')
-            .replaceAll('localhost', '10.0.2.2'),
-    }.toList();
-
-    for (final backendUrl in candidateUrls) {
-      try {
-        final client = dio.Dio(
-          dio.BaseOptions(
-            baseUrl: backendUrl,
-            connectTimeout: const Duration(seconds: 8),
-            receiveTimeout: const Duration(seconds: 15),
-            headers: {'ngrok-skip-browser-warning': 'true'},
-          ),
-        );
-        final fileName = file.path.split('/').last;
-        final formData = dio.FormData.fromMap({
-          'file': await dio.MultipartFile.fromFile(file.path, filename: fileName),
-        });
-
-        // Correct relative path resolved against client's baseUrl
-        final uploadPath = '/prompt-engineering/upload-reference';
-        final res = await client.post(uploadPath, data: formData);
-        if (res.statusCode == 200 && res.data is Map && res.data['url'] != null) {
-          final publicUrl = res.data['url'] as String;
-          AppLogger.s('Reference uploaded via Backend Gateway ($backendUrl): $publicUrl', tag: 'UPLOADER');
-          return (url: publicUrl, failure: null);
-        }
-      } catch (e) {
-        AppLogger.w('Backend gateway ($backendUrl) attempt failed: $e', tag: 'UPLOADER');
+    // 1. Try Backend Upload Gateway via persistent ApiClient singleton
+    try {
+      final res = await ApiClient.instance.uploadFile(
+        '/prompt-engineering/upload-reference',
+        file,
+        options: dio.Options(
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 25),
+        ),
+      );
+      if (res.statusCode == 200 && res.data is Map && res.data['url'] != null) {
+        final publicUrl = res.data['url'] as String;
+        AppLogger.s('Reference uploaded via Backend Gateway: $publicUrl', tag: 'UPLOADER');
+        return (url: publicUrl, failure: null);
       }
+    } catch (e) {
+      AppLogger.w('Backend gateway upload attempt failed: $e', tag: 'UPLOADER');
     }
 
     // 2. Direct Supabase Storage Client fallback to 'user_generations'
