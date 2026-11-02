@@ -9,7 +9,6 @@ import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/publish_creation_sheet.dart';
-import 'package:craftai_studio_mobile/features/library/widgets/download_paywall_sheet.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/widgets/studio_image_edit_actions_sheet.dart';
 
 /// [CreationDetailView] renders the full-screen MeiGen image detail screen.
@@ -286,14 +285,7 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                               '$_likeCount',
                               style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
                             ),
-                            SizedBox(width: 8.w),
-
-                            // Download Button
-                            IconButton(
-                              onPressed: () => Get.bottomSheet(DownloadPaywallSheet(job: widget.job)),
-                              icon: Icon(Icons.download_rounded, size: 22.sp, color: AppColors.textPrimary),
-                            ),
-                            SizedBox(width: 4.w),
+                            SizedBox(width: 12.w),
 
                             // Copy Button
                             TextButton.icon(
@@ -355,9 +347,10 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                                   style: AppTextStyles.bodyMediumBold.copyWith(color: AppColors.textPrimary),
                                 ),
                                 Text(
-                                  widget.job.isDownloadUnlocked ? 'Unlocked (4K Ready)' : 'Cloud Saved (Free)',
+                                  'Cloud Saved',
                                   style: AppTextStyles.captionXs.copyWith(
-                                    color: widget.job.isDownloadUnlocked ? AppColors.accentSuccess : AppColors.textMuted,
+                                    color: AppColors.accentSuccess,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],

@@ -8,7 +8,6 @@ import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
-import 'package:craftai_studio_mobile/features/library/widgets/download_paywall_sheet.dart';
 import 'package:craftai_studio_mobile/features/remix/views/remix_chat_view.dart';
 import 'package:craftai_studio_mobile/features/tools/views/magic_object_eraser_view.dart';
 import 'package:craftai_studio_mobile/features/tools/views/photo_colorizer_view.dart';
@@ -74,7 +73,7 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                     : 'Condition on image1 with prompt deltas',
                 badge: studioCtrl.freeEditAttemptsRemaining.value > 0 ? 'Free' : null,
                 onTap: () {
-                  Get.back();
+                  Navigator.of(context).pop();
                   studioCtrl.loadForImageEdit(imageUrl: job.previewUrl, initialPrompt: job.prompt);
                   shellCtrl.switchTab(1);
                 },
@@ -88,17 +87,19 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 subtitle: 'Conversational style & lighting tuning anchored to this creation',
                 badge: 'Remix Lab',
                 onTap: () {
-                  Get.back();
-                  Get.to(
-                    () => const RemixChatView(),
-                    arguments: {
-                      'anchorImageUrl': job.previewUrl,
-                      'sourceType': 'library',
-                      'initialPrompt': job.prompt,
-                      'authorName': 'Your Creation',
-                    },
-                    transition: Transition.rightToLeft,
-                  );
+                  Navigator.of(context).pop();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Get.to(
+                      () => const RemixChatView(),
+                      arguments: {
+                        'anchorImageUrl': job.previewUrl,
+                        'sourceType': 'library',
+                        'initialPrompt': job.prompt,
+                        'authorName': 'Your Creation',
+                      },
+                      transition: Transition.rightToLeft,
+                    );
+                  });
                 },
               ),
 
@@ -109,7 +110,7 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 title: 'Remove Background',
                 subtitle: 'Zero-token local CPU transparent PNG cutout',
                 onTap: () {
-                  Get.back();
+                  Navigator.of(context).pop();
                   shellCtrl.switchTab(2); // AI Tools
                 },
               ),
@@ -122,11 +123,13 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 subtitle: 'Erase unwanted people, text, or objects seamlessly',
                 badge: 'LaMa Neural',
                 onTap: () {
-                  Get.back();
-                  Get.to(
-                    () => MagicObjectEraserView(initialImagePath: job.previewUrl),
-                    transition: Transition.rightToLeft,
-                  );
+                  Navigator.of(context).pop();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Get.to(
+                      () => MagicObjectEraserView(initialImagePath: job.previewUrl),
+                      transition: Transition.rightToLeft,
+                    );
+                  });
                 },
               ),
 
@@ -138,11 +141,13 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 subtitle: 'Restore natural vibrant chromaticity to monochrome photo',
                 badge: 'DDColor',
                 onTap: () {
-                  Get.back();
-                  Get.to(
-                    () => PhotoColorizerView(initialImagePath: job.previewUrl),
-                    transition: Transition.rightToLeft,
-                  );
+                  Navigator.of(context).pop();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Get.to(
+                      () => PhotoColorizerView(initialImagePath: job.previewUrl),
+                      transition: Transition.rightToLeft,
+                    );
+                  });
                 },
               ),
 
@@ -153,7 +158,7 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 title: 'Use prompt',
                 subtitle: 'Load raw text prompt into Studio canvas',
                 onTap: () {
-                  Get.back();
+                  Navigator.of(context).pop();
                   studioCtrl.loadPromptText(job.prompt);
                   shellCtrl.switchTab(1);
                 },
@@ -167,7 +172,7 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 subtitle: 'Animate creation into high-fps AI motion video',
                 badge: 'Motion',
                 onTap: () {
-                  Get.back();
+                  Navigator.of(context).pop();
                   Get.snackbar(
                     'Make Video 🎬',
                     'Motion Video diffusion is queued for the upcoming update! Stay tuned.',
@@ -180,18 +185,6 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 },
               ),
 
-              // Option 6: Upscale 4K
-              _buildActionItem(
-                icon: Icons.high_quality_rounded,
-                iconColor: AppColors.textPrimary,
-                title: 'Upscale 4K',
-                subtitle: job.isDownloadUnlocked ? 'Lossless export unlocked' : 'Unlock uncompressed 4K master file (2 Cr)',
-                onTap: () {
-                  Get.back();
-                  Get.bottomSheet(DownloadPaywallSheet(job: job));
-                },
-              ),
-
               // Option 7: Delete from Library & Storage
               _buildActionItem(
                 icon: Icons.delete_outline_rounded,
@@ -199,7 +192,7 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 title: 'Delete from Library & Storage',
                 subtitle: 'Permanently remove from cloud storage & records',
                 onTap: () {
-                  Get.back();
+                  Navigator.of(context).pop();
                   _confirmDeleteSheet(context);
                 },
               ),

@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import '../controllers/library_controller.dart';
-import '../widgets/download_paywall_sheet.dart';
 import '../views/creation_detail_view.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_network_image.dart';
@@ -81,47 +80,44 @@ class CloudLibraryView extends StatelessWidget {
                       children: [
                         Text(job.prompt, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textPrimary, fontSize: 13.sp)),
                         SizedBox(height: 10.h),
-                        Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8.w,
-                          runSpacing: 8.h,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
                               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                               decoration: BoxDecoration(
-                                color: job.isDownloadUnlocked ? AppColors.accentSuccess.withValues(alpha: 0.15) : AppColors.surfaceLight,
+                                color: AppColors.surfaceLight,
                                 borderRadius: BorderRadius.circular(6.r),
                               ),
-                              child: Text(
-                                job.isDownloadUnlocked ? 'Unlocked (4K Ready)' : 'Cloud Saved (Free)',
-                                style: TextStyle(
-                                  fontSize: 11.sp,
-                                  color: job.isDownloadUnlocked ? AppColors.accentSuccess : AppColors.textSecondary,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.cloud_done_rounded, size: 12.sp, color: AppColors.accentSuccess),
+                                  SizedBox(width: 4.w),
+                                  Text(
+                                    'Cloud Saved',
+                                    style: TextStyle(
+                                      fontSize: 11.sp,
+                                      color: AppColors.accentSuccess,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                Get.bottomSheet(DownloadPaywallSheet(job: job));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: job.isDownloadUnlocked ? AppColors.accentSuccess : AppColors.primary,
-                                foregroundColor: AppColors.white,
-                                elevation: 0,
-                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                            TextButton.icon(
+                              onPressed: () => Get.to(() => CreationDetailView(job: job)),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
-                              icon: Icon(
-                                job.isDownloadUnlocked ? Icons.check_circle_outline_rounded : Icons.download_rounded,
-                                size: 14.sp,
-                                color: AppColors.white,
+                              icon: Text(
+                                'View Details',
+                                style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold, color: AppColors.primary),
                               ),
-                              label: Text(
-                                job.isDownloadUnlocked ? 'Re-Download (Free)' : 'Download 4K (2 Cr)',
-                                style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold, color: AppColors.white),
-                              ),
+                              label: Icon(Icons.arrow_forward_ios_rounded, size: 10.sp, color: AppColors.primary),
                             ),
                           ],
                         ),

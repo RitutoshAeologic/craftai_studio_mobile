@@ -40,13 +40,21 @@ class _PhotoColorizerViewState extends State<PhotoColorizerView> {
   @override
   void initState() {
     super.initState();
-    controller.clearActiveSession();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        controller.clearActiveSession();
+      }
+    });
     _imagePath = widget.initialImagePath;
   }
 
   @override
   void dispose() {
-    controller.clearActiveSession();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isRegistered<ToolsController>()) {
+        controller.clearActiveSession();
+      }
+    });
     super.dispose();
   }
 

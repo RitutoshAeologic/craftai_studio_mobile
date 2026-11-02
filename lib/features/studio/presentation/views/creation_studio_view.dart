@@ -1415,44 +1415,18 @@ class CreationStudioView extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      HapticFeedback.lightImpact();
-                      Get.snackbar(
-                        'Saved to Photos 📥',
-                        'Artwork saved to your device in original 2K resolution.',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: AppColors.surface,
-                        colorText: AppColors.accentSuccess,
-                        duration: const Duration(seconds: 3),
-                      );
+                      final shellCtrl = Get.find<ShellController>();
+                      shellCtrl.switchTab(3); // View in Library
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       padding: EdgeInsets.symmetric(vertical: 10.h),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSm)),
                     ),
-                    icon: Icon(Icons.download_rounded, size: 16.sp, color: AppColors.surface),
+                    icon: Icon(Icons.photo_library_outlined, size: 16.sp, color: AppColors.surface),
                     label: Text(
-                      'Save HD',
+                      'View in Library',
                       style: AppTextStyles.captionBold.copyWith(color: AppColors.surface),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8.w),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      final shellCtrl = Get.find<ShellController>();
-                      shellCtrl.switchTab(3); // View in Library
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.border),
-                      padding: EdgeInsets.symmetric(vertical: 10.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSm)),
-                    ),
-                    icon: Icon(Icons.photo_library_outlined, size: 16.sp, color: AppColors.primary),
-                    label: Text(
-                      'Library',
-                      style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
                     ),
                   ),
                 ),

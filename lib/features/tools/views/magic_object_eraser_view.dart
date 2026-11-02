@@ -48,7 +48,11 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
   @override
   void initState() {
     super.initState();
-    controller.clearActiveSession();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        controller.clearActiveSession();
+      }
+    });
     _imagePath = widget.initialImagePath;
     if (_imagePath != null && _imagePath!.isNotEmpty) {
       _loadImage(_imagePath!);
@@ -57,7 +61,11 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
 
   @override
   void dispose() {
-    controller.clearActiveSession();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isRegistered<ToolsController>()) {
+        controller.clearActiveSession();
+      }
+    });
     super.dispose();
   }
 
@@ -65,8 +73,10 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
     try {
       Uint8List bytes;
       if (path.startsWith('http://') || path.startsWith('https://')) {
-        final client = HttpClient();
+        final client = HttpClient()
+          ..badCertificateCallback = (cert, host, port) => true;
         final request = await client.getUrl(Uri.parse(path));
+        request.headers.set('Bypass-Tunnel-Reminder', 'true');
         final response = await request.close();
         final byteList = await response.fold<List<int>>([], (prev, elem) => prev..addAll(elem));
         bytes = Uint8List.fromList(byteList);
@@ -445,6 +455,22 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
   }
 
   Widget _buildEmptyState() {
+    if (_imagePath != null && _imagePath!.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(color: AppColors.primary),
+            SizedBox(height: 16.h),
+            Text(
+              'Loading image canvas...',
+              style: AppTextStyles.bodyMediumBold.copyWith(color: AppColors.textPrimary),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
