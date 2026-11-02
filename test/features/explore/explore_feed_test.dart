@@ -14,7 +14,7 @@ void main() {
     Get.reset();
   });
 
-  testWidgets('ExploreFeedView category chip changes selection and styling on tap', (WidgetTester tester) async {
+  testWidgets('ExploreFeedView displays 3 dropdown filters and applies category selection', (WidgetTester tester) async {
     final controller = Get.put(ExploreController());
 
     await tester.pumpWidget(
@@ -28,23 +28,28 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
+    // Verify initial state: default filter is 'All'
     expect(controller.selectedCategory.value, 'All');
+    expect(find.text('Categories'), findsOneWidget);
+    expect(find.text('Models'), findsOneWidget);
+    expect(find.text('Aspect Ratio'), findsOneWidget);
 
-    // Tap on 'Anime' chip
-    final animeChip = find.text('Anime').first;
-    expect(animeChip, findsOneWidget);
-    await tester.tap(animeChip);
+    // Tap on Categories dropdown
+    final categoryDropdown = find.byType(DropdownButton<String>).first;
+    expect(categoryDropdown, findsOneWidget);
+    await tester.tap(categoryDropdown);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 300));
 
+    // Tap 'Anime' in the dropdown menu
+    final animeItem = find.text('Anime').last;
+    expect(animeItem, findsOneWidget);
+    await tester.tap(animeItem);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Verify controller value updated
     expect(controller.selectedCategory.value, 'Anime');
-
-    // Verify styling contrast: active chip has white text, inactive chip has textSecondary
-    final Text animeTextWidget = tester.widget(find.text('Anime').first);
-    expect(animeTextWidget.style?.color, Colors.white);
-
-    final Text allTextWidget = tester.widget(find.text('All').first);
-    expect(allTextWidget.style?.color, isNot(Colors.white));
 
     // All displayed cards in masonry grid should belong to 'Anime'
     for (final card in controller.filteredCards) {

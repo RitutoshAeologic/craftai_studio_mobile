@@ -27,6 +27,24 @@ class ExploreController extends GetxController {
   /// Whether search mode is active in the Explore feed
   final RxBool isSearching = false.obs;
 
+  /// Available AI Models for dropdown filtering.
+  final List<String> models = const [
+    'All Models',
+    'SDXL-Lightning',
+    'FLUX.1 Schnell',
+    'RealVisXL v4.0',
+  ];
+
+  /// Available Aspect Ratios for dropdown filtering.
+  final List<String> aspectRatios = const [
+    'All',
+    '1:1',
+    '16:9',
+    '9:16',
+    '4:5',
+    '3:4',
+  ];
+
   /// Available style and prompt categories in the community feed.
   final RxList<String> categories = <String>[
     'All',
@@ -331,6 +349,17 @@ class ExploreController extends GetxController {
   void setCategory(String category) {
     selectedCategory.value = category;
   }
+
+  /// Changes the active AI Model filter and re-filters the feed.
+  void setModel(String model) {
+    selectedModel.value = model;
+  }
+
+  /// Changes the active Aspect Ratio filter and re-filters the feed.
+  void setAspectRatio(String ratio) {
+    selectedAspectRatios.assignAll({ratio});
+  }
+
 
   /// Applies composite multi-dimensional filters
   void applyFilters({

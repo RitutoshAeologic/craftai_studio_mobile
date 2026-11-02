@@ -8,11 +8,9 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import '../controllers/explore_controller.dart';
 import '../widgets/explore_card_widget.dart';
-import '../widgets/filter_bottom_sheet.dart';
 
-/// [ExploreFeedView] represents Screen 1 of the TL Explore Funnel:
-/// Displays artwork in an organic Scattered Masonry grid with chunked category pills
-/// and direct 1-tap navigation into [ExploreDiscoveryView].
+/// [ExploreFeedView] displays community artwork in an organic Scattered Masonry grid
+/// with 3 primary dropdown filters at the top: Categories, Models, and Aspect Ratio.
 class ExploreFeedView extends StatelessWidget {
   const ExploreFeedView({super.key});
 
@@ -71,36 +69,6 @@ class ExploreFeedView extends StatelessWidget {
               },
             );
           }),
-          Obx(() {
-            final hasFilters = controller.hasActiveFilters;
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.tune, color: AppColors.textPrimary),
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                  tooltip: 'Filter Creations',
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    FilterBottomSheet.show(context);
-                  },
-                ),
-                if (hasFilters)
-                  Positioned(
-                    top: 10.h,
-                    right: 8.w,
-                    child: Container(
-                      width: 8.w,
-                      height: 8.h,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          }),
           SizedBox(width: 4.w),
         ],
         bottom: PreferredSize(
@@ -114,68 +82,78 @@ class ExploreFeedView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // =================================================================
-            // CHUNKED CATEGORY FILTER PILLS (Miller's Law 7 +/- 2)
+            // THREE PRIMARY DROPDOWN FILTERS: Categories, Models, Aspect Ratio
             // =================================================================
             Container(
-              height: 54.h,
               color: AppColors.surface,
-              padding: EdgeInsets.symmetric(vertical: 8.h),
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                itemCount: controller.categories.length,
-                separatorBuilder: (_, __) => SizedBox(width: 8.w),
-                itemBuilder: (context, idx) {
-                  final cat = controller.categories[idx];
-                  return Obx(() {
-                    final isSelected = controller.selectedCategory.value == cat;
-                    return GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        controller.setCategory(cat);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        constraints: const BoxConstraints(minHeight: 44),
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                          border: Border.all(
-                            color: isSelected ? AppColors.primary : AppColors.border,
-                            width: 1.0,
-                          ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.25),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Center(
-                          child: Text(
-                            cat,
-                            style: AppTextStyles.captionBold.copyWith(
-                              color: isSelected ? AppColors.surface : AppColors.textSecondary,
-                              fontSize: 12.sp,
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                            ),
-                          ),
-                        ),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              child: Obx(() {
+                final selectedCategory = controller.selectedCategory.value;
+                final selectedModel = controller.selectedModel.value;
+                final selectedRatio = controller.selectedAspectRatios.contains('All')
+                    ? 'All'
+                    : controller.selectedAspectRatios.first;
+
+                return Row(
+                  children: [
+                    // Dropdown 1: Categories
+                    Expanded(
+                      child: _buildFilterDropdown(
+                        title: 'Categories',
+                        value: selectedCategory,
+                        items: controller.categories,
+                        isDefault: selectedCategory == 'All',
+                        onChanged: (val) {
+                          if (val != null) {
+                            HapticFeedback.selectionClick();
+                            controller.setCategory(val);
+                          }
+                        },
                       ),
-                    );
-                  });
-                },
-              ),
+                    ),
+                    SizedBox(width: 8.w),
+
+                    // Dropdown 2: Models
+                    Expanded(
+                      child: _buildFilterDropdown(
+                        title: 'Models',
+                        value: selectedModel,
+                        items: controller.models,
+                        isDefault: selectedModel == 'All Models',
+                        onChanged: (val) {
+                          if (val != null) {
+                            HapticFeedback.selectionClick();
+                            controller.setModel(val);
+                          }
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+
+                    // Dropdown 3: Aspect Ratio
+                    Expanded(
+                      child: _buildFilterDropdown(
+                        title: 'Aspect Ratio',
+                        value: selectedRatio,
+                        items: controller.aspectRatios,
+                        isDefault: selectedRatio == 'All',
+                        onChanged: (val) {
+                          if (val != null) {
+                            HapticFeedback.selectionClick();
+                            controller.setAspectRatio(val);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              }),
             ),
 
             Divider(height: 1, color: AppColors.border),
 
             // =================================================================
-            // SCATTERED MASONRY GRID (Pinterest / Collage Aesthetic)
+            // SCATTERED MASONRY GRID (Consistent Sketcher-Style Layout)
             // =================================================================
             Expanded(
               child: Obx(() {
@@ -188,8 +166,17 @@ class ExploreFeedView extends StatelessWidget {
                         Icon(Icons.image_search, size: 48.sp, color: AppColors.textMuted),
                         SizedBox(height: 12.h),
                         Text(
-                          'No creations found in this category',
+                          'No creations found matching filters',
                           style: AppTextStyles.bodyMediumBold.copyWith(color: AppColors.textSecondary),
+                        ),
+                        SizedBox(height: 8.h),
+                        TextButton.icon(
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            controller.resetFilters();
+                          },
+                          icon: const Icon(Icons.refresh, size: 16),
+                          label: const Text('Reset All Filters'),
                         ),
                       ],
                     ),
@@ -213,6 +200,98 @@ class ExploreFeedView extends StatelessWidget {
               }),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Reusable Dropdown Filter Component with dynamic active styling
+  Widget _buildFilterDropdown({
+    required String title,
+    required String value,
+    required List<String> items,
+    required bool isDefault,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final safeValue = items.contains(value) ? value : items.first;
+    final displayText = isDefault ? title : value;
+
+    return Container(
+      height: 40.h,
+      padding: EdgeInsets.symmetric(horizontal: 10.w),
+      decoration: BoxDecoration(
+        color: !isDefault
+            ? AppColors.primary.withValues(alpha: 0.12)
+            : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+        border: Border.all(
+          color: !isDefault ? AppColors.primary : AppColors.border,
+          width: !isDefault ? 1.5 : 1.0,
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: safeValue,
+          isExpanded: true,
+          dropdownColor: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+          icon: Icon(
+            Icons.keyboard_arrow_down,
+            size: 18.sp,
+            color: !isDefault ? AppColors.primary : AppColors.textSecondary,
+          ),
+          selectedItemBuilder: (context) {
+            return items.map((item) {
+              return Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  displayText,
+                  style: AppTextStyles.captionBold.copyWith(
+                    color: !isDefault ? AppColors.primary : AppColors.textPrimary,
+                    fontSize: 11.5.sp,
+                    fontWeight: !isDefault ? FontWeight.w800 : FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList();
+          },
+          items: items.map((item) {
+            final isItemDefault = item == 'All' || item == 'All Models';
+            final isItemSelected = item == safeValue;
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isItemSelected
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                        fontWeight: isItemSelected
+                            ? FontWeight.bold
+                            : (isItemDefault ? FontWeight.w600 : FontWeight.normal),
+                        fontSize: 13.sp,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isItemSelected)
+                    Icon(
+                      Icons.check,
+                      size: 16.sp,
+                      color: AppColors.primary,
+                    ),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
         ),
       ),
     );

@@ -7,6 +7,7 @@ import 'package:craftai_studio_mobile/features/explore/controllers/explore_contr
 import 'package:craftai_studio_mobile/features/explore/views/explore_feed_view.dart';
 import 'package:craftai_studio_mobile/features/explore/views/explore_discovery_view.dart';
 import 'package:craftai_studio_mobile/features/explore/widgets/image_details_bottom_sheet.dart';
+import 'package:craftai_studio_mobile/features/explore/widgets/filter_bottom_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/save_to_collection_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/collection_controller.dart';
 
@@ -48,8 +49,8 @@ void main() {
     costCredits: 2.0,
   );
 
-  group('Explore Feed & Scattered Masonry Tests', () {
-    testWidgets('ExploreFeedView renders header title and category pills', (tester) async {
+  group('Explore Feed & Dropdown Filters Tests', () {
+    testWidgets('ExploreFeedView renders header title, 3 dropdown filters, and removes old filter button', (tester) async {
       tester.view.physicalSize = const Size(1179, 2556);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -58,25 +59,51 @@ void main() {
       await tester.pump();
 
       expect(find.text('Explore Feed'), findsOneWidget);
-      expect(find.text('All'), findsOneWidget);
-      expect(find.text('Photorealism'), findsAtLeastNWidgets(1));
-      expect(find.text('Anime'), findsAtLeastNWidgets(1));
-      expect(find.text('Cyberpunk'), findsAtLeastNWidgets(1));
+      // Three primary dropdown filters
+      expect(find.text('Categories'), findsOneWidget);
+      expect(find.text('Models'), findsOneWidget);
+      expect(find.text('Aspect Ratio'), findsOneWidget);
+
+      // Old filter icon button should be removed
+      expect(find.byTooltip('Filter Creations'), findsNothing);
     });
 
-    testWidgets('Tapping Filter icon opens FilterBottomSheet', (tester) async {
+    testWidgets('Dropdown filters support combining multiple filters simultaneously', (tester) async {
       tester.view.physicalSize = const Size(1179, 2556);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
+      final controller = Get.find<ExploreController>();
+
       await tester.pumpWidget(createTestWidget(const ExploreFeedView()));
       await tester.pump();
 
-      final filterButton = find.byTooltip('Filter Creations');
-      expect(filterButton, findsOneWidget);
-      await tester.tap(filterButton);
+      // Apply multiple filters simultaneously
+      controller.setCategory('Cyberpunk');
+      controller.setModel('FLUX.1 Schnell');
+      controller.setAspectRatio('16:9');
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(controller.selectedCategory.value, 'Cyberpunk');
+      expect(controller.selectedModel.value, 'FLUX.1 Schnell');
+      expect(controller.selectedAspectRatios.contains('16:9'), isTrue);
+
+      // Verify filtered cards match all applied criteria
+      for (final card in controller.filteredCards) {
+        expect(card.category, 'Cyberpunk');
+        expect(card.modelUsed.toLowerCase(), contains('flux'));
+        expect(card.aspectRatio, '16:9');
+      }
+    });
+
+    testWidgets('FilterBottomSheet renders multi-faceted options and reset', (tester) async {
+      tester.view.physicalSize = const Size(1179, 2556);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(createTestWidget(const FilterBottomSheet()));
+      await tester.pump();
 
       expect(find.text('Filter Feed'), findsOneWidget);
       expect(find.text('Apply Filters'), findsOneWidget);
