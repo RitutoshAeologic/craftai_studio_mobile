@@ -136,6 +136,17 @@ class LibraryRemoteDataSource {
             .delete()
             .eq('job_id', job.jobId);
       }
+
+      // 3b. Fallback deletion by preview_url if row used a different job_id alias
+      if (job.previewUrl.isNotEmpty && job.previewUrl.startsWith('http')) {
+        try {
+          await _supabase
+              .from('jobs')
+              .delete()
+              .or('preview_url.eq.${job.previewUrl},preview_image_url.eq.${job.previewUrl}');
+        } catch (_) {}
+      }
+
       AppLogger.s('Deleted job ${job.jobId} from Supabase jobs table', tag: 'LIBRARY_DS');
     } catch (dbErr) {
       AppLogger.d('Direct Supabase delete skipped or pending migration: $dbErr', tag: 'LIBRARY_DS');

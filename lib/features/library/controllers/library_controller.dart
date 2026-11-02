@@ -119,6 +119,7 @@ class LibraryController extends GetxController {
 
   /// Inserts a newly generated artwork into local state and persists via repository
   void addNewCreation({
+    String? jobId,
     required String prompt,
     required double credits,
     String? previewUrl,
@@ -131,8 +132,12 @@ class LibraryController extends GetxController {
         ? previewUrl
         : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop';
 
+    final effectiveJobId = (jobId != null && jobId.trim().isNotEmpty)
+        ? jobId.trim()
+        : 'job_${DateTime.now().millisecondsSinceEpoch}';
+
     final newJob = JobModel(
-      jobId: 'job_${DateTime.now().millisecondsSinceEpoch}',
+      jobId: effectiveJobId,
       type: type,
       status: 'completed',
       prompt: prompt,
@@ -192,8 +197,10 @@ class LibraryController extends GetxController {
   /// Permanently deletes an image from Cloud Storage, database records, and local state.
   Future<bool> deleteCreation(JobModel job, {bool showSnackbar = true}) async {
     try {
-      // 1. Optimistically remove from local reactive state for instantaneous UI response
-      myCreations.removeWhere((j) => j.jobId == job.jobId);
+      // 1. Optimistically remove from local reactive state by both jobId and previewUrl
+      myCreations.removeWhere((j) =>
+          j.jobId == job.jobId ||
+          (j.previewUrl.isNotEmpty && j.previewUrl == job.previewUrl));
       AppLogger.i('Removed job ${job.jobId} from local UI list', tag: 'LIBRARY');
 
       // 2. Delegate remote purge to repository

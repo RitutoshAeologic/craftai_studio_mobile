@@ -1176,6 +1176,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
 
       final libCtrl = Get.find<LibraryController>();
       libCtrl.addNewCreation(
+        jobId: generatedTaskId,
         prompt: promptUsed,
         credits: cost,
         previewUrl: outputUrl,
@@ -1364,6 +1365,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
 
     if (Get.isRegistered<LibraryController>()) {
       Get.find<LibraryController>().addNewCreation(
+        jobId: taskId,
         prompt: promptUsed,
         credits: cost,
         previewUrl: url,

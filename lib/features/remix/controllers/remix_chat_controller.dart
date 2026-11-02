@@ -316,7 +316,7 @@ class RemixChatController extends GetxController {
       shellCtrl?.deductCredits(1.0);
 
       if (dispatchData.directImageUrl.isNotEmpty) {
-        _onGenerationCompleted(dispatchData.directImageUrl);
+        _onGenerationCompleted(dispatchData.directImageUrl, taskId);
       } else {
         _progressSub?.cancel();
         _progressSub = _repository.listenToGenerationProgress(
@@ -325,7 +325,7 @@ class RemixChatController extends GetxController {
             generationProgress.value = progress;
             generationPhase.value = message.isNotEmpty ? message : 'Diffusing remix latents ($progress%)...';
             if (progress >= 100 && status == 'completed') {
-              _onGenerationCompleted(dispatchData.directImageUrl.isNotEmpty ? dispatchData.directImageUrl : anchorImageUrl.value);
+              _onGenerationCompleted(dispatchData.directImageUrl.isNotEmpty ? dispatchData.directImageUrl : anchorImageUrl.value, taskId);
             } else if (status.toLowerCase() == 'failed' || status.toLowerCase() == 'error') {
               _onGenerationFailed('Generation task failed on backend. 1.0 credit refunded.');
             }
@@ -353,11 +353,12 @@ class RemixChatController extends GetxController {
     _showUserError(RemixServerFailure(errorMessage));
   }
 
-  void _onGenerationCompleted(String imageUrl) {
+  void _onGenerationCompleted(String imageUrl, [String? taskId]) {
     _progressSub?.cancel();
     // Save to Cloud Library regardless of screen closure so generated artwork is never lost
     if (Get.isRegistered<LibraryController>()) {
       Get.find<LibraryController>().addNewCreation(
+        jobId: taskId,
         prompt: currentCompiledPrompt.value,
         credits: 1.0,
         previewUrl: imageUrl,

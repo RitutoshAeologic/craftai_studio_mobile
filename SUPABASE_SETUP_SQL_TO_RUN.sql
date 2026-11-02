@@ -181,6 +181,12 @@ DROP POLICY IF EXISTS "Users update own jobs" ON public.jobs;
 CREATE POLICY "Users update own jobs" ON public.jobs 
     FOR UPDATE USING ((SELECT auth.uid()) = user_id);
 
+DROP POLICY IF EXISTS "Users delete own jobs" ON public.jobs;
+CREATE POLICY "Users delete own jobs" ON public.jobs 
+    FOR DELETE USING ((SELECT auth.uid()) = user_id);
+
+GRANT ALL ON public.jobs TO anon, authenticated, service_role;
+
 -- Full text search GIN index for jobs
 DROP INDEX IF EXISTS public.idx_jobs_prompt_fts;
 CREATE INDEX idx_jobs_prompt_fts ON public.jobs 
