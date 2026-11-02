@@ -19,7 +19,9 @@ import '../widgets/studio_error_sheet.dart';
 import '../widgets/studio_prompt_inspector_sheet.dart';
 import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
 import 'package:craftai_studio_mobile/core/services/network_service.dart';
+import 'package:craftai_studio_mobile/core/network/api_client.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
+import 'package:dio/dio.dart';
 
 /// [StudioController] is the central brain of the MeiGen creative canvas.
 ///
@@ -29,7 +31,7 @@ import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
 /// - Connects to LLM prompt expanders ([enhancePrompt] via Gemini, Groq, Claude)
 /// - Implements Subject-Lock prompt synthesis for character consistency
 /// - Orchestrates generation dispatch, WebSocket progress tracking, and [LibraryController] persistence
-class StudioController extends GetxController {
+class StudioController extends GetxController with WidgetsBindingObserver {
   final IStudioRepository _repository;
 
   StudioController({IStudioRepository? repository})
@@ -41,6 +43,7 @@ class StudioController extends GetxController {
   /// Text controller managing the prompt input field.
   final TextEditingController promptController = TextEditingController();
   StreamSubscription? _progressSubscription;
+  String? _activeTaskId;
 
   /// Number of images to generate concurrently (default 1).
   final RxInt batchCount = 1.obs;
@@ -290,6 +293,7 @@ class StudioController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _fetchDynamicLlmConfig();
     promptController.addListener(() {
       promptLength.value = promptController.text.length;
@@ -1124,6 +1128,7 @@ class StudioController extends GetxController {
       }
 
       final generatedTaskId = dispatchRes.data?.taskId ?? 'job_${DateTime.now().millisecondsSinceEpoch}';
+      _activeTaskId = generatedTaskId;
 
       // 4. Attach progress listener and resolve authoritative image URL (sync or async WebSocket/polling)
       String? outputUrl = dispatchRes.data?.directImageUrl;
@@ -1288,6 +1293,93 @@ class StudioController extends GetxController {
     isGenerating.value = false;
     generationProgress.value = 0;
     generationPhase.value = '';
+    _activeTaskId = null;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && isGenerating.value && _activeTaskId != null) {
+      _recoverActiveGenerationOnResume();
+    }
+  }
+
+  /// Automatically synchronizes task state when user resumes app from background
+  Future<void> _recoverActiveGenerationOnResume() async {
+    final taskId = _activeTaskId;
+    if (taskId == null || !isGenerating.value) return;
+
+    AppLogger.i('App resumed with in-flight generation ($taskId). Verifying cloud completion...', tag: 'STUDIO_LIFECYCLE');
+    try {
+      // 1. Check Supabase jobs table first (persistent cloud ledger)
+      final user = SupabaseService.client.auth.currentUser;
+      if (user != null) {
+        final job = await SupabaseService.client
+            .from('jobs')
+            .select('preview_image_url, preview_url, status')
+            .eq('job_id', taskId)
+            .maybeSingle();
+
+        final status = job?['status'] as String?;
+        final url = (job?['preview_image_url'] ?? job?['preview_url']) as String?;
+
+        if (status == 'completed' && url != null && url.isNotEmpty) {
+          _handleGenerationSuccess(taskId, url);
+          return;
+        }
+      }
+
+      // 2. Fallback check on backend API endpoint
+      try {
+        final resp = await ApiClient.instance.get(
+          '/prompt-engineering/status/$taskId',
+          options: Options(receiveTimeout: const Duration(seconds: 4)),
+        );
+        final data = resp.data as Map<String, dynamic>;
+        final status = (data['status'] as String? ?? '').toLowerCase();
+        final url = data['output_url'] as String?;
+
+        if (status == 'completed' && url != null && url.isNotEmpty) {
+          _handleGenerationSuccess(taskId, url);
+        }
+      } catch (_) {}
+    } catch (e) {
+      AppLogger.d('Lifecycle recovery check notice: $e', tag: 'STUDIO_LIFECYCLE');
+    }
+  }
+
+  void _handleGenerationSuccess(String taskId, String url) {
+    AppLogger.s('Task $taskId completed while backgrounded! Revealing artwork: $url', tag: 'STUDIO_LIFECYCLE');
+    _progressSubscription?.cancel();
+    _activeTaskId = null;
+    lastGeneratedImageUrl.value = url;
+    showResultHero.value = true;
+    isGenerating.value = false;
+    generationProgress.value = 100;
+    generationPhase.value = '✨ Complete!';
+
+    final cost = calculatedCreditCost.toDouble();
+    final promptUsed = lastDispatchedPrompt.value.isNotEmpty
+        ? lastDispatchedPrompt.value
+        : promptController.text.trim();
+
+    if (Get.isRegistered<LibraryController>()) {
+      Get.find<LibraryController>().addNewCreation(
+        prompt: promptUsed,
+        credits: cost,
+        previewUrl: url,
+      );
+    }
+
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      Get.snackbar(
+        'Artwork Ready! ✦',
+        'Your creation completed while you were away.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.primary,
+        duration: const Duration(seconds: 4),
+      );
+    }
   }
 
   /// Maps unexpected Dart/Dio exceptions to user-friendly StudioFailure objects.
@@ -1307,6 +1399,7 @@ class StudioController extends GetxController {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     _progressSubscription?.cancel();
     promptController.dispose();
     super.onClose();
