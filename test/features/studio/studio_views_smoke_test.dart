@@ -95,8 +95,10 @@ class MockStudioRepository extends FakeStudioRepository {
   StreamSubscription? listenToGenerationProgress({
     required String taskId,
     required void Function(int progress, String status, String message) onProgress,
+    void Function(String outputUrl)? onCompleted,
   }) {
     onProgress(100, 'COMPLETED', 'Done');
+    onCompleted?.call('https://example.com/smoke_output.png');
     return null;
   }
 

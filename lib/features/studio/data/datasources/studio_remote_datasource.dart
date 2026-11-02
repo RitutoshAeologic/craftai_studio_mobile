@@ -148,6 +148,7 @@ class StudioRemoteDataSource {
   StreamSubscription? listenToGenerationProgress({
     required String taskId,
     required void Function(int progress, String status, String message) onProgress,
+    void Function(String outputUrl)? onCompleted,
   }) {
     final streamController = StreamController<void>();
     WebSocket? activeSocket;
@@ -156,7 +157,7 @@ class StudioRemoteDataSource {
     bool isPollingActive = false;
     int highestProgress = 0;
 
-    void emitProgress(int progress, String status, String message) {
+    void emitProgress(int progress, String status, String message, [String? outputUrl]) {
       if (isCompleted) return;
       highestProgress = progress > highestProgress ? progress : highestProgress;
       onProgress(highestProgress, status, message);
@@ -164,6 +165,18 @@ class StudioRemoteDataSource {
         isCompleted = true;
         pollTimer?.cancel();
         activeSocket?.close();
+        if (status == 'completed' && onCompleted != null) {
+          if (outputUrl != null && outputUrl.isNotEmpty) {
+            onCompleted(outputUrl);
+          } else {
+            getGenerationStatus(taskId).then((data) {
+              final url = data['output_url'] as String? ?? '';
+              onCompleted(url);
+            }).catchError((_) {
+              onCompleted('');
+            });
+          }
+        }
       }
     }
 
@@ -185,8 +198,9 @@ class StudioRemoteDataSource {
           final status = statusData['status'] as String? ?? 'processing';
           final progress = statusData['progress'] as int? ?? (pollCount * 3).clamp(15, 90);
           final message = statusData['message'] as String? ?? 'Processing diffusion latents...';
+          final outputUrl = statusData['output_url'] as String?;
 
-          emitProgress(progress, status, message);
+          emitProgress(progress, status, message, outputUrl);
         } catch (_) {
           emitProgress((pollCount * 3).clamp(15, 85), 'processing', 'Denoising latents...');
         } finally {
@@ -206,7 +220,8 @@ class StudioRemoteDataSource {
               final progress = payload['progress'] as int? ?? 50;
               final status = payload['status'] as String? ?? 'diffusing';
               final message = payload['message'] as String? ?? '';
-              emitProgress(progress, status, message);
+              final outputUrl = payload['output_url'] as String?;
+              emitProgress(progress, status, message, outputUrl);
             } catch (_) {}
           },
           onError: (_) => startRealPolling(),

@@ -381,6 +381,10 @@ class StudioController extends GetxController {
 
   /// Triggers a surprise creative idea for simple / non-typing users.
   void triggerSurpriseMe() {
+    if (isBusy) {
+      AppLogger.w('Surprise me blocked: Studio is currently busy', tag: 'STUDIO_GEN');
+      return;
+    }
     HapticFeedback.mediumImpact();
     final item = surprisePrompts[_surpriseIndex % surprisePrompts.length];
     _surpriseIndex++;
@@ -1121,9 +1125,10 @@ class StudioController extends GetxController {
 
       final generatedTaskId = dispatchRes.data?.taskId ?? 'job_${DateTime.now().millisecondsSinceEpoch}';
 
-      // 4. Attach progress listener to returned authoritative task ID if direct image not immediately ready
-      final rawUrl = dispatchRes.data?.directImageUrl;
-      if (rawUrl == null || rawUrl.trim().isEmpty || !rawUrl.startsWith('http')) {
+      // 4. Attach progress listener and resolve authoritative image URL (sync or async WebSocket/polling)
+      String? outputUrl = dispatchRes.data?.directImageUrl;
+      if (outputUrl == null || outputUrl.trim().isEmpty || !outputUrl.startsWith('http')) {
+        final completer = Completer<String?>();
         _progressSubscription?.cancel();
         _progressSubscription = _repository.listenToGenerationProgress(
           taskId: generatedTaskId,
@@ -1133,11 +1138,22 @@ class StudioController extends GetxController {
               generationPhase.value = message.isNotEmpty ? message : 'Denoising latents...';
               AppLogger.d('[$generatedTaskId] Progress: $progress% ($message)', tag: 'STUDIO_GEN');
             }
+            if (status.toLowerCase() == 'failed' || status.toLowerCase() == 'error') {
+              if (!completer.isCompleted) completer.complete(null);
+            }
           },
+          onCompleted: (resultUrl) {
+            if (!completer.isCompleted) completer.complete(resultUrl);
+          },
+        );
+
+        outputUrl = await completer.future.timeout(
+          const Duration(seconds: 90),
+          onTimeout: () => null,
         );
       }
 
-      if (rawUrl == null || rawUrl.trim().isEmpty || !rawUrl.startsWith('http')) {
+      if (outputUrl == null || outputUrl.trim().isEmpty || !outputUrl.startsWith('http')) {
         _progressSubscription?.cancel();
         _resetLoadingState();
         if (creditsDeducted) {
@@ -1152,8 +1168,6 @@ class StudioController extends GetxController {
         );
         return;
       }
-
-      final outputUrl = rawUrl;
 
       final libCtrl = Get.find<LibraryController>();
       libCtrl.addNewCreation(

@@ -77,6 +77,7 @@ class ExploreCardWidget extends StatelessWidget {
                   child: CachedNetworkImage(
                     imageUrl: card.previewUrl,
                     fit: BoxFit.cover,
+                    memCacheWidth: 600,
                     placeholder: (_, __) => Container(
                       color: AppColors.surfaceLight,
                       child: const Center(

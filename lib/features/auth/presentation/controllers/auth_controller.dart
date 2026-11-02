@@ -9,6 +9,7 @@ import '../../domain/auth_user_model.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/network_service.dart';
+import '../../../../core/services/supabase_service.dart';
 import '../../../../core/utils/app_logger.dart';
 
 /// Permanent GetX controller — registered in [main.dart] via
@@ -305,7 +306,9 @@ class AuthController extends GetxController {
   Future<void> signOut() async {
     AppLogger.i('Signing out user: ${currentUser.value?.email ?? "anonymous"}', tag: 'AUTH_UI');
     try {
-      final token = Supabase.instance.client.auth.currentSession?.accessToken;
+      final token = SupabaseService.instance.isInitialized
+          ? SupabaseService.client.auth.currentSession?.accessToken
+          : null;
       if (token != null && token.isNotEmpty) {
         await ApiClient.instance.post(
           '/auth/signout',

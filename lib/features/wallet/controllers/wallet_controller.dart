@@ -6,43 +6,19 @@ import 'package:craftai_studio_mobile/features/shell/controllers/shell_controlle
 class WalletController extends GetxController {
   final ShellController shellCtrl = Get.find<ShellController>();
 
-  late final Rx<WalletModel> wallet;
+  Rx<WalletModel> get wallet => shellCtrl.walletModel;
 
   @override
   void onInit() {
     super.onInit();
-    wallet = WalletModel(
-      purchasedBalance: shellCtrl.userCredits.value,
-      earnedRoyaltyBalance: 0.0,
-      freeDailyBalance: shellCtrl.userCredits.value,
-      totalGenerations: 0,
-      totalRoyaltiesEarned: 0.0,
-    ).obs;
-
-    // Reactively track credits updates from ShellController
-    ever(shellCtrl.userCredits, (double val) {
-      wallet.value = WalletModel(
-        purchasedBalance: val,
-        earnedRoyaltyBalance: wallet.value.earnedRoyaltyBalance,
-        freeDailyBalance: val,
-        totalGenerations: wallet.value.totalGenerations,
-        totalRoyaltiesEarned: wallet.value.totalRoyaltiesEarned,
-      );
-    });
+    shellCtrl.fetchWalletCredits();
   }
 
   void buyCreditPack(String name, double credits, double priceUsd) {
-    shellCtrl.addCredits(credits);
-    wallet.value = WalletModel(
-      purchasedBalance: wallet.value.purchasedBalance + credits,
-      earnedRoyaltyBalance: wallet.value.earnedRoyaltyBalance,
-      freeDailyBalance: wallet.value.freeDailyBalance,
-      totalGenerations: wallet.value.totalGenerations,
-      totalRoyaltiesEarned: wallet.value.totalRoyaltiesEarned,
-    );
+    shellCtrl.addCredits(credits, isPurchased: true);
     Get.snackbar(
       'Credit Pack Added! ✦',
-      'Added $credits credits to your purchased balance.',
+      'Added ${credits.toInt()} credits to your purchased balance.',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: AppColors.surface,
       colorText: AppColors.primary,

@@ -1,14 +1,29 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'i_supabase_service.dart';
 
-/// Supabase bootstrap service.
+/// Supabase bootstrap and client service implementing [ISupabaseService].
 ///
 /// Credentials are injected at build time via --dart-define:
 ///   flutter run --dart-define-from-file=dart_defines/dev.json
 ///
-/// Never hardcode these values. See rules.md §3.
-class SupabaseService {
-  SupabaseService._();
+/// Follows DIP & Clean Architecture:
+/// - Provides a singleton instance implementing [ISupabaseService].
+/// - Allows injecting mock instances via [setMockInstance] for unit testing.
+/// - Preserves static [client] getter for full backward compatibility.
+class SupabaseService implements ISupabaseService {
+  SupabaseService._internal();
+
+  static final SupabaseService _defaultInstance = SupabaseService._internal();
+  static ISupabaseService _instance = _defaultInstance;
+
+  /// Global singleton accessor implementing [ISupabaseService]
+  static ISupabaseService get instance => _instance;
+
+  /// Injects a custom or mock [ISupabaseService] for testing
+  static void setMockInstance(ISupabaseService? mock) {
+    _instance = mock ?? _defaultInstance;
+  }
 
   static const String _url = String.fromEnvironment(
     'SUPABASE_URL',
@@ -26,13 +41,53 @@ class SupabaseService {
     await Supabase.initialize(
       url: _url,
       // ignore: deprecated_member_use
-      anonKey: _anonKey, // publishableKey alias — update when supabase_flutter ≥3.0
+      anonKey: _anonKey,
       debug: kDebugMode,
     );
     debugPrint('✅ Supabase initialized → $_url');
   }
 
-  /// Non-nullable client — throws [StateError] if called before [initialize].
-  /// This is intentional: it's a programming error to use the client before init.
-  static SupabaseClient get client => Supabase.instance.client;
+  /// Backward-compatible static client getter
+  static SupabaseClient get client => instance.supabaseClient;
+
+  @override
+  bool get isInitialized {
+    try {
+      return Supabase.instance.isInitialized;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  SupabaseClient get supabaseClient => Supabase.instance.client;
+
+  @override
+  User? get currentUser {
+    if (!isInitialized) return null;
+    try {
+      return supabaseClient.auth.currentUser;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Session? get currentSession {
+    if (!isInitialized) return null;
+    try {
+      return supabaseClient.auth.currentSession;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  SupabaseQueryBuilder from(String table) => supabaseClient.from(table);
+
+  @override
+  SupabaseStorageClient get storage => supabaseClient.storage;
+
+  @override
+  GoTrueClient get auth => supabaseClient.auth;
 }

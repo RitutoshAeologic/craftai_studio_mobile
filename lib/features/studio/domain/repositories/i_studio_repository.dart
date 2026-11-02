@@ -54,6 +54,7 @@ abstract class IStudioRepository {
   StreamSubscription? listenToGenerationProgress({
     required String taskId,
     required void Function(int progress, String status, String message) onProgress,
+    void Function(String outputUrl)? onCompleted,
   });
 
   /// Creates a dedicated Remix Chat Session

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
+import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
 import '../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/wallet_controller.dart';
 
@@ -132,7 +132,7 @@ class WalletView extends StatelessWidget {
                       SizedBox(width: 8.w),
                       Expanded(
                         child: Text(
-                          Supabase.instance.client.auth.currentUser?.email ?? 'Logged In Creator',
+                          SupabaseService.client.auth.currentUser?.email ?? 'Logged In Creator',
                           style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
                           overflow: TextOverflow.ellipsis,
                         ),

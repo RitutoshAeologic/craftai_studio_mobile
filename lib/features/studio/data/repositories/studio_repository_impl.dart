@@ -160,10 +160,12 @@ class StudioRepositoryImpl implements IStudioRepository {
   StreamSubscription? listenToGenerationProgress({
     required String taskId,
     required void Function(int progress, String status, String message) onProgress,
+    void Function(String outputUrl)? onCompleted,
   }) {
     return _remoteDataSource.listenToGenerationProgress(
       taskId: taskId,
       onProgress: onProgress,
+      onCompleted: onCompleted,
     );
   }
 

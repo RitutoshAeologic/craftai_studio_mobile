@@ -1,17 +1,22 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
-import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
-import 'package:craftai_studio_mobile/core/network/api_client.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
+import '../domain/repositories/i_explore_repository.dart';
+import '../data/repositories/explore_repository_impl.dart';
 
 /// [ExploreController] manages the community discovery feed, style categorization,
 /// multi-dimensional filtering (Category, Model, Aspect Ratio), and Studio remixes.
+/// Follows Clean Architecture: Depends strictly on [IExploreRepository].
 class ExploreController extends GetxController {
+  final IExploreRepository _repository;
+
+  ExploreController({IExploreRepository? repository})
+      : _repository = repository ?? ExploreRepositoryImpl();
+
   /// Currently active category filter (default: 'All').
   final RxString selectedCategory = 'All'.obs;
 
@@ -26,6 +31,24 @@ class ExploreController extends GetxController {
 
   /// Whether search mode is active in the Explore feed
   final RxBool isSearching = false.obs;
+
+  /// Number of cards loaded per pagination batch
+  static const int kPageSize = 20;
+
+  /// Active pagination page index (0-indexed)
+  final RxInt currentPage = 0.obs;
+
+  /// Whether initial cards are being fetched or refreshed
+  final RxBool isInitialLoading = false.obs;
+
+  /// Whether a subsequent page of cards is actively loading
+  final RxBool isLoadingMore = false.obs;
+
+  /// Whether more cards exist to be loaded from the backend/database
+  final RxBool hasMoreCards = true.obs;
+
+  /// Any error message during pagination fetch (null if healthy)
+  final RxnString paginationError = RxnString();
 
   /// Available AI Models for dropdown filtering.
   final List<String> models = const [
@@ -256,34 +279,68 @@ class ExploreController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchExploreCardsFromSupabase();
+    fetchExploreCards(isRefresh: true);
   }
 
-  /// Fetches published community prompts from Supabase
-  Future<void> fetchExploreCardsFromSupabase() async {
+  /// Compatibility alias for initial load
+  Future<void> fetchExploreCardsFromSupabase() async => fetchExploreCards(isRefresh: true);
+
+  /// Fetches a paginated slice of published community prompts from Supabase
+  /// using safe range query and [AsyncWorker] isolate deserialization.
+  Future<void> fetchExploreCards({bool isRefresh = false}) async {
+    if (isRefresh) {
+      currentPage.value = 0;
+      hasMoreCards.value = true;
+      paginationError.value = null;
+      isInitialLoading.value = true;
+    } else {
+      if (isLoadingMore.value || !hasMoreCards.value) return;
+      isLoadingMore.value = true;
+      paginationError.value = null;
+    }
+
     try {
-      final client = SupabaseService.client;
-      final res = await client
-          .from('explore_prompts')
-          .select('*')
-          .order('created_at', ascending: false)
-          .limit(30);
+      final fetched = await _repository.getExploreCards(
+        page: currentPage.value,
+        pageSize: kPageSize,
+        category: selectedCategory.value,
+        model: selectedModel.value,
+        aspectRatios: selectedAspectRatios,
+        searchQuery: searchQuery.value,
+      );
 
-      final list = (res as List)
-          .map((row) => ExploreCardModel.fromJson(row as Map<String, dynamic>))
-          .toList();
-
-      if (list.isNotEmpty) {
-        // Merge Supabase prompts at the top of the feed without duplicate IDs
-        final existingIds = list.map((c) => c.id).toSet();
-        final localRemaining = cards.where((c) => !existingIds.contains(c.id)).toList();
-        cards.assignAll([...list, ...localRemaining]);
-        AppLogger.s('Loaded ${list.length} community creations from Supabase', tag: 'EXPLORE');
+      if (isRefresh) {
+        if (fetched.isNotEmpty) {
+          final fetchedIds = fetched.map((c) => c.id).toSet();
+          final remainingLocal = cards.where((c) => !fetchedIds.contains(c.id) && c.id.startsWith('00000000')).toList();
+          cards.assignAll([...fetched, ...remainingLocal]);
+        }
+      } else {
+        final existingIds = cards.map((c) => c.id).toSet();
+        final newItems = fetched.where((c) => !existingIds.contains(c.id)).toList();
+        cards.addAll(newItems);
       }
+
+      if (fetched.length < kPageSize) {
+        hasMoreCards.value = false;
+      } else {
+        currentPage.value++;
+      }
+      AppLogger.s('Explore page ${currentPage.value} loaded (${fetched.length} items)', tag: 'EXPLORE');
     } catch (e) {
-      AppLogger.d('Cloud explore prompts load skipped: $e', tag: 'EXPLORE');
+      AppLogger.w('Explore pagination error: $e', tag: 'EXPLORE');
+      paginationError.value = 'Failed to load creations. Tap to retry.';
+    } finally {
+      isInitialLoading.value = false;
+      isLoadingMore.value = false;
     }
   }
+
+  /// Triggers next page load when scrolling near bottom of feed
+  Future<void> loadMoreCards() async => fetchExploreCards(isRefresh: false);
+
+  /// Pull-to-refresh handler
+  Future<void> refreshCards() async => fetchExploreCards(isRefresh: true);
 
   /// Returns cards filtered across Search Query, Category, AI Model, and Aspect Ratio
   List<ExploreCardModel> get filteredCards {
@@ -347,19 +404,23 @@ class ExploreController extends GetxController {
 
   /// Changes the active category filter and re-filters the feed.
   void setCategory(String category) {
+    if (selectedCategory.value == category) return;
     selectedCategory.value = category;
+    fetchExploreCards(isRefresh: true);
   }
 
   /// Changes the active AI Model filter and re-filters the feed.
   void setModel(String model) {
+    if (selectedModel.value == model) return;
     selectedModel.value = model;
+    fetchExploreCards(isRefresh: true);
   }
 
   /// Changes the active Aspect Ratio filter and re-filters the feed.
   void setAspectRatio(String ratio) {
     selectedAspectRatios.assignAll({ratio});
+    fetchExploreCards(isRefresh: true);
   }
-
 
   /// Applies composite multi-dimensional filters
   void applyFilters({
@@ -370,6 +431,7 @@ class ExploreController extends GetxController {
     selectedCategory.value = category;
     selectedModel.value = model;
     selectedAspectRatios.assignAll(aspectRatios);
+    fetchExploreCards(isRefresh: true);
   }
 
   /// Resets all filters back to default
@@ -377,37 +439,32 @@ class ExploreController extends GetxController {
     selectedCategory.value = 'All';
     selectedModel.value = 'All Models';
     selectedAspectRatios.assignAll({'All'});
+    searchQuery.value = '';
+    fetchExploreCards(isRefresh: true);
+  }
+
+  /// Total count of active non-default filters currently applied
+  int get activeFilterCount {
+    int count = 0;
+    if (selectedCategory.value != 'All') count++;
+    if (selectedModel.value != 'All Models') count++;
+    if (!selectedAspectRatios.contains('All')) count++;
+    if (searchQuery.value.trim().isNotEmpty) count++;
+    return count;
   }
 
   /// Whether any non-default filter is currently active
-  bool get hasActiveFilters {
-    return selectedCategory.value != 'All' ||
-        selectedModel.value != 'All Models' ||
-        !selectedAspectRatios.contains('All') ||
-        searchQuery.value.isNotEmpty;
-  }
+  bool get hasActiveFilters => activeFilterCount > 0;
 
-  /// Fetches similar creations from backend pgvector/similar endpoint with offline fallback
+  /// Fetches similar creations from backend pgvector/similar endpoint via repository
   Future<List<ExploreCardModel>> fetchSimilarCreations(String cardId) async {
     try {
-      final res = await ApiClient.instance.get(
-        '/explore/similar/$cardId',
-        options: Options(
-          connectTimeout: const Duration(seconds: 4),
-          receiveTimeout: const Duration(seconds: 4),
-        ),
-      );
-      if (res.statusCode == 200 && res.data is List) {
-        final list = (res.data as List)
-            .map((item) => ExploreCardModel.fromJson(item as Map<String, dynamic>))
-            .toList();
-        if (list.isNotEmpty) {
-          AppLogger.s('Loaded ${list.length} similar creations from backend', tag: 'EXPLORE');
-          return list;
-        }
+      final list = await _repository.getSimilarCreations(cardId);
+      if (list.isNotEmpty) {
+        return list;
       }
     } catch (e) {
-      AppLogger.d('Backend similar creations fallback to local: $e', tag: 'EXPLORE');
+      AppLogger.d('Similar creations fetch error fallback: $e', tag: 'EXPLORE');
     }
 
     // High-fidelity fallback: local category matching
@@ -433,6 +490,7 @@ class ExploreController extends GetxController {
         isLiked: newLiked,
         likeCount: newLiked ? card.likeCount + 1 : card.likeCount - 1,
       );
+      _repository.toggleLike(id, newLiked);
     }
   }
 

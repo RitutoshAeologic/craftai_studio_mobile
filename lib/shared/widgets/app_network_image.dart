@@ -1,9 +1,10 @@
-import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimens.dart';
+import '../../core/utils/async_worker.dart';
 
 /// [AppNetworkImage] is a shared, cached image component.
 /// Mandated by rules.md §5 to ensure consistent placeholder loading
@@ -79,25 +80,39 @@ class AppNetworkImage extends StatelessWidget {
     if (imageUrl.trim().isEmpty) {
       imageWidget = buildError();
     } else if (imageUrl.startsWith('data:image/') && imageUrl.contains(',')) {
-      try {
-        final base64String = imageUrl.split(',').last;
-        final bytes = base64Decode(base64String);
-        imageWidget = Image.memory(
-          bytes,
-          width: width,
-          height: height,
-          fit: fit,
-          errorBuilder: (_, __, ___) => buildError(),
-        );
-      } catch (_) {
-        imageWidget = buildError();
-      }
+      imageWidget = FutureBuilder<Uint8List>(
+        future: AsyncWorker.decodeBase64(imageUrl),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return buildPlaceholder();
+          }
+          if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+            return buildError();
+          }
+          return Image.memory(
+            snapshot.data!,
+            width: width,
+            height: height,
+            fit: fit,
+            errorBuilder: (_, __, ___) => buildError(),
+          );
+        },
+      );
     } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      final targetMemWidth = (width != null && width!.isFinite)
+          ? (width! * 2).toInt().clamp(200, 1080)
+          : 600;
+      final targetMemHeight = (height != null && height!.isFinite)
+          ? (height! * 2).toInt().clamp(200, 1080)
+          : null;
+
       imageWidget = CachedNetworkImage(
         imageUrl: imageUrl,
         width: width,
         height: height,
         fit: fit,
+        memCacheWidth: targetMemWidth,
+        memCacheHeight: targetMemHeight,
         placeholder: (_, __) => buildPlaceholder(),
         errorWidget: (_, __, ___) => buildError(),
       );

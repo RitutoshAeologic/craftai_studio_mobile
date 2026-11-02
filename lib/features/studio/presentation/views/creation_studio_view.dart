@@ -80,15 +80,17 @@ class CreationStudioView extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 8.w),
-                  GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      controller.triggerSurpriseMe();
-                    },
+                  Obx(() => GestureDetector(
+                    onTap: controller.isBusy
+                        ? null
+                        : () {
+                            HapticFeedback.lightImpact();
+                            controller.triggerSurpriseMe();
+                          },
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: controller.isBusy ? AppColors.surface.withValues(alpha: 0.5) : AppColors.surface,
                         borderRadius: BorderRadius.circular(AppDimens.radiusRound),
                         border: Border.all(color: AppColors.border),
                         boxShadow: [
@@ -102,19 +104,19 @@ class CreationStudioView extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.casino_outlined, size: 14.sp, color: AppColors.primary),
+                          Icon(Icons.casino_outlined, size: 14.sp, color: controller.isBusy ? AppColors.textMuted : AppColors.primary),
                           SizedBox(width: 4.w),
                           Text(
                             'Surprise Me',
                             style: AppTextStyles.captionBold.copyWith(
-                              color: AppColors.primary,
+                              color: controller.isBusy ? AppColors.textMuted : AppColors.primary,
                               fontSize: 11.sp,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
+                  )),
                 ],
               ),
               SizedBox(height: AppDimens.vSpacingMd),
@@ -128,10 +130,10 @@ class CreationStudioView extends StatelessWidget {
               // SECTIONS 2 - 5: INTERACTIVE CREATIVE CONFIGURATION (LOCKED DURING GENERATION)
               // =========================================================================
               Obx(() => AbsorbPointer(
-                absorbing: controller.isGenerating.value,
+                absorbing: controller.isBusy,
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 200),
-                  opacity: controller.isGenerating.value ? 0.55 : 1.0,
+                  opacity: controller.isBusy ? 0.55 : 1.0,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

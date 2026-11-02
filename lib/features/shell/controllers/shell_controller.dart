@@ -21,6 +21,15 @@ class ShellController extends GetxController {
   /// Initialized to 500.0 Cr for rapid development and testing.
   final RxDouble userCredits = 500.0.obs;
 
+  /// Complete observable dual-ledger wallet model (purchased, royalties, free)
+  final Rx<WalletModel> walletModel = WalletModel(
+    purchasedBalance: 0.0,
+    earnedRoyaltyBalance: 0.0,
+    freeDailyBalance: 500.0,
+    totalGenerations: 0,
+    totalRoyaltiesEarned: 0.0,
+  ).obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -40,8 +49,9 @@ class ShellController extends GetxController {
 
         if (res != null) {
           final wallet = WalletModel.fromJson(res);
-          userCredits.value = wallet.purchasedBalance + wallet.freeDailyBalance;
-          AppLogger.s('Synced wallet balance from Supabase: ${userCredits.value} Cr', tag: 'WALLET');
+          walletModel.value = wallet;
+          userCredits.value = wallet.totalSpendable;
+          AppLogger.s('Synced wallet balance from Supabase: ${userCredits.value} Cr (Purchased: ${wallet.purchasedBalance}, Royalties: ${wallet.earnedRoyaltyBalance}, Free: ${wallet.freeDailyBalance})', tag: 'WALLET');
         } else {
           // Brand new user: auto-create wallet row in Supabase with initial 500 credits
           try {
@@ -49,9 +59,17 @@ class ShellController extends GetxController {
               'user_id': user.id,
               'free_daily_balance': 500.0,
               'purchased_balance': 0.0,
+              'earned_royalty_balance': 0.0,
               'credits': 500.0,
             }, onConflict: 'user_id');
             userCredits.value = 500.0;
+            walletModel.value = WalletModel(
+              purchasedBalance: 0.0,
+              earnedRoyaltyBalance: 0.0,
+              freeDailyBalance: 500.0,
+              totalGenerations: 0,
+              totalRoyaltiesEarned: 0.0,
+            );
             AppLogger.s('Initialized new user wallet with 500.0 Cr in Supabase', tag: 'WALLET');
           } catch (_) {}
         }
@@ -86,13 +104,50 @@ class ShellController extends GetxController {
   void deductCredits(double amount) {
     if (userCredits.value >= amount) {
       userCredits.value -= amount;
+      final current = walletModel.value;
+      double remaining = amount;
+      double newFree = current.freeDailyBalance;
+      double newPurchased = current.purchasedBalance;
+      double newRoyalty = current.earnedRoyaltyBalance;
+
+      if (newFree >= remaining) {
+        newFree -= remaining;
+        remaining = 0;
+      } else {
+        remaining -= newFree;
+        newFree = 0;
+        if (newPurchased >= remaining) {
+          newPurchased -= remaining;
+          remaining = 0;
+        } else {
+          remaining -= newPurchased;
+          newPurchased = 0;
+          newRoyalty = (newRoyalty - remaining).clamp(0.0, double.infinity);
+        }
+      }
+
+      walletModel.value = WalletModel(
+        purchasedBalance: newPurchased,
+        earnedRoyaltyBalance: newRoyalty,
+        freeDailyBalance: newFree,
+        totalGenerations: current.totalGenerations + 1,
+        totalRoyaltiesEarned: current.totalRoyaltiesEarned,
+      );
       _persistBalance();
     }
   }
 
   /// Adds [amount] credits to the user's wallet (e.g. after a pack purchase or reward).
-  void addCredits(double amount) {
+  void addCredits(double amount, {bool isPurchased = false}) {
     userCredits.value += amount;
+    final current = walletModel.value;
+    walletModel.value = WalletModel(
+      purchasedBalance: isPurchased ? current.purchasedBalance + amount : current.purchasedBalance,
+      earnedRoyaltyBalance: current.earnedRoyaltyBalance,
+      freeDailyBalance: isPurchased ? current.freeDailyBalance : current.freeDailyBalance + amount,
+      totalGenerations: current.totalGenerations,
+      totalRoyaltiesEarned: current.totalRoyaltiesEarned,
+    );
     _persistBalance();
   }
 
@@ -100,12 +155,18 @@ class ShellController extends GetxController {
     try {
       final user = SupabaseService.client.auth.currentUser;
       if (user != null) {
+        final w = walletModel.value;
         await SupabaseService.client
             .from('wallets')
             .upsert({
               'user_id': user.id,
-              'free_daily_balance': userCredits.value,
               'credits': userCredits.value,
+              'free_daily_balance': w.freeDailyBalance,
+              'purchased_balance': w.purchasedBalance,
+              'earned_royalty_balance': w.earnedRoyaltyBalance,
+              'total_generations': w.totalGenerations,
+              'total_royalties_earned': w.totalRoyaltiesEarned,
+              'updated_at': DateTime.now().toIso8601String(),
             }, onConflict: 'user_id');
       }
     } catch (_) {}

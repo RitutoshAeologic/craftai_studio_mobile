@@ -389,37 +389,40 @@ class ProfileView extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimens.radiusXl),
         border: Border.all(color: AppColors.border),
       ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-        leading: Container(
-          padding: EdgeInsets.all(8.w),
-          decoration: BoxDecoration(
-            color: AppColors.accentError.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8.r),
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+          leading: Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: AppColors.accentError.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: const Icon(Icons.logout_rounded, color: AppColors.accentError),
           ),
-          child: const Icon(Icons.logout_rounded, color: AppColors.accentError),
-        ),
-        title: Text(
-          'Sign Out',
-          style: TextStyle(
+          title: Text(
+            'Sign Out',
+            style: TextStyle(
+              color: AppColors.accentError,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          subtitle: Text(
+            'End your current session on this device',
+            style: TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 11.sp,
+            ),
+          ),
+          trailing: Icon(
+            Icons.chevron_right_rounded,
             color: AppColors.accentError,
-            fontSize: 14.sp,
-            fontWeight: FontWeight.bold,
+            size: 20.sp,
           ),
+          onTap: controller.confirmSignOut,
         ),
-        subtitle: Text(
-          'End your current session on this device',
-          style: TextStyle(
-            color: AppColors.textMuted,
-            fontSize: 11.sp,
-          ),
-        ),
-        trailing: Icon(
-          Icons.chevron_right_rounded,
-          color: AppColors.accentError,
-          size: 20.sp,
-        ),
-        onTap: controller.confirmSignOut,
       ),
     );
   }

@@ -60,6 +60,7 @@ class MockStudioRepository extends FakeStudioRepository {
   StreamSubscription? listenToGenerationProgress({
     required String taskId,
     required void Function(int progress, String status, String message) onProgress,
+    void Function(String outputUrl)? onCompleted,
   }) => null;
 
   @override
