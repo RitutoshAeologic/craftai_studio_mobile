@@ -6,4 +6,6 @@ abstract final class AppRoutes {
   static const String home = '/home';
   static const String profile = '/profile';
   static const String wallet = '/wallet';
+  static const String exploreDetail = '/explore/detail';
+  static const String exploreCategory = '/explore/category';
 }

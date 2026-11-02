@@ -8,10 +8,12 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/explore/controllers/explore_controller.dart';
-import 'package:craftai_studio_mobile/features/explore/views/explore_discovery_view.dart';
+import 'package:craftai_studio_mobile/features/explore/views/explore_image_detail_view.dart';
+import 'package:craftai_studio_mobile/features/explore/views/explore_category_view.dart';
 
 /// [ExploreCardWidget] renders an artwork card in the Scattered Masonry Explore feed.
-/// Tapping the card routes directly to [ExploreDiscoveryView] as specified in the TL flow.
+/// Tapping the card routes directly to [ExploreImageDetailView] full-page screen.
+/// Tapping the category badge routes to [ExploreCategoryView] displaying photos in that category.
 class ExploreCardWidget extends StatelessWidget {
   final ExploreCardModel card;
   final int index;
@@ -48,7 +50,7 @@ class ExploreCardWidget extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        Get.to(() => ExploreDiscoveryView(selectedCard: card));
+        Get.to(() => ExploreImageDetailView(card: card));
       },
       child: Container(
         decoration: BoxDecoration(
@@ -88,23 +90,30 @@ class ExploreCardWidget extends StatelessWidget {
                   ),
                 ),
 
-                // Category Tag (Top-left)
+                // Category Tag (Top-left) - routes directly to ExploreCategoryView
                 Positioned(
                   top: 8.h,
                   left: 8.w,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-                    decoration: BoxDecoration(
-                      color: AppColors.black.withValues(alpha: 0.75),
-                      borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                      border: Border.all(color: AppColors.border.withValues(alpha: 0.5), width: 0.5),
-                    ),
-                    child: Text(
-                      card.category,
-                      style: AppTextStyles.captionXs.copyWith(
-                        color: AppColors.surface,
-                        fontSize: 9.sp,
-                        fontWeight: FontWeight.bold,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Get.to(() => ExploreCategoryView(category: card.category));
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.black.withValues(alpha: 0.75),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                        border: Border.all(color: AppColors.border.withValues(alpha: 0.5), width: 0.5),
+                      ),
+                      child: Text(
+                        card.category,
+                        style: AppTextStyles.captionXs.copyWith(
+                          color: AppColors.surface,
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

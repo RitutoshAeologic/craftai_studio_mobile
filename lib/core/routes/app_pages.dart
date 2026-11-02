@@ -7,6 +7,9 @@ import '../../features/auth/presentation/views/forgot_password_view.dart';
 import '../../features/shell/views/home_shell_view.dart';
 import '../../features/profile/views/profile_view.dart';
 import '../../features/wallet/views/wallet_view.dart';
+import '../../features/explore/views/explore_image_detail_view.dart';
+import '../../features/explore/views/explore_category_view.dart';
+import '../../data/models/explore_card_model.dart';
 import 'app_routes.dart';
 
 /// Single source of truth for every named [GetPage] in the app.
@@ -57,6 +60,18 @@ class AppPages {
     GetPage(
       name: AppRoutes.wallet,
       page: () => const WalletView(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: AppRoutes.exploreDetail,
+      page: () => ExploreImageDetailView(card: Get.arguments as ExploreCardModel),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: AppRoutes.exploreCategory,
+      page: () => ExploreCategoryView(category: Get.arguments as String),
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 250),
     ),

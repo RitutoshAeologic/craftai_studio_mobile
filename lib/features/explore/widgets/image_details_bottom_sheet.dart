@@ -9,6 +9,8 @@ import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/explore/controllers/explore_controller.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/save_to_collection_sheet.dart';
+import '../views/explore_image_detail_view.dart';
+import '../views/explore_category_view.dart';
 
 /// [ImageDetailsBottomSheet] is the central inspection modal for Explore artwork.
 /// It strictly implements Miller's Law (3 chunked cards), Hick's Law (1 Primary CTA),
@@ -18,7 +20,10 @@ class ImageDetailsBottomSheet extends StatefulWidget {
 
   const ImageDetailsBottomSheet({super.key, required this.card});
 
-  static void show(BuildContext context, ExploreCardModel card) {
+  static void show(BuildContext context, ExploreCardModel card) =>
+      Get.to(() => ExploreImageDetailView(card: card));
+
+  static void showModal(BuildContext context, ExploreCardModel card) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -179,17 +184,24 @@ class _ImageDetailsBottomSheetState extends State<ImageDetailsBottomSheet> {
               Positioned(
                 top: 12.h,
                 left: 12.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                  ),
-                  child: Text(
-                    widget.card.category,
-                    style: AppTextStyles.captionBold.copyWith(
-                      color: AppColors.surface,
-                      fontSize: 11.sp,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    Get.to(() => ExploreCategoryView(category: widget.card.category));
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                    ),
+                    child: Text(
+                      widget.card.category,
+                      style: AppTextStyles.captionBold.copyWith(
+                        color: AppColors.surface,
+                        fontSize: 11.sp,
+                      ),
                     ),
                   ),
                 ),
