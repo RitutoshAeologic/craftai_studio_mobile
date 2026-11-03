@@ -47,11 +47,12 @@ void main() {
     expect(find.text('Upscale 4K'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('Marketing Poster'),
+      find.text('AI Expand'),
       100,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.text('Marketing Poster'), findsOneWidget);
+    expect(find.text('AI Expand'), findsOneWidget);
+    expect(find.text('Marketing Poster'), findsNothing);
   });
 
   testWidgets('Tapping a tool card clears any previously selected photo variable', (WidgetTester tester) async {
