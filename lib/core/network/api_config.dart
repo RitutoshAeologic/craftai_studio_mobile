@@ -26,7 +26,7 @@ class ApiConfig {
     }
 
     // Default fallback pointing to active tunnel:
-    return 'https://craftai-dev.loca.lt/api/v1';
+    return 'https://craftai-backend.loca.lt/api/v1';
   }
 
   /// Optional remote fallback URL (e.g. an active ngrok tunnel or remote staging server).
