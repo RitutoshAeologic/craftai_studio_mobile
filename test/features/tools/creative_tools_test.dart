@@ -13,6 +13,8 @@ import 'package:craftai_studio_mobile/features/tools/widgets/upscale_sheet.dart'
 import 'package:craftai_studio_mobile/features/tools/widgets/product_detail_sheet.dart';
 import 'package:craftai_studio_mobile/features/tools/widgets/marketing_poster_sheet.dart';
 import 'package:craftai_studio_mobile/features/tools/widgets/tool_result_preview_sheet.dart';
+import 'package:craftai_studio_mobile/features/tools/widgets/product_pack_preview_sheet.dart';
+import 'package:craftai_studio_mobile/features/tools/views/magic_grab_view.dart';
 import 'package:craftai_studio_mobile/shared/widgets/before_after_slider.dart';
 import '../../mocks/fake_studio_repository.dart';
 
@@ -30,6 +32,7 @@ class MockCreativeToolsRepository extends FakeStudioRepository {
     String? customBackdrop,
     String aspectRatio = 'Auto',
     String quality = '1k',
+    bool harmonizeLighting = true,
     String? userId,
   }) async {
     lastBgMode = mode;
@@ -70,6 +73,56 @@ class MockCreativeToolsRepository extends FakeStudioRepository {
     return (data: 'https://images.unsplash.com/mock-product-detail-result', failure: null);
   }
 
+  String? lastGrabMask;
+  String? lastPackProductName;
+
+  @override
+  Future<StudioResult<Map<String, dynamic>>> executeMagicGrab({
+    required String imageUrl,
+    required String maskBase64,
+    String? imageBase64,
+  }) async {
+    lastGrabMask = maskBase64;
+    return (
+      data: {
+        'cutout_url': 'https://images.unsplash.com/mock-cutout.png',
+        'background_url': 'https://images.unsplash.com/mock-background.png',
+        'all_urls': [
+          'https://images.unsplash.com/mock-cutout.png',
+          'https://images.unsplash.com/mock-background.png',
+        ],
+      },
+      failure: null,
+    );
+  }
+
+  @override
+  Future<StudioResult<Map<String, dynamic>>> executeProductPack({
+    String? imageUrl,
+    String productName = 'Commercial Product',
+    String? userId,
+  }) async {
+    lastPackProductName = productName;
+    return (
+      data: {
+        'pack': {
+          'amazon_white': 'https://images.unsplash.com/mock-amazon.png',
+          'studio_pedestal': 'https://images.unsplash.com/mock-pedestal.png',
+          'lifestyle_table': 'https://images.unsplash.com/mock-lifestyle.png',
+          'story_flyer': 'https://images.unsplash.com/mock-story.png',
+        },
+        'all_urls': [
+          'https://images.unsplash.com/mock-amazon.png',
+          'https://images.unsplash.com/mock-pedestal.png',
+          'https://images.unsplash.com/mock-lifestyle.png',
+          'https://images.unsplash.com/mock-story.png',
+        ],
+        'product_name': productName,
+      },
+      failure: null,
+    );
+  }
+
   @override
   Future<StudioResult<String>> generateMarketingPoster({
     required String topic,
@@ -77,6 +130,9 @@ class MockCreativeToolsRepository extends FakeStudioRepository {
     String category = 'Promotion',
     String aspectRatio = '4:5',
     String? headline,
+    String? subtext,
+    String? discountBadge,
+    String? theme,
     String language = 'Auto',
     String quality = '1k',
     String? userId,
@@ -217,6 +273,32 @@ void main() {
       expect(shellController.userCredits.value, equals(initialCredits - 14.0));
     });
 
+    test('runMagicGrab executes dual-layer cutout & background infilling', () async {
+      final res = await toolsController.runMagicGrab(
+        path: 'https://images.unsplash.com/photo-subject',
+        maskBase64: 'data:image/png;base64,mockmask',
+      );
+
+      expect(res, isNotNull);
+      expect(mockRepo.lastGrabMask, equals('data:image/png;base64,mockmask'));
+      expect(toolsController.magicGrabCutoutUrl.value, equals('https://images.unsplash.com/mock-cutout.png'));
+      expect(toolsController.magicGrabBackgroundUrl.value, equals('https://images.unsplash.com/mock-background.png'));
+    });
+
+    test('runProductPack generates 4-in-1 marketplace listing suite and deducts 10 credits', () async {
+      final initialCredits = shellController.userCredits.value;
+
+      final res = await toolsController.runProductPack(
+        path: 'https://images.unsplash.com/photo-bottle',
+        productName: 'Eco Glass Bottle',
+      );
+
+      expect(res, isNotNull);
+      expect(mockRepo.lastPackProductName, equals('Eco Glass Bottle'));
+      expect(toolsController.productPackResults.value, isNotNull);
+      expect(shellController.userCredits.value, equals(initialCredits - 10.0));
+    });
+
     test('Preflight credit check aborts when user credits are insufficient', () async {
       shellController.userCredits.value = 5.0; // Needs 10.0
 
@@ -241,6 +323,10 @@ void main() {
       expect(find.text('Pure white'), findsOneWidget);
       expect(find.text('Smart'), findsOneWidget);
       expect(find.text('Replace background ✦ 10'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(find.text('Lighting Harmonization'), findsOneWidget);
     });
 
     testWidgets('AiExpandSheet renders without overflow', (tester) async {
@@ -270,6 +356,8 @@ void main() {
 
       expect(find.text('Product Detail Images'), findsOneWidget);
       expect(find.text('Set up the basics'), findsOneWidget);
+      expect(find.text('📦 4-Pack (Shopify & Amazon)'), findsOneWidget);
+      expect(find.text('🛍️ Single Staged Image'), findsOneWidget);
       expect(find.text('Generate Listing Set ✦ 10'), findsOneWidget);
     });
 
@@ -280,6 +368,45 @@ void main() {
       expect(find.text('Marketing Poster'), findsOneWidget);
       expect(find.text('Set up the basics'), findsOneWidget);
       expect(find.text('Generate Poster ✦ 10'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(find.text('Headline Copy'), findsOneWidget);
+      expect(find.text('Subtitle / Description'), findsOneWidget);
+      expect(find.text('Discount / Promo Badge'), findsOneWidget);
+    });
+
+    testWidgets('ProductPackPreviewSheet renders all 4 listing formats and switches view', (tester) async {
+      await tester.pumpWidget(
+        buildTestableWidget(
+          const ProductPackPreviewSheet(
+            productName: 'Ergonomic Chair',
+            pack: {
+              'amazon_white': 'https://images.unsplash.com/mock-white.png',
+              'studio_pedestal': 'https://images.unsplash.com/mock-pedestal.png',
+              'lifestyle_table': 'https://images.unsplash.com/mock-lifestyle.png',
+              'story_flyer': 'https://images.unsplash.com/mock-story.png',
+            },
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('E-Commerce 4-Pack'), findsOneWidget);
+      expect(find.text('4 Listings in 1'), findsOneWidget);
+      expect(find.text('Ergonomic Chair'), findsOneWidget);
+      expect(find.text('Save All 4 Formats to Library'), findsOneWidget);
+      expect(find.text('Remix Active Format in Lab'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
+    });
+
+    testWidgets('MagicGrabView renders empty state without overflow', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const MagicGrabView()));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Magic Grab'), findsOneWidget);
+      expect(find.text('Select Photo to Grab Object'), findsOneWidget);
+      expect(find.text('Choose Photo'), findsOneWidget);
     });
   });
 

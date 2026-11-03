@@ -86,6 +86,7 @@ abstract class IStudioRepository {
     String? customBackdrop,
     String aspectRatio = 'Auto',
     String quality = '1k',
+    bool harmonizeLighting = true,
     String? userId,
   }) async => (data: null, failure: null);
 
@@ -121,13 +122,30 @@ abstract class IStudioRepository {
     String category = 'Promotion',
     String aspectRatio = '4:5',
     String? headline,
+    String? subtext,
+    String? discountBadge,
+    String? theme,
     String language = 'Auto',
     String quality = '1k',
     String? userId,
   }) async => (data: null, failure: null);
 
+  /// E-Commerce 4-Pack Auto-Listing Generator (Shopify Magic / Photoroom Pro parity)
+  Future<StudioResult<Map<String, dynamic>>> executeProductPack({
+    String? imageUrl,
+    String productName = 'Commercial Product',
+    String? userId,
+  }) async => (data: null, failure: null);
+
   /// Skill 7: Magic Object Eraser (Zero-Hallucination LaMa Inpainting)
   Future<StudioResult<String>> eraseObject({
+    required String imageUrl,
+    required String maskBase64,
+    String? imageBase64,
+  }) async => (data: null, failure: null);
+
+  /// Magic Grab (Canva Magic Grab & Pixel Magic Editor parity)
+  Future<StudioResult<Map<String, dynamic>>> executeMagicGrab({
     required String imageUrl,
     required String maskBase64,
     String? imageBase64,

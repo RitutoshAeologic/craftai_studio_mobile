@@ -236,6 +236,7 @@ class StudioRepositoryImpl implements IStudioRepository {
     String? customBackdrop,
     String aspectRatio = 'Auto',
     String quality = '1k',
+    bool harmonizeLighting = true,
     String? userId,
   }) async {
     try {
@@ -245,6 +246,7 @@ class StudioRepositoryImpl implements IStudioRepository {
         customBackdrop: customBackdrop,
         aspectRatio: aspectRatio,
         quality: quality,
+        harmonizeLighting: harmonizeLighting,
         userId: userId,
       );
       final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? '';
@@ -334,6 +336,9 @@ class StudioRepositoryImpl implements IStudioRepository {
     String category = 'Promotion',
     String aspectRatio = '4:5',
     String? headline,
+    String? subtext,
+    String? discountBadge,
+    String? theme,
     String language = 'Auto',
     String quality = '1k',
     String? userId,
@@ -345,12 +350,35 @@ class StudioRepositoryImpl implements IStudioRepository {
         category: category,
         aspectRatio: aspectRatio,
         headline: headline,
+        subtext: subtext,
+        discountBadge: discountBadge,
+        theme: theme,
         language: language,
         quality: quality,
         userId: userId,
       );
       final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? '';
       return (data: outUrl, failure: null);
+    } on DioException catch (e) {
+      return (data: null, failure: _mapDioException(e));
+    } catch (e) {
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<StudioResult<Map<String, dynamic>>> executeProductPack({
+    String? imageUrl,
+    String productName = 'Commercial Product',
+    String? userId,
+  }) async {
+    try {
+      final res = await _remoteDataSource.executeProductPack(
+        imageUrl: imageUrl,
+        productName: productName,
+        userId: userId,
+      );
+      return (data: res, failure: null);
     } on DioException catch (e) {
       return (data: null, failure: _mapDioException(e));
     } catch (e) {
@@ -372,6 +400,26 @@ class StudioRepositoryImpl implements IStudioRepository {
       );
       final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? res['url'] as String? ?? '';
       return (data: outUrl, failure: null);
+    } on DioException catch (e) {
+      return (data: null, failure: _mapDioException(e));
+    } catch (e) {
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<StudioResult<Map<String, dynamic>>> executeMagicGrab({
+    required String imageUrl,
+    required String maskBase64,
+    String? imageBase64,
+  }) async {
+    try {
+      final res = await _remoteDataSource.executeMagicGrab(
+        imageUrl: imageUrl,
+        maskBase64: maskBase64,
+        imageBase64: imageBase64,
+      );
+      return (data: res, failure: null);
     } on DioException catch (e) {
       return (data: null, failure: _mapDioException(e));
     } catch (e) {

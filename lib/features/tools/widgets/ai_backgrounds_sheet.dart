@@ -37,6 +37,7 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
   String _selectedTemplateId = 'smart';
   String _selectedRatio = 'Auto';
   String _selectedQuality = '1k'; // '1k', '2k'
+  bool _harmonizeLighting = true;
   final TextEditingController _customBackdropCtrl = TextEditingController();
 
   final List<String> _ratios = ['Auto', '1:1', '4:5', '9:16', '16:9'];
@@ -206,7 +207,13 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
                 _buildRatioDropdown(),
                 SizedBox(height: 16.h),
 
-                // 5. Choose Quality
+                // 5. Lighting Harmonization (CIELAB Color Match & Edge Rim synthesis)
+                if (!isPureWhite) ...[
+                  _buildHarmonizationToggle(),
+                  SizedBox(height: 16.h),
+                ],
+
+                // 6. Choose Quality
                 if (!isPureWhite) ...[
                   _buildQualitySelector(),
                   SizedBox(height: 16.h),
@@ -491,6 +498,46 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
     );
   }
 
+  Widget _buildHarmonizationToggle() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.wb_sunny_outlined, size: 16.sp, color: AppColors.primary),
+                    SizedBox(width: 6.w),
+                    Text('Lighting Harmonization', style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary)),
+                  ],
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  'Auto-blends subject with ambient color temperature & edge rim lighting',
+                  style: AppTextStyles.captionXs.copyWith(color: AppColors.textTertiary, fontSize: 10.sp),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: _harmonizeLighting,
+            activeTrackColor: AppColors.primary,
+            onChanged: (val) => setState(() => _harmonizeLighting = val),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildQualitySelector() {
     return Container(
       padding: EdgeInsets.all(12.r),
@@ -620,6 +667,7 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
       customBackdrop: _customBackdropCtrl.text.trim().isNotEmpty ? _customBackdropCtrl.text.trim() : null,
       aspectRatio: _selectedRatio,
       quality: _selectedQuality,
+      harmonizeLighting: _harmonizeLighting,
     );
 
     if (outUrl != null && mounted) {

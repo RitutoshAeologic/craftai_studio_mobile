@@ -9,11 +9,14 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/features/tools/controllers/tools_controller.dart';
 import 'tool_result_preview_sheet.dart';
+import 'product_pack_preview_sheet.dart';
 
 class ProductDetailSheet extends StatefulWidget {
-  const ProductDetailSheet({super.key});
+  final bool isPackMode;
 
-  static void show(BuildContext context) {
+  const ProductDetailSheet({super.key, this.isPackMode = false});
+
+  static void show(BuildContext context, {bool isPackMode = false}) {
     if (Get.isRegistered<ToolsController>()) {
       Get.find<ToolsController>().clearActiveSession();
     }
@@ -21,7 +24,7 @@ class ProductDetailSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const ProductDetailSheet(),
+      builder: (_) => ProductDetailSheet(isPackMode: isPackMode),
     );
   }
 
@@ -32,6 +35,7 @@ class ProductDetailSheet extends StatefulWidget {
 class _ProductDetailSheetState extends State<ProductDetailSheet> {
   final ToolsController controller = Get.find<ToolsController>();
   final TextEditingController _nameCtrl = TextEditingController();
+  late bool _isPackMode;
   String? _selectedImagePath;
   String _selectedRatio = '4:5';
   String _selectedLanguage = 'Auto (match my input)';
@@ -42,6 +46,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
   @override
   void initState() {
     super.initState();
+    _isPackMode = widget.isPackMode;
     controller.clearActiveSession();
   }
 
@@ -103,6 +108,10 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                 Text('Upload your product, pick size and language', style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary)),
                 SizedBox(height: 14.h),
 
+                // 0. Mode Selector: 4-Pack vs Single
+                _buildModeSelector(),
+                SizedBox(height: 14.h),
+
                 // 1. Upload Product Image
                 _buildUploadSection(),
                 SizedBox(height: 14.h),
@@ -111,13 +120,16 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                 _buildNameField(),
                 SizedBox(height: 14.h),
 
-                // 3. Size / Ratio Dropdown
-                _buildRatioDropdown(),
-                SizedBox(height: 14.h),
-
-                // 4. Detail Copy Language Dropdown
-                _buildLanguageDropdown(),
-                SizedBox(height: 16.h),
+                // Conditional Ratio & Language (only for single staging)
+                if (!_isPackMode) ...[
+                  _buildRatioDropdown(),
+                  SizedBox(height: 14.h),
+                  _buildLanguageDropdown(),
+                  SizedBox(height: 16.h),
+                ] else ...[
+                  _buildPackInfoCard(),
+                  SizedBox(height: 16.h),
+                ],
               ],
             ),
           ),
@@ -163,12 +175,101 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                           ],
                         )
                       : Text(
-                          'Generate Listing Set ✦ 10',
+                          _isPackMode ? 'Generate 4-Pack Listings ✦ 10' : 'Generate Listing Set ✦ 10',
                           style: AppTextStyles.button.copyWith(color: Colors.white, fontSize: 15.sp),
                         ),
                 ),
               );
             }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeSelector() {
+    return Container(
+      padding: EdgeInsets.all(4.r),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _isPackMode = true),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: _isPackMode ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                ),
+                child: Center(
+                  child: Text(
+                    '📦 4-Pack (Shopify & Amazon)',
+                    style: AppTextStyles.captionBold.copyWith(
+                      color: _isPackMode ? Colors.white : AppColors.textSecondary,
+                      fontSize: 11.sp,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 4.w),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _isPackMode = false),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: !_isPackMode ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                ),
+                child: Center(
+                  child: Text(
+                    '🛍️ Single Staged Image',
+                    style: AppTextStyles.captionBold.copyWith(
+                      color: !_isPackMode ? Colors.white : AppColors.textSecondary,
+                      fontSize: 11.sp,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPackInfoCard() {
+    return Container(
+      padding: EdgeInsets.all(12.r),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_awesome, size: 16.sp, color: AppColors.primary),
+              SizedBox(width: 6.w),
+              Text(
+                'Instant E-Commerce Multi-Channel Kit',
+                style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+              ),
+            ],
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            '1 photo generates all 4 marketplace-ready formats simultaneously:\n• 🛒 Amazon White (1:1 compliance)\n• 🏛️ Studio Pedestal (4:5 Shopify catalog)\n• ☕ Lifestyle Table (4:5 conversion hero)\n• 📱 Story Flyer (9:16 vertical social ad)',
+            style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary, height: 1.4),
           ),
         ],
       ),
@@ -372,24 +473,42 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
     }
 
     final prodName = _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim() : 'Commercial Product';
-    final outUrl = await controller.runProductDetail(
-      path: _selectedImagePath!,
-      productName: prodName,
-      aspectRatio: _selectedRatio,
-      language: _selectedLanguage,
-    );
 
-    if (outUrl != null && mounted) {
-      Navigator.of(context).pop();
-      ToolResultPreviewSheet.show(
-        context: context,
-        title: 'Product Listing Images',
-        resultImageUrl: outUrl,
-        originalImageUrl: _selectedImagePath,
-        creditsUsed: 10.0,
-        badgeText: 'Product: $prodName • $_selectedRatio',
-        enableBeforeAfter: false,
+    if (_isPackMode) {
+      final packResult = await controller.runProductPack(
+        path: _selectedImagePath!,
+        productName: prodName,
       );
+
+      if (packResult != null && packResult['pack'] != null && mounted) {
+        Navigator.of(context).pop();
+        ProductPackPreviewSheet.show(
+          context: context,
+          productName: prodName,
+          pack: packResult['pack'] as Map<String, dynamic>,
+          originalImageUrl: _selectedImagePath,
+        );
+      }
+    } else {
+      final outUrl = await controller.runProductDetail(
+        path: _selectedImagePath!,
+        productName: prodName,
+        aspectRatio: _selectedRatio,
+        language: _selectedLanguage,
+      );
+
+      if (outUrl != null && mounted) {
+        Navigator.of(context).pop();
+        ToolResultPreviewSheet.show(
+          context: context,
+          title: 'Product Listing Images',
+          resultImageUrl: outUrl,
+          originalImageUrl: _selectedImagePath,
+          creditsUsed: 10.0,
+          badgeText: 'Product: $prodName • $_selectedRatio',
+          enableBeforeAfter: false,
+        );
+      }
     }
   }
 }

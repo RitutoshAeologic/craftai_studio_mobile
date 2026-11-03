@@ -87,6 +87,7 @@ class FakeStudioRepository implements IStudioRepository {
     String? customBackdrop,
     String aspectRatio = 'Auto',
     String quality = '1k',
+    bool harmonizeLighting = true,
     String? userId,
   }) async => (data: null, failure: null);
 
@@ -122,10 +123,37 @@ class FakeStudioRepository implements IStudioRepository {
     String category = 'Promotion',
     String aspectRatio = '4:5',
     String? headline,
+    String? subtext,
+    String? discountBadge,
+    String? theme,
     String language = 'Auto',
     String quality = '1k',
     String? userId,
   }) async => (data: null, failure: null);
+
+  @override
+  Future<StudioResult<Map<String, dynamic>>> executeProductPack({
+    String? imageUrl,
+    String productName = 'Commercial Product',
+    String? userId,
+  }) async => (
+        data: {
+          'pack': {
+            'amazon_white': 'https://images.unsplash.com/mock-amazon.png',
+            'studio_pedestal': 'https://images.unsplash.com/mock-pedestal.png',
+            'lifestyle_table': 'https://images.unsplash.com/mock-lifestyle.png',
+            'story_flyer': 'https://images.unsplash.com/mock-story.png',
+          },
+          'all_urls': [
+            'https://images.unsplash.com/mock-amazon.png',
+            'https://images.unsplash.com/mock-pedestal.png',
+            'https://images.unsplash.com/mock-lifestyle.png',
+            'https://images.unsplash.com/mock-story.png',
+          ],
+          'product_name': productName,
+        },
+        failure: null,
+      );
 
   @override
   Future<StudioResult<String>> eraseObject({
@@ -133,6 +161,23 @@ class FakeStudioRepository implements IStudioRepository {
     required String maskBase64,
     String? imageBase64,
   }) async => (data: 'https://images.unsplash.com/mock-erased.png', failure: null);
+
+  @override
+  Future<StudioResult<Map<String, dynamic>>> executeMagicGrab({
+    required String imageUrl,
+    required String maskBase64,
+    String? imageBase64,
+  }) async => (
+        data: {
+          'cutout_url': 'https://images.unsplash.com/mock-cutout.png',
+          'background_url': 'https://images.unsplash.com/mock-bg-infill.png',
+          'all_urls': [
+            'https://images.unsplash.com/mock-cutout.png',
+            'https://images.unsplash.com/mock-bg-infill.png',
+          ],
+        },
+        failure: null,
+      );
 
   @override
   Future<StudioResult<String>> colorizePhoto({

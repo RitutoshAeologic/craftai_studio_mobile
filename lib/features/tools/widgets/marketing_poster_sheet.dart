@@ -33,6 +33,8 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
   final ToolsController controller = Get.find<ToolsController>();
   final TextEditingController _topicCtrl = TextEditingController();
   final TextEditingController _headlineCtrl = TextEditingController();
+  final TextEditingController _subtextCtrl = TextEditingController();
+  final TextEditingController _discountCtrl = TextEditingController();
 
   String? _selectedImagePath;
   String _selectedCategory = 'Beverage';
@@ -54,6 +56,8 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
   void dispose() {
     _topicCtrl.dispose();
     _headlineCtrl.dispose();
+    _subtextCtrl.dispose();
+    _discountCtrl.dispose();
     controller.clearActiveSession();
     super.dispose();
   }
@@ -116,7 +120,15 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
                 _buildHeadlineField(),
                 SizedBox(height: 14.h),
 
-                // 4. Aspect Ratio Dropdown
+                // 4. Subtitle / Body Copy (Optional)
+                _buildSubtextField(),
+                SizedBox(height: 14.h),
+
+                // 5. Discount / Promotion Tag (Optional)
+                _buildDiscountField(),
+                SizedBox(height: 14.h),
+
+                // 6. Aspect Ratio Dropdown
                 _buildRatioDropdown(),
                 SizedBox(height: 14.h),
 
@@ -291,6 +303,84 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
             style: AppTextStyles.bodySmall,
             decoration: InputDecoration(
               hintText: 'e.g. Sip Into Pure Summer',
+              hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
+              filled: true,
+              fillColor: AppColors.background,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubtextField() {
+    return Container(
+      padding: EdgeInsets.all(12.r),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Subtitle / Description', style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary)),
+              Text('Optional', style: AppTextStyles.captionXs.copyWith(color: AppColors.textTertiary)),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          TextField(
+            controller: _subtextCtrl,
+            style: AppTextStyles.bodySmall,
+            decoration: InputDecoration(
+              hintText: 'e.g. Crafted with organic botanical extracts',
+              hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
+              filled: true,
+              fillColor: AppColors.background,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiscountField() {
+    return Container(
+      padding: EdgeInsets.all(12.r),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Discount / Promo Badge', style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary)),
+              Text('Optional', style: AppTextStyles.captionXs.copyWith(color: AppColors.textTertiary)),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          TextField(
+            controller: _discountCtrl,
+            style: AppTextStyles.bodySmall,
+            decoration: InputDecoration(
+              hintText: 'e.g. 50% OFF or LIMITED DROP',
               hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
               filled: true,
               fillColor: AppColors.background,
@@ -568,6 +658,8 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
       category: _selectedCategory,
       aspectRatio: _selectedRatio,
       headline: _headlineCtrl.text.trim().isNotEmpty ? _headlineCtrl.text.trim() : null,
+      subtext: _subtextCtrl.text.trim().isNotEmpty ? _subtextCtrl.text.trim() : null,
+      discountBadge: _discountCtrl.text.trim().isNotEmpty ? _discountCtrl.text.trim() : null,
       language: _selectedLanguage,
       quality: _selectedQuality,
     );

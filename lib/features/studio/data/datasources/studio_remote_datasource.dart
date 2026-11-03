@@ -341,6 +341,7 @@ class StudioRemoteDataSource {
     String? customBackdrop,
     String aspectRatio = 'Auto',
     String quality = '1k',
+    bool harmonizeLighting = true,
     String? userId,
   }) async {
     final response = await _dio.post(
@@ -351,6 +352,7 @@ class StudioRemoteDataSource {
         if (customBackdrop != null) 'custom_backdrop': customBackdrop,
         'aspect_ratio': aspectRatio,
         'quality': quality,
+        'harmonize_lighting': harmonizeLighting,
         if (userId != null) 'user_id': userId,
       },
       options: Options(receiveTimeout: const Duration(seconds: 120)),
@@ -434,6 +436,9 @@ class StudioRemoteDataSource {
     String category = 'Promotion',
     String aspectRatio = '4:5',
     String? headline,
+    String? subtext,
+    String? discountBadge,
+    String? theme,
     String language = 'Auto',
     String quality = '1k',
     String? userId,
@@ -446,11 +451,52 @@ class StudioRemoteDataSource {
         'category': category,
         'aspect_ratio': aspectRatio,
         if (headline != null) 'headline': headline,
+        if (subtext != null) 'subtext': subtext,
+        if (discountBadge != null) 'discount': discountBadge,
+        if (theme != null) 'theme': theme,
         'language': language,
         'quality': quality,
         if (userId != null) 'user_id': userId,
       },
       options: Options(receiveTimeout: const Duration(seconds: 120)),
+    );
+
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// E-Commerce 4-Pack Auto-Listing Generator (Shopify Magic / Photoroom Pro parity)
+  Future<Map<String, dynamic>> executeProductPack({
+    String? imageUrl,
+    String productName = 'Commercial Product',
+    String? userId,
+  }) async {
+    final response = await _dio.post(
+      '/prompt-engineering/tools/product-pack',
+      data: {
+        if (imageUrl != null && imageUrl.trim().isNotEmpty) 'image_url': imageUrl,
+        'product_name': productName,
+        if (userId != null) 'user_id': userId,
+      },
+      options: Options(receiveTimeout: const Duration(seconds: 120)),
+    );
+
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// Magic Grab: Lifts selected object into a moveable cutout and infills background with LaMa
+  Future<Map<String, dynamic>> executeMagicGrab({
+    required String imageUrl,
+    required String maskBase64,
+    String? imageBase64,
+  }) async {
+    final response = await _dio.post(
+      '/prompt-engineering/tools/magic-grab',
+      data: {
+        'image_url': imageUrl,
+        'mask_base64': maskBase64,
+        if (imageBase64 != null) 'image_base64': imageBase64,
+      },
+      options: Options(receiveTimeout: const Duration(seconds: 60)),
     );
 
     return response.data as Map<String, dynamic>;

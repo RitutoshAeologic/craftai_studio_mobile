@@ -40,6 +40,13 @@ class ToolsController extends GetxController {
   /// Active result image URL (e.g. transparent cutout PNG or generated image)
   final RxnString resultImageUrl = RxnString();
 
+  /// Magic Grab dual-layer observables
+  final RxnString magicGrabCutoutUrl = RxnString();
+  final RxnString magicGrabBackgroundUrl = RxnString();
+
+  /// E-Commerce 4-Pack results
+  final Rxn<Map<String, dynamic>> productPackResults = Rxn<Map<String, dynamic>>();
+
   /// 6 Curated MeiGen Creative Skills
   final List<Map<String, dynamic>> tools = const [
     {
@@ -64,6 +71,18 @@ class ToolsController extends GetxController {
       'cost': 0.0,
       'bgTint': Color(0xFFF3E8FF),
       'accentColor': Color(0xFF9333EA),
+      'category': 'Edit',
+    },
+    {
+      'id': 'magic_grab',
+      'title': 'Magic Grab',
+      'desc': 'Lift & reposition any object freely',
+      'icon': '🖐️',
+      'badge': 'Canva & Pixel Parity',
+      'credits': '0 Cr',
+      'cost': 0.0,
+      'bgTint': Color(0xFFEDE7F6),
+      'accentColor': Color(0xFF7E57C2),
       'category': 'Edit',
     },
     {
@@ -124,6 +143,18 @@ class ToolsController extends GetxController {
       'cost': 10.0,
       'bgTint': Color(0xFFEBF0F8),
       'accentColor': Color(0xFF3949AB),
+      'category': 'Transform',
+    },
+    {
+      'id': 'product_pack',
+      'title': 'E-Commerce 4-Pack',
+      'desc': 'Amazon, Pedestal, Lifestyle & Story in 1 tap',
+      'icon': '📦',
+      'badge': 'Shopify & Amazon 4-in-1',
+      'credits': '10 Cr',
+      'cost': 10.0,
+      'bgTint': Color(0xFFE0F2F1),
+      'accentColor': Color(0xFF00897B),
       'category': 'Transform',
     },
     {
@@ -274,6 +305,7 @@ class ToolsController extends GetxController {
     String? customBackdrop,
     String aspectRatio = 'Auto',
     String quality = '1k',
+    bool harmonizeLighting = true,
   }) async {
     final cost = mode == 'pure_white' ? 0.0 : (quality == '1k' ? 10.0 : 14.0);
     if (!_preflightCheck(requiredCredits: cost)) return null;
@@ -290,6 +322,7 @@ class ToolsController extends GetxController {
         customBackdrop: customBackdrop,
         aspectRatio: aspectRatio,
         quality: quality,
+        harmonizeLighting: harmonizeLighting,
       );
 
       if (result.data != null && result.data!.isNotEmpty) {
@@ -474,6 +507,9 @@ class ToolsController extends GetxController {
     String category = 'Promotion',
     String aspectRatio = '4:5',
     String? headline,
+    String? subtext,
+    String? discountBadge,
+    String? theme,
     String language = 'Auto',
     String quality = '1k',
   }) async {
@@ -494,6 +530,9 @@ class ToolsController extends GetxController {
         category: category,
         aspectRatio: aspectRatio,
         headline: headline,
+        subtext: subtext,
+        discountBadge: discountBadge,
+        theme: theme,
         language: language,
         quality: quality,
       );
@@ -609,10 +648,118 @@ class ToolsController extends GetxController {
     }
   }
 
+  /// Magic Grab (Canva Magic Grab & Pixel Magic Editor parity)
+  Future<Map<String, dynamic>?> runMagicGrab({
+    required String path,
+    required String maskBase64,
+  }) async {
+    isProcessing.value = true;
+    processingMessage.value = 'Extracting cutout and synthesizing background plate...';
+    try {
+      final remoteUrl = await _ensureRemoteUrl(path);
+      final result = await _repository.executeMagicGrab(
+        imageUrl: remoteUrl,
+        maskBase64: maskBase64,
+      );
+
+      if (result.data != null && result.data!['cutout_url'] != null) {
+        final cutout = result.data!['cutout_url'] as String;
+        final bgPlate = result.data!['background_url'] as String? ?? remoteUrl;
+        magicGrabCutoutUrl.value = cutout;
+        magicGrabBackgroundUrl.value = bgPlate;
+        resultImageUrl.value = cutout;
+
+        if (Get.isRegistered<LibraryController>()) {
+          LibraryController.to.addNewCreation(
+            prompt: 'Magic Grab Subject Cutout',
+            credits: 0.0,
+            previewUrl: cutout,
+            type: 'MAGIC_GRAB',
+            metadata: {
+              'source_url': remoteUrl,
+              'cutout_url': cutout,
+              'background_url': bgPlate,
+            },
+          );
+        }
+        return result.data;
+      } else {
+        throw Exception(result.failure?.message ?? 'Failed to execute Magic Grab');
+      }
+    } catch (e) {
+      AppLogger.e('Error in Magic Grab: $e', tag: 'TOOLS');
+      _showNotice('Notice', e.toString().replaceAll('Exception: ', ''));
+      return null;
+    } finally {
+      isProcessing.value = false;
+      processingMessage.value = '';
+    }
+  }
+
+  /// E-Commerce 4-Pack Auto-Listing Generator (Shopify Magic / Photoroom Pro parity)
+  Future<Map<String, dynamic>?> runProductPack({
+    String? path,
+    String productName = 'Commercial Product',
+  }) async {
+    const cost = 10.0;
+    if (!_preflightCheck(requiredCredits: cost)) return null;
+
+    isProcessing.value = true;
+    processingMessage.value = 'Generating 4 marketplace listings (Amazon, Studio, Lifestyle, Story)...';
+    try {
+      String? remoteUrl;
+      if (path != null && path.trim().isNotEmpty) {
+        remoteUrl = await _ensureRemoteUrl(path);
+      }
+
+      final result = await _repository.executeProductPack(
+        imageUrl: remoteUrl,
+        productName: productName,
+      );
+
+      if (result.data != null && result.data!['pack'] != null) {
+        productPackResults.value = result.data!;
+        final pack = result.data!['pack'] as Map<String, dynamic>;
+        final firstUrl = pack['amazon_white'] as String? ?? pack['studio_pedestal'] as String? ?? '';
+        resultImageUrl.value = firstUrl;
+
+        if (Get.isRegistered<ShellController>()) {
+          ShellController.to.deductCredits(cost);
+        }
+        if (Get.isRegistered<LibraryController>() && firstUrl.isNotEmpty) {
+          LibraryController.to.addNewCreation(
+            prompt: 'E-Commerce 4-Pack: $productName',
+            credits: cost,
+            previewUrl: firstUrl,
+            type: 'PRODUCT_PACK',
+            metadata: {
+              'product_name': productName,
+              if (remoteUrl != null) 'source_url': remoteUrl,
+              'pack': pack,
+            },
+          );
+        }
+        return result.data;
+      } else {
+        throw Exception(result.failure?.message ?? 'Failed to generate product pack');
+      }
+    } catch (e) {
+      AppLogger.e('Error in Product Pack: $e', tag: 'TOOLS');
+      _showNotice('Notice', e.toString().replaceAll('Exception: ', ''));
+      return null;
+    } finally {
+      isProcessing.value = false;
+      processingMessage.value = '';
+    }
+  }
+
   /// Resets active input/result
   void clearActiveSession() {
     inputImagePath.value = null;
     resultImageUrl.value = null;
+    magicGrabCutoutUrl.value = null;
+    magicGrabBackgroundUrl.value = null;
+    productPackResults.value = null;
     isProcessing.value = false;
   }
 }

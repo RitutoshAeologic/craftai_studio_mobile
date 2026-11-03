@@ -21,6 +21,7 @@ import '../widgets/product_detail_sheet.dart';
 import '../widgets/upscale_sheet.dart';
 import 'magic_object_eraser_view.dart';
 import 'photo_colorizer_view.dart';
+import 'magic_grab_view.dart';
 
 class AiToolsView extends StatelessWidget {
   const AiToolsView({super.key});
@@ -494,6 +495,9 @@ class AiToolsView extends StatelessWidget {
           case 'magic_eraser':
             Get.to(() => const MagicObjectEraserView());
             break;
+          case 'magic_grab':
+            Get.to(() => const MagicGrabView());
+            break;
           case 'photo_colorizer':
             Get.to(() => const PhotoColorizerView());
             break;
@@ -511,6 +515,9 @@ class AiToolsView extends StatelessWidget {
             break;
           case 'product_detail':
             ProductDetailSheet.show(context);
+            break;
+          case 'product_pack':
+            ProductDetailSheet.show(context, isPackMode: true);
             break;
           case 'marketing_poster':
             MarketingPosterSheet.show(context);
