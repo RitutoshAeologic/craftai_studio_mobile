@@ -263,6 +263,9 @@ class StudioRepositoryImpl implements IStudioRepository {
     required String imageUrl,
     String targetRatio = '16:9',
     String quality = '1k',
+    String alignment = 'auto',
+    String? prompt,
+    String engine = 'diffusion',
     String? userId,
   }) async {
     try {
@@ -270,6 +273,9 @@ class StudioRepositoryImpl implements IStudioRepository {
         imageUrl: imageUrl,
         targetRatio: targetRatio,
         quality: quality,
+        alignment: alignment,
+        prompt: prompt,
+        engine: engine,
         userId: userId,
       );
       final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? '';

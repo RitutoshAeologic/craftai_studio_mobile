@@ -366,6 +366,9 @@ class StudioRemoteDataSource {
     required String imageUrl,
     String targetRatio = '16:9',
     String quality = '1k',
+    String alignment = 'auto',
+    String? prompt,
+    String engine = 'diffusion',
     String? userId,
   }) async {
     final response = await _dio.post(
@@ -374,6 +377,9 @@ class StudioRemoteDataSource {
         'image_url': imageUrl,
         'target_ratio': targetRatio,
         'quality': quality,
+        'alignment': alignment,
+        if (prompt != null && prompt.trim().isNotEmpty) 'prompt': prompt.trim(),
+        'engine': engine,
         if (userId != null) 'user_id': userId,
       },
       options: Options(receiveTimeout: const Duration(seconds: 120)),

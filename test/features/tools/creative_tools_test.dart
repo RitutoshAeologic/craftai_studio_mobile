@@ -44,6 +44,9 @@ class MockCreativeToolsRepository extends FakeStudioRepository {
     required String imageUrl,
     String targetRatio = '16:9',
     String quality = '1k',
+    String alignment = 'auto',
+    String? prompt,
+    String engine = 'diffusion',
     String? userId,
   }) async {
     lastExpandRatio = targetRatio;
@@ -336,6 +339,8 @@ void main() {
       expect(find.text('AI Expand'), findsOneWidget);
       expect(find.text('Target ratio'), findsOneWidget);
       expect(find.text('16:9'), findsOneWidget);
+      expect(find.text('Subject Placement'), findsOneWidget);
+      expect(find.text('Auto ✦'), findsOneWidget);
       expect(find.text('Expand image ✦ 10'), findsOneWidget);
     });
 

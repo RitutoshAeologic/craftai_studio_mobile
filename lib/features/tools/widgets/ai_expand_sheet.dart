@@ -34,6 +34,9 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
   String? _selectedImagePath;
   String _selectedRatio = '16:9';
   String _selectedQuality = '1k'; // '1k', '2k'
+  String _selectedAlignment = 'auto'; // 'auto', 'center', 'left', 'right', 'top', 'bottom'
+  String _selectedEngine = 'diffusion'; // 'diffusion', 'fast'
+  final TextEditingController _promptController = TextEditingController();
 
   final List<String> _ratios = [
     '1:1', '3:4', '4:3', '9:16', '16:9', '2:3', '3:2', '2:1', '1:2'
@@ -47,6 +50,7 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
 
   @override
   void dispose() {
+    _promptController.dispose();
     controller.clearActiveSession();
     super.dispose();
   }
@@ -104,11 +108,23 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
                 _buildTargetRatioGrid(),
                 SizedBox(height: 16.h),
 
-                // 3. Canvas Placement View
+                // 3. Subject Placement Alignment
+                _buildAlignmentSelector(),
+                SizedBox(height: 16.h),
+
+                // 4. Canvas Placement View
                 _buildCanvasPreview(),
                 SizedBox(height: 16.h),
 
-                // 4. Choose Quality
+                // 5. Scene Prompt Section (Optional)
+                _buildScenePromptSection(),
+                SizedBox(height: 16.h),
+
+                // 6. Engine Selector
+                _buildEngineSelector(),
+                SizedBox(height: 16.h),
+
+                // 7. Choose Quality
                 _buildQualitySelector(),
                 SizedBox(height: 16.h),
               ],
@@ -257,6 +273,217 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
     );
   }
 
+  Alignment _getCanvasAlignment() {
+    switch (_selectedAlignment) {
+      case 'left':
+        return Alignment.centerLeft;
+      case 'right':
+        return Alignment.centerRight;
+      case 'top':
+        return Alignment.topCenter;
+      case 'bottom':
+        return Alignment.bottomCenter;
+      case 'center':
+      case 'auto':
+      default:
+        return Alignment.center;
+    }
+  }
+
+  Widget _buildAlignmentSelector() {
+    final alignments = [
+      {'id': 'auto', 'label': 'Auto ✦', 'icon': Icons.auto_awesome},
+      {'id': 'center', 'label': 'Center', 'icon': Icons.filter_center_focus},
+      {'id': 'left', 'label': 'Left', 'icon': Icons.align_horizontal_left},
+      {'id': 'right', 'label': 'Right', 'icon': Icons.align_horizontal_right},
+      {'id': 'top', 'label': 'Top', 'icon': Icons.align_vertical_top},
+      {'id': 'bottom', 'label': 'Bottom', 'icon': Icons.align_vertical_bottom},
+    ];
+
+    return Container(
+      padding: EdgeInsets.all(12.r),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Subject Placement', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
+              Text('Smart alignment', style: AppTextStyles.captionXs.copyWith(color: AppColors.textTertiary)),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: alignments.map((a) {
+                final isSel = _selectedAlignment == a['id'];
+                return Padding(
+                  padding: EdgeInsets.only(right: 8.w),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedAlignment = a['id'] as String),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.h),
+                      decoration: BoxDecoration(
+                        color: isSel ? AppColors.surface : AppColors.background,
+                        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                        border: Border.all(
+                          color: isSel ? AppColors.primary : AppColors.border,
+                          width: isSel ? 1.5 : 1.0,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            a['icon'] as IconData,
+                            size: 13.sp,
+                            color: isSel ? AppColors.primary : AppColors.textSecondary,
+                          ),
+                          SizedBox(width: 5.w),
+                          Text(
+                            a['label'] as String,
+                            style: AppTextStyles.captionBold.copyWith(
+                              color: isSel ? AppColors.textPrimary : AppColors.textSecondary,
+                              fontSize: 11.5.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScenePromptSection() {
+    return Container(
+      padding: EdgeInsets.all(12.r),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.auto_fix_high, size: 15.sp, color: AppColors.primary),
+                  SizedBox(width: 6.w),
+                  Text('Scene Prompt', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
+                ],
+              ),
+              Text('Optional', style: AppTextStyles.captionXs.copyWith(color: AppColors.textTertiary)),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          TextField(
+            controller: _promptController,
+            maxLines: 2,
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary, fontSize: 13.sp),
+            decoration: InputDecoration(
+              hintText: 'Describe scenery extension (leave blank for auto vision match)',
+              hintStyle: AppTextStyles.captionXs.copyWith(color: AppColors.textTertiary),
+              filled: true,
+              fillColor: AppColors.background,
+              contentPadding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                borderSide: BorderSide(color: AppColors.primary, width: 1.2),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEngineSelector() {
+    final engines = [
+      {'id': 'diffusion', 'title': 'HD Generative (FLUX)', 'desc': 'Photorealistic scene & depth'},
+      {'id': 'fast', 'title': 'Fast Neural', 'desc': 'Reflection texture outpaint'},
+    ];
+
+    return Container(
+      padding: EdgeInsets.all(12.r),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Outpaint Engine', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
+          SizedBox(height: 10.h),
+          Row(
+            children: engines.map((e) {
+              final isSel = _selectedEngine == e['id'];
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: e['id'] == 'diffusion' ? 8.w : 0),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedEngine = e['id'] as String),
+                    child: Container(
+                      padding: EdgeInsets.all(10.r),
+                      decoration: BoxDecoration(
+                        color: isSel ? AppColors.surface : AppColors.background,
+                        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                        border: Border.all(
+                          color: isSel ? AppColors.primary : AppColors.border,
+                          width: isSel ? 1.5 : 1.0,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            e['title'] as String,
+                            style: AppTextStyles.captionBold.copyWith(
+                              color: isSel ? AppColors.textPrimary : AppColors.textSecondary,
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                          Text(
+                            e['desc'] as String,
+                            style: AppTextStyles.captionXs.copyWith(color: AppColors.textTertiary, fontSize: 10.sp),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
   double _getTargetRatioValue() {
     switch (_selectedRatio) {
       case '16:9':
@@ -307,7 +534,7 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
                       borderRadius: BorderRadius.circular(AppDimens.radiusRound),
                     ),
                     child: Text(
-                      'Target $_selectedRatio',
+                      'Target: $_selectedRatio • ${_selectedAlignment.toUpperCase()}',
                       style: AppTextStyles.captionXs.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -360,12 +587,15 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
                                 ),
                               ),
                             ),
-                            // Nested source image
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                              child: _selectedImagePath!.startsWith('http')
-                                  ? CachedNetworkImage(imageUrl: _selectedImagePath!, fit: BoxFit.contain)
-                                  : Image.file(File(_selectedImagePath!), fit: BoxFit.contain),
+                            // Nested source image with dynamic alignment positioning
+                            Align(
+                              alignment: _getCanvasAlignment(),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                                child: _selectedImagePath!.startsWith('http')
+                                    ? CachedNetworkImage(imageUrl: _selectedImagePath!, fit: BoxFit.contain)
+                                    : Image.file(File(_selectedImagePath!), fit: BoxFit.contain),
+                              ),
                             ),
                           ],
                         ),
@@ -476,21 +706,26 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
       return;
     }
 
+    final promptText = _promptController.text.trim();
     final outUrl = await controller.runAiExpand(
       path: _selectedImagePath!,
       targetRatio: _selectedRatio,
       quality: _selectedQuality,
+      alignment: _selectedAlignment,
+      prompt: promptText.isNotEmpty ? promptText : null,
+      engine: _selectedEngine,
     );
 
     if (outUrl != null && mounted) {
       Navigator.of(context).pop();
+      final engineLabel = _selectedEngine == 'diffusion' ? 'HD Generative' : 'Fast';
       ToolResultPreviewSheet.show(
         context: context,
         title: 'AI Expand',
         resultImageUrl: outUrl,
         originalImageUrl: _selectedImagePath,
         creditsUsed: _selectedQuality == '1k' ? 10.0 : 14.0,
-        badgeText: 'Target Ratio: $_selectedRatio • $_selectedQuality',
+        badgeText: '$_selectedRatio • ${_selectedAlignment.toUpperCase()} • $engineLabel • $_selectedQuality',
         enableBeforeAfter: false,
       );
     }

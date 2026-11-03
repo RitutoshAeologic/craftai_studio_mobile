@@ -360,18 +360,26 @@ class ToolsController extends GetxController {
     required String path,
     required String targetRatio,
     String quality = '1k',
+    String alignment = 'auto',
+    String? prompt,
+    String engine = 'diffusion',
   }) async {
     final cost = quality == '1k' ? 10.0 : 14.0;
     if (!_preflightCheck(requiredCredits: cost)) return null;
 
     isProcessing.value = true;
-    processingMessage.value = 'Extending canvas outpaint to $targetRatio...';
+    processingMessage.value = engine == 'diffusion'
+        ? 'Generating scene expansion via FLUX ($targetRatio)...'
+        : 'Extending canvas outpaint to $targetRatio...';
     try {
       final remoteUrl = await _ensureRemoteUrl(path);
       final result = await _repository.executeAiExpand(
         imageUrl: remoteUrl,
         targetRatio: targetRatio,
         quality: quality,
+        alignment: alignment,
+        prompt: prompt,
+        engine: engine,
       );
 
       if (result.data != null && result.data!.isNotEmpty) {
@@ -381,11 +389,18 @@ class ToolsController extends GetxController {
         }
         if (Get.isRegistered<LibraryController>()) {
           LibraryController.to.addNewCreation(
-            prompt: 'AI Expand canvas ($targetRatio)',
+            prompt: prompt != null && prompt.trim().isNotEmpty
+                ? 'AI Expand ($targetRatio): ${prompt.trim()}'
+                : 'AI Expand canvas ($targetRatio)',
             credits: cost,
             previewUrl: result.data!,
             type: 'AI_EXPAND',
-            metadata: {'target_ratio': targetRatio, 'source_url': remoteUrl},
+            metadata: {
+              'target_ratio': targetRatio,
+              'source_url': remoteUrl,
+              'alignment': alignment,
+              'engine': engine,
+            },
           );
         }
         return result.data;

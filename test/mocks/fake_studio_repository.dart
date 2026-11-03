@@ -96,6 +96,9 @@ class FakeStudioRepository implements IStudioRepository {
     required String imageUrl,
     String targetRatio = '16:9',
     String quality = '1k',
+    String alignment = 'auto',
+    String? prompt,
+    String engine = 'diffusion',
     String? userId,
   }) async => (data: null, failure: null);
 
