@@ -79,6 +79,7 @@ class LibraryRemoteDataSource {
       'job_id': job.jobId,
       'user_id': user.id,
       'type': job.type,
+      'tool_applied': job.type.toLowerCase(),
       'status': 'completed',
       'prompt': job.prompt,
       'prompt_text': job.prompt,
