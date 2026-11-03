@@ -234,6 +234,7 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
                   return ExploreCardWidget(
                     card: similarCard,
                     index: idx,
+                    showCategory: false,
                   );
                 },
                 childCount: _similarCards.length,

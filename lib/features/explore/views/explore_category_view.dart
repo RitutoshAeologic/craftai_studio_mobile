@@ -101,6 +101,7 @@ class ExploreCategoryView extends StatelessWidget {
               return ExploreCardWidget(
                 card: card,
                 index: idx,
+                showCategory: false,
               );
             },
           );

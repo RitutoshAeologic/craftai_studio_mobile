@@ -590,14 +590,28 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                   HapticFeedback.lightImpact();
                   Get.to(() => CreationDetailView(job: job));
                 },
-                child: AppNetworkImage(
-                  imageUrl: (job.previewUrl.isNotEmpty && job.previewUrl.startsWith('http'))
-                      ? job.previewUrl
-                      : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop',
-                  height: 180.h,
+                child: Container(
+                  // height: 220.h,
                   width: double.infinity,
-                  fit: BoxFit.cover,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(14.r)),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLight,
+                    // color: AppColors.black,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(14.r)),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Center(
+                    child: CachedNetworkImage(
+                      imageUrl: job.previewUrl.isNotEmpty && job.previewUrl.startsWith('http')
+                          ? job.previewUrl
+                          : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop',
+                      fit: BoxFit.contain,
+                      placeholder: (_, __) => Container(color: AppColors.surfaceLight),
+                      errorWidget: (_, __, ___) => Container(
+                        color: AppColors.surfaceLight,
+                        child: const Center(child: Icon(Icons.broken_image, color: AppColors.textMuted)),
+                      ),
+                    ),
+                  ),
                 ),
               ),
 

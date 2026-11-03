@@ -17,11 +17,13 @@ import 'package:craftai_studio_mobile/features/explore/views/explore_category_vi
 class ExploreCardWidget extends StatelessWidget {
   final ExploreCardModel card;
   final int index;
+  final bool showCategory;
 
   const ExploreCardWidget({
     super.key,
     required this.card,
     this.index = 0,
+    this.showCategory = true,
   });
 
   /// Dynamic aspect ratio calculation for scattered organic visual rhythm:
@@ -91,34 +93,35 @@ class ExploreCardWidget extends StatelessWidget {
                   ),
                 ),
 
-                // Category Tag (Top-left) - routes directly to ExploreCategoryView
-                Positioned(
-                  top: 8.h,
-                  left: 8.w,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      Get.to(() => ExploreCategoryView(category: card.category));
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-                      decoration: BoxDecoration(
-                        color: AppColors.black.withValues(alpha: 0.75),
-                        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                        border: Border.all(color: AppColors.border.withValues(alpha: 0.5), width: 0.5),
-                      ),
-                      child: Text(
-                        card.category,
-                        style: AppTextStyles.captionXs.copyWith(
-                          color: AppColors.surface,
-                          fontSize: 9.sp,
-                          fontWeight: FontWeight.bold,
+                // Category Tag (Top-left) - routes directly to ExploreCategoryView (hidden on Similar Creation page)
+                if (showCategory)
+                  Positioned(
+                    top: 8.h,
+                    left: 8.w,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Get.to(() => ExploreCategoryView(category: card.category));
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+                        decoration: BoxDecoration(
+                          color: AppColors.black.withValues(alpha: 0.75),
+                          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                          border: Border.all(color: AppColors.border.withValues(alpha: 0.5), width: 0.5),
+                        ),
+                        child: Text(
+                          card.category,
+                          style: AppTextStyles.captionXs.copyWith(
+                            color: AppColors.surface,
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
 
                 // Heart / Like Target with 48dp hit area (Top-right)
                 Positioned(
