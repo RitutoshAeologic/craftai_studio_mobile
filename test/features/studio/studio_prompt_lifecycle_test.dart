@@ -214,5 +214,32 @@ void main() {
         await tester.pumpAndSettle();
       }
     });
+
+    testWidgets('Entering a new prompt after enhancement disarms stale master prompt and dispatches new prompt', (tester) async {
+      studioController.promptController.text = 'Steaming bowl of noodles';
+      await studioController.enhancePrompt();
+      await tester.pumpAndSettle();
+
+      // Verify enhanced state for noodles
+      expect(studioController.isPromptEnhanced, isTrue);
+      expect(studioController.geminiRefinedPrompt.value, contains('Refined visual masterpiece'));
+
+      // User now adds a completely new prompt
+      const newPrompt = 'A futuristic cyberpunk red sports car';
+      studioController.promptController.text = newPrompt;
+      await tester.pumpAndSettle();
+
+      // Verify that isPromptEnhanced is now false and stale formula is disarmed
+      expect(studioController.isPromptEnhanced, isFalse);
+      expect(studioController.geminiRefinedPrompt.value, isEmpty);
+
+      // Trigger generation with the new prompt
+      await studioController.generateVisual();
+      await tester.pumpAndSettle();
+
+      // Assert that the new prompt was dispatched, NOT the old noodles
+      expect(studioController.lastDispatchedPrompt.value, contains(newPrompt));
+      expect(studioController.lastDispatchedPrompt.value, isNot(contains('noodles')));
+    });
   });
 }

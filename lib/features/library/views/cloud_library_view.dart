@@ -9,12 +9,12 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/data/models/collection_model.dart';
+import '../../../shared/widgets/app_network_image.dart';
 import '../controllers/library_controller.dart';
 import '../controllers/collection_controller.dart';
 import '../views/creation_detail_view.dart';
 import '../views/collection_gallery_view.dart';
 import '../../../shared/widgets/app_empty_state.dart';
-import '../../../shared/widgets/app_network_image.dart';
 import '../../shell/controllers/shell_controller.dart';
 
 /// [CloudLibraryView] displays the user's personal creations backed up in the cloud.
@@ -27,7 +27,8 @@ class CloudLibraryView extends StatefulWidget {
   State<CloudLibraryView> createState() => _CloudLibraryViewState();
 }
 
-class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerProviderStateMixin {
+class _CloudLibraryViewState extends State<CloudLibraryView>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   late final ScrollController _scrollController;
   late final LibraryController _controller;
@@ -120,8 +121,10 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                   dividerColor: Colors.transparent,
                   labelColor: AppColors.white,
                   unselectedLabelColor: AppColors.textSecondary,
-                  labelStyle: AppTextStyles.captionBold.copyWith(fontSize: 12.5.sp),
-                  unselectedLabelStyle: AppTextStyles.captionBold.copyWith(fontSize: 12.5.sp),
+                  labelStyle:
+                      AppTextStyles.captionBold.copyWith(fontSize: 12.5.sp),
+                  unselectedLabelStyle:
+                      AppTextStyles.captionBold.copyWith(fontSize: 12.5.sp),
                   tabs: const [
                     Tab(text: 'Current'),
                     Tab(text: 'Collections'),
@@ -172,7 +175,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
         onRefresh: _controller.refreshCreations,
         child: ListView.builder(
           controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics()),
           padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
           itemCount: _controller.myCreations.length + 1,
           itemBuilder: (context, idx) {
@@ -192,7 +196,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
   /// Tab 2: User-created Collections organizing saved artwork
   Widget _buildCollectionsTab() {
     return Obx(() {
-      if (_collectionController.isLoading.value && _collectionController.collections.isEmpty) {
+      if (_collectionController.isLoading.value &&
+          _collectionController.collections.isEmpty) {
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -200,12 +205,14 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
               SizedBox(
                 width: 32.w,
                 height: 32.w,
-                child: const CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.primary),
+                child: const CircularProgressIndicator(
+                    strokeWidth: 2.5, color: AppColors.primary),
               ),
               SizedBox(height: 16.h),
               Text(
                 'Syncing collections...',
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -216,7 +223,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
         return AppEmptyState(
           icon: Icons.bookmark_border_rounded,
           title: 'No Collections Yet',
-          subtitle: 'Create folders to organize your saved and bookmarked creations.',
+          subtitle:
+              'Create folders to organize your saved and bookmarked creations.',
           actionLabel: 'Create Collection',
           onAction: () => _showCreateCollectionDialog(context),
         );
@@ -227,7 +235,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
         backgroundColor: AppColors.surface,
         onRefresh: _collectionController.fetchCollections,
         child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics()),
           padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
           children: [
             Row(
@@ -246,11 +255,14 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                 GestureDetector(
                   onTap: () => _showCreateCollectionDialog(context),
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                      borderRadius:
+                          BorderRadius.circular(AppDimens.radiusRound),
+                      border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -271,7 +283,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
               ],
             ),
             SizedBox(height: 12.h),
-            ..._collectionController.collections.map((col) => _buildCollectionCard(context, col)),
+            ..._collectionController.collections
+                .map((col) => _buildCollectionCard(context, col)),
           ],
         ),
       );
@@ -317,9 +330,11 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                           padding: EdgeInsets.all(6.r),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                            borderRadius:
+                                BorderRadius.circular(AppDimens.radiusSm),
                           ),
-                          child: Icon(Icons.folder_open_rounded, color: AppColors.primary, size: 16.sp),
+                          child: Icon(Icons.folder_open_rounded,
+                              color: AppColors.primary, size: 16.sp),
                         ),
                         SizedBox(width: 8.w),
                         Expanded(
@@ -338,10 +353,12 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                   ),
                   SizedBox(width: 8.w),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceLight,
-                      borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                      borderRadius:
+                          BorderRadius.circular(AppDimens.radiusRound),
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Text(
@@ -353,7 +370,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                     ),
                   ),
                   SizedBox(width: 4.w),
-                  Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18.sp),
+                  Icon(Icons.chevron_right_rounded,
+                      color: AppColors.textMuted, size: 18.sp),
                 ],
               ),
               if (col.description != null && col.description!.isNotEmpty) ...[
@@ -362,7 +380,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                   col.description!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
+                  style: AppTextStyles.captionXs
+                      .copyWith(color: AppColors.textMuted),
                 ),
               ],
               SizedBox(height: 10.h),
@@ -386,15 +405,19 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                           child: CachedNetworkImage(
                             imageUrl: imgUrl,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(color: AppColors.surfaceLight),
-                            errorWidget: (_, __, ___) => const Icon(Icons.broken_image, color: AppColors.textMuted),
+                            placeholder: (_, __) =>
+                                Container(color: AppColors.surfaceLight),
+                            errorWidget: (_, __, ___) => const Icon(
+                                Icons.broken_image,
+                                color: AppColors.textMuted),
                           ),
                         ),
                       );
                     },
                   ),
                 ),
-              ] else if (col.coverImageUrl != null && col.coverImageUrl!.isNotEmpty) ...[
+              ] else if (col.coverImageUrl != null &&
+                  col.coverImageUrl!.isNotEmpty) ...[
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                   child: Container(
@@ -404,8 +427,11 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                     child: CachedNetworkImage(
                       imageUrl: col.coverImageUrl!,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppColors.surfaceLight),
-                      errorWidget: (_, __, ___) => const Icon(Icons.broken_image, color: AppColors.textMuted),
+                      placeholder: (_, __) =>
+                          Container(color: AppColors.surfaceLight),
+                      errorWidget: (_, __, ___) => const Icon(
+                          Icons.broken_image,
+                          color: AppColors.textMuted),
                     ),
                   ),
                 ),
@@ -419,7 +445,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                   child: Center(
                     child: Text(
                       'Empty collection • Tap to browse or add photos',
-                      style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
+                      style: AppTextStyles.captionXs
+                          .copyWith(color: AppColors.textMuted),
                     ),
                   ),
                 ),
@@ -460,7 +487,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
               SizedBox(height: AppDimens.vSpacingSm),
               Text(
                 'Organize your saved artwork into custom themes.',
-                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.caption
+                    .copyWith(color: AppColors.textSecondary),
               ),
               SizedBox(height: AppDimens.vSpacingMd),
               TextField(
@@ -469,14 +497,16 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                 style: AppTextStyles.bodyMedium,
                 decoration: InputDecoration(
                   hintText: 'Collection Name (e.g. Cyberpunk Vibes)',
-                  hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                  hintStyle: AppTextStyles.caption
+                      .copyWith(color: AppColors.textMuted),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                     borderSide: const BorderSide(color: AppColors.border),
                   ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                 ),
               ),
               SizedBox(height: 10.h),
@@ -485,14 +515,16 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                 style: AppTextStyles.bodyMedium,
                 decoration: InputDecoration(
                   hintText: 'Description (optional)',
-                  hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                  hintStyle: AppTextStyles.caption
+                      .copyWith(color: AppColors.textMuted),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                     borderSide: const BorderSide(color: AppColors.border),
                   ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                 ),
               ),
               SizedBox(height: AppDimens.vSpacingLg),
@@ -501,7 +533,9 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                 children: [
                   TextButton(
                     onPressed: () => Get.back(),
-                    child: Text('Cancel', style: AppTextStyles.buttonSmall.copyWith(color: AppColors.textMuted)),
+                    child: Text('Cancel',
+                        style: AppTextStyles.buttonSmall
+                            .copyWith(color: AppColors.textMuted)),
                   ),
                   SizedBox(width: 8.w),
                   ElevatedButton(
@@ -557,7 +591,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
           SizedBox(height: 16.h),
           Text(
             'Syncing cloud library...',
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.bodyMedium
+                .copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -647,12 +682,14 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                     _confirmDelete(context, _controller, job);
                   },
                   child: Container(
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    constraints:
+                        const BoxConstraints(minWidth: 40, minHeight: 40),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.65),
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
+                      border: Border.all(
+                          color: AppColors.border.withValues(alpha: 0.3)),
                     ),
                     child: Icon(
                       Icons.delete_outline_rounded,
@@ -684,7 +721,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceLight,
                         borderRadius: BorderRadius.circular(6.r),
@@ -716,7 +754,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.primary,
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8.w, vertical: 4.h),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -792,7 +831,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                border: Border.all(color: AppColors.accentWarning.withValues(alpha: 0.5)),
+                border: Border.all(
+                    color: AppColors.accentWarning.withValues(alpha: 0.5)),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.black.withValues(alpha: 0.04),
@@ -804,12 +844,14 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.refresh_rounded, size: 15.sp, color: AppColors.accentWarning),
+                  Icon(Icons.refresh_rounded,
+                      size: 15.sp, color: AppColors.accentWarning),
                   SizedBox(width: 6.w),
                   Flexible(
                     child: Text(
                       'Failed to load older creations • Tap to retry',
-                      style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                      style: AppTextStyles.captionBold
+                          .copyWith(color: AppColors.textPrimary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -822,7 +864,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
       }
 
       // 3. Reached end of cloud library
-      if (!_controller.hasMoreCreations.value && _controller.myCreations.isNotEmpty) {
+      if (!_controller.hasMoreCreations.value &&
+          _controller.myCreations.isNotEmpty) {
         return Container(
           padding: EdgeInsets.symmetric(vertical: 16.h),
           alignment: Alignment.center,
@@ -836,7 +879,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.cloud_done_rounded, size: 13.sp, color: AppColors.accentSuccess),
+                Icon(Icons.cloud_done_rounded,
+                    size: 13.sp, color: AppColors.accentSuccess),
                 SizedBox(width: 6.w),
                 Flexible(
                   child: Text(
@@ -860,14 +904,16 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
   }
 
   /// Safe delete confirmation dialog
-  void _confirmDelete(BuildContext context, LibraryController controller, JobModel job) {
+  void _confirmDelete(
+      BuildContext context, LibraryController controller, JobModel job) {
     bool isDeleting = false;
     Get.dialog(
       StatefulBuilder(
         builder: (dialogContext, setDialogState) {
           return Dialog(
             backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.r)),
             child: Padding(
               padding: EdgeInsets.all(20.w),
               child: Column(
@@ -879,7 +925,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                       color: AppColors.accentError.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.delete_forever_rounded, color: AppColors.accentError, size: 28.sp),
+                    child: Icon(Icons.delete_forever_rounded,
+                        color: AppColors.accentError, size: 28.sp),
                   ),
                   SizedBox(height: 16.h),
                   Text(
@@ -905,10 +952,13 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: isDeleting ? null : () => Navigator.of(dialogContext).pop(),
+                          onPressed: isDeleting
+                              ? null
+                              : () => Navigator.of(dialogContext).pop(),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.border),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.r)),
                             padding: EdgeInsets.symmetric(vertical: 12.h),
                           ),
                           child: Text(
@@ -930,18 +980,22 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                                   setDialogState(() {
                                     isDeleting = true;
                                   });
-                                  await controller.deleteCreation(job, showSnackbar: false);
+                                  await controller.deleteCreation(job,
+                                      showSnackbar: false);
                                   if (dialogContext.mounted) {
                                     Navigator.of(dialogContext).pop();
                                   }
-                                  if (Get.overlayContext != null && !Get.testMode) {
+                                  if (Get.overlayContext != null &&
+                                      !Get.testMode) {
                                     Get.snackbar(
                                       'Image Deleted 🗑️',
                                       'Image removed from your library and cloud storage.',
                                       snackPosition: SnackPosition.BOTTOM,
                                       backgroundColor: AppColors.surface,
                                       colorText: AppColors.textPrimary,
-                                      icon: const Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
+                                      icon: const Icon(
+                                          Icons.check_circle_rounded,
+                                          color: AppColors.accentSuccess),
                                       margin: const EdgeInsets.all(16),
                                       borderRadius: 12,
                                       duration: const Duration(seconds: 2),
@@ -951,9 +1005,11 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.accentError,
                             foregroundColor: AppColors.white,
-                            disabledBackgroundColor: AppColors.accentError.withValues(alpha: 0.6),
+                            disabledBackgroundColor:
+                                AppColors.accentError.withValues(alpha: 0.6),
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.r)),
                             padding: EdgeInsets.symmetric(vertical: 12.h),
                           ),
                           child: isDeleting
@@ -962,7 +1018,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerPr
                                   height: 18.w,
                                   child: const CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppColors.white),
                                   ),
                                 )
                               : Text(

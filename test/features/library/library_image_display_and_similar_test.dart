@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/library/views/cloud_library_view.dart';
@@ -11,7 +12,6 @@ import 'package:craftai_studio_mobile/features/explore/controllers/explore_contr
 import 'package:craftai_studio_mobile/features/explore/views/explore_category_view.dart';
 import 'package:craftai_studio_mobile/features/explore/widgets/explore_card_widget.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
-import 'package:craftai_studio_mobile/shared/widgets/app_network_image.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -62,12 +62,12 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      // 1. Verify AppNetworkImage is present with BoxFit.contain
-      final appNetworkImageFinder = find.byType(AppNetworkImage);
-      expect(appNetworkImageFinder, findsOneWidget);
+      // 1. Verify CachedNetworkImage is present with BoxFit.contain
+      final imageFinder = find.byType(CachedNetworkImage);
+      expect(imageFinder, findsOneWidget);
 
-      final appNetworkImageWidget = tester.widget<AppNetworkImage>(appNetworkImageFinder);
-      expect(appNetworkImageWidget.fit, equals(BoxFit.contain));
+      final cachedImageWidget = tester.widget<CachedNetworkImage>(imageFinder);
+      expect(cachedImageWidget.fit, equals(BoxFit.contain));
 
       // 2. Verify prompt text and job elements render cleanly
       expect(find.text('Futuristic architectural skyline at dusk'), findsOneWidget);

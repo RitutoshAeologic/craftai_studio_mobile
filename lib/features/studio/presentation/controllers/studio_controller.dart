@@ -307,6 +307,15 @@ class StudioController extends GetxController with WidgetsBindingObserver {
         }
       }
       selectedStarterTemplate.value = match?['title'];
+
+      // If user typed, modified, or replaced the prompt text after enhancement,
+      // disarm the stale enhanced prompt so the new prompt is sent for generation.
+      if (geminiRefinedPrompt.value.isNotEmpty && currentText != userTypedPrompt.value) {
+        geminiRefinedPrompt.value = '';
+        geminiNegativePrompt.value = '';
+        geminiModelUsed.value = '';
+        activeStructuredMetadata.value = null;
+      }
     });
   }
 
@@ -839,8 +848,13 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     }
   }
 
-  /// Whether Gemini prompt refinement is armed for the next generation
-  bool get isPromptEnhanced => geminiRefinedPrompt.value.isNotEmpty;
+  /// Whether Gemini prompt refinement is armed for the next generation.
+  /// Strictly verifies that the prompt currently in [promptController] still matches
+  /// the user draft that was enhanced, preventing stale prompt bleed.
+  bool get isPromptEnhanced =>
+      geminiRefinedPrompt.value.isNotEmpty &&
+      userTypedPrompt.value.trim().isNotEmpty &&
+      promptController.text.trim() == userTypedPrompt.value.trim();
 
   /// Disarms the Gemini enhancement so the user can generate using raw text
   void clearEnhancement() {
@@ -1014,9 +1028,16 @@ class StudioController extends GetxController with WidgetsBindingObserver {
       return;
     }
 
-    if (userTypedPrompt.value.isEmpty) {
-      userTypedPrompt.value = promptUsed;
+    // Defensive check: If the user changed or entered a new prompt since the last AI enhancement,
+    // disarm the stale enhanced prompt so the new prompt is dispatched to the backend.
+    if (geminiRefinedPrompt.value.isNotEmpty && promptUsed != userTypedPrompt.value.trim()) {
+      geminiRefinedPrompt.value = '';
+      geminiNegativePrompt.value = '';
+      geminiModelUsed.value = '';
+      activeStructuredMetadata.value = null;
     }
+
+    userTypedPrompt.value = promptUsed;
 
     // Blend selected visual style preset keywords if not already included
     final selectedStyle = visualStyles.firstWhere(
@@ -1026,7 +1047,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     final styleSuffix = selectedStyle['promptSuffix'] as String? ?? '';
     final styledPrompt = promptUsed.contains(styleSuffix) ? promptUsed : '$promptUsed$styleSuffix';
 
-    // Option A: If enhanced, dispatch the secret master recipe to the engine!
+    // Option A: If enhanced and still matching active prompt, dispatch secret master recipe; otherwise styled prompt
     final rawPrompt = isPromptEnhanced ? geminiRefinedPrompt.value : styledPrompt;
     final promptToDispatch = rawPrompt.length > 4000 ? rawPrompt.substring(0, 4000) : rawPrompt;
 
@@ -1098,9 +1119,11 @@ class StudioController extends GetxController with WidgetsBindingObserver {
         prompt: promptToDispatch,
         characterId: selectedCharacter.value?.id,
         faceReferenceUrls: remoteReferenceUrls.isNotEmpty ? remoteReferenceUrls : null,
-        negativePrompt: geminiNegativePrompt.value.isNotEmpty ? geminiNegativePrompt.value : null,
+        negativePrompt: isPromptEnhanced && geminiNegativePrompt.value.isNotEmpty
+            ? geminiNegativePrompt.value
+            : null,
         seed: isSeedLocked.value ? (seedValue.value.clamp(0, 2147483647).toInt()) : null,
-        structuredMetadata: activeStructuredMetadata.value?.toJson(),
+        structuredMetadata: isPromptEnhanced ? activeStructuredMetadata.value?.toJson() : null,
         width: w,
         height: h,
         model: selectedModel.value,
