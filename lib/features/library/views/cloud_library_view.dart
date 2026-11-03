@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
+import 'package:craftai_studio_mobile/data/models/collection_model.dart';
 import '../controllers/library_controller.dart';
+import '../controllers/collection_controller.dart';
 import '../views/creation_detail_view.dart';
+import '../views/collection_gallery_view.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_network_image.dart';
 import '../../shell/controllers/shell_controller.dart';
@@ -23,20 +27,27 @@ class CloudLibraryView extends StatefulWidget {
   State<CloudLibraryView> createState() => _CloudLibraryViewState();
 }
 
-class _CloudLibraryViewState extends State<CloudLibraryView> {
+class _CloudLibraryViewState extends State<CloudLibraryView> with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
   late final ScrollController _scrollController;
   late final LibraryController _controller;
+  late final CollectionController _collectionController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _controller = Get.put(LibraryController());
+    _collectionController = Get.isRegistered<CollectionController>()
+        ? Get.find<CollectionController>()
+        : Get.put(CollectionController());
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _tabController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -88,52 +99,444 @@ class _CloudLibraryViewState extends State<CloudLibraryView> {
           ),
         ),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1.h),
-          child: Container(color: AppColors.border, height: 1.h),
+          preferredSize: Size.fromHeight(48.h),
+          child: Column(
+            children: [
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+                height: 36.h,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  labelColor: AppColors.white,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  labelStyle: AppTextStyles.captionBold.copyWith(fontSize: 12.5.sp),
+                  unselectedLabelStyle: AppTextStyles.captionBold.copyWith(fontSize: 12.5.sp),
+                  tabs: const [
+                    Tab(text: 'Current'),
+                    Tab(text: 'Collections'),
+                  ],
+                ),
+              ),
+              Container(color: AppColors.border, height: 1.h),
+            ],
+          ),
         ),
       ),
-      body: Obx(() {
-        // 1. Initial skeleton loading state
-        if (_controller.isLoading.value && _controller.myCreations.isEmpty) {
-          return _buildInitialSkeleton();
-        }
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildCurrentTab(),
+          _buildCollectionsTab(),
+        ],
+      ),
+    );
+  }
 
-        // 2. Empty library state
-        if (_controller.myCreations.isEmpty) {
-          return AppEmptyState(
-            icon: Icons.photo_library_outlined,
-            title: 'No Creations Yet',
-            subtitle: 'Generate your first masterpiece in the Studio canvas.',
-            actionLabel: 'Create Now',
-            onAction: () {
-              HapticFeedback.lightImpact();
-              Get.find<ShellController>().switchTab(1);
-            },
-          );
-        }
+  /// Tab 1: Current personal creations list with infinite scroll & pagination
+  Widget _buildCurrentTab() {
+    return Obx(() {
+      // 1. Initial skeleton loading state
+      if (_controller.isLoading.value && _controller.myCreations.isEmpty) {
+        return _buildInitialSkeleton();
+      }
 
-        // 3. Paginated creations list with pull-to-refresh
-        return RefreshIndicator(
-          color: AppColors.primary,
-          backgroundColor: AppColors.surface,
-          onRefresh: _controller.refreshCreations,
-          child: ListView.builder(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
-            itemCount: _controller.myCreations.length + 1,
-            itemBuilder: (context, idx) {
-              // Last item is the dynamic pagination footer
-              if (idx == _controller.myCreations.length) {
-                return _buildPaginationFooter();
-              }
+      // 2. Empty library state
+      if (_controller.myCreations.isEmpty) {
+        return AppEmptyState(
+          icon: Icons.photo_library_outlined,
+          title: 'No Creations Yet',
+          subtitle: 'Generate your first masterpiece in the Studio canvas.',
+          actionLabel: 'Create Now',
+          onAction: () {
+            HapticFeedback.lightImpact();
+            Get.find<ShellController>().switchTab(1);
+          },
+        );
+      }
 
-              final job = _controller.myCreations[idx];
-              return _buildCreationCard(context, job);
-            },
+      // 3. Paginated creations list with pull-to-refresh
+      return RefreshIndicator(
+        color: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        onRefresh: _controller.refreshCreations,
+        child: ListView.builder(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          itemCount: _controller.myCreations.length + 1,
+          itemBuilder: (context, idx) {
+            // Last item is the dynamic pagination footer
+            if (idx == _controller.myCreations.length) {
+              return _buildPaginationFooter();
+            }
+
+            final job = _controller.myCreations[idx];
+            return _buildCreationCard(context, job);
+          },
+        ),
+      );
+    });
+  }
+
+  /// Tab 2: User-created Collections organizing saved artwork
+  Widget _buildCollectionsTab() {
+    return Obx(() {
+      if (_collectionController.isLoading.value && _collectionController.collections.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 32.w,
+                height: 32.w,
+                child: const CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.primary),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                'Syncing collections...',
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
           ),
         );
-      }),
+      }
+
+      if (_collectionController.collections.isEmpty) {
+        return AppEmptyState(
+          icon: Icons.bookmark_border_rounded,
+          title: 'No Collections Yet',
+          subtitle: 'Create folders to organize your saved and bookmarked creations.',
+          actionLabel: 'Create Collection',
+          onAction: () => _showCreateCollectionDialog(context),
+        );
+      }
+
+      return RefreshIndicator(
+        color: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        onRefresh: _collectionController.fetchCollections,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    '${_collectionController.collections.length} Collections',
+                    style: AppTextStyles.captionBold.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                GestureDetector(
+                  onTap: () => _showCreateCollectionDialog(context),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add, size: 14.sp, color: AppColors.primary),
+                        SizedBox(width: 4.w),
+                        Text(
+                          'New Collection',
+                          style: AppTextStyles.captionBold.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 11.5.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            ..._collectionController.collections.map((col) => _buildCollectionCard(context, col)),
+          ],
+        ),
+      );
+    });
+  }
+
+  /// Card item displaying a collection folder and thumbnail previews of its saved images
+  Widget _buildCollectionCard(BuildContext context, CollectionModel col) {
+    return Obx(() {
+      final items = _collectionController.getCollectionItems(col.id);
+      final count = items.isNotEmpty ? items.length : col.itemCount;
+
+      return GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Get.to(() => CollectionGalleryView(collection: col));
+        },
+        child: Container(
+          margin: EdgeInsets.only(bottom: 12.h),
+          padding: EdgeInsets.all(12.r),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.black.withValues(alpha: 0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(6.r),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                          ),
+                          child: Icon(Icons.folder_open_rounded, color: AppColors.primary, size: 16.sp),
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            col.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.h3.copyWith(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Text(
+                      '$count photo${count == 1 ? '' : 's'}',
+                      style: AppTextStyles.captionXs.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 4.w),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18.sp),
+                ],
+              ),
+              if (col.description != null && col.description!.isNotEmpty) ...[
+                SizedBox(height: 6.h),
+                Text(
+                  col.description!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
+                ),
+              ],
+              SizedBox(height: 10.h),
+              if (items.isNotEmpty) ...[
+                SizedBox(
+                  height: 72.h,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: items.length.clamp(0, 6),
+                    separatorBuilder: (_, __) => SizedBox(width: 8.w),
+                    itemBuilder: (context, idx) {
+                      final item = items[idx];
+                      final imgUrl = item['image_url'] as String? ?? '';
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                        child: Container(
+                          width: 72.h,
+                          height: 72.h,
+                          color: AppColors.surfaceLight,
+                          child: CachedNetworkImage(
+                            imageUrl: imgUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Container(color: AppColors.surfaceLight),
+                            errorWidget: (_, __, ___) => const Icon(Icons.broken_image, color: AppColors.textMuted),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ] else if (col.coverImageUrl != null && col.coverImageUrl!.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                  child: Container(
+                    height: 64.h,
+                    width: double.infinity,
+                    color: AppColors.surfaceLight,
+                    child: CachedNetworkImage(
+                      imageUrl: col.coverImageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: AppColors.surfaceLight),
+                      errorWidget: (_, __, ___) => const Icon(Icons.broken_image, color: AppColors.textMuted),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Container(
+                  height: 48.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLight,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Empty collection • Tap to browse or add photos',
+                      style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  void _showCreateCollectionDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final descController = TextEditingController();
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+        ),
+        backgroundColor: AppColors.surface,
+        child: Padding(
+          padding: EdgeInsets.all(AppDimens.spacingLg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('New Collection', style: AppTextStyles.h3),
+                  GestureDetector(
+                    onTap: () => Get.back(),
+                    child: const Icon(Icons.close, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppDimens.vSpacingSm),
+              Text(
+                'Organize your saved artwork into custom themes.',
+                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+              ),
+              SizedBox(height: AppDimens.vSpacingMd),
+              TextField(
+                controller: nameController,
+                autofocus: true,
+                style: AppTextStyles.bodyMedium,
+                decoration: InputDecoration(
+                  hintText: 'Collection Name (e.g. Cyberpunk Vibes)',
+                  hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                  filled: true,
+                  fillColor: AppColors.surfaceLight,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                ),
+              ),
+              SizedBox(height: 10.h),
+              TextField(
+                controller: descController,
+                style: AppTextStyles.bodyMedium,
+                decoration: InputDecoration(
+                  hintText: 'Description (optional)',
+                  hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                  filled: true,
+                  fillColor: AppColors.surfaceLight,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                ),
+              ),
+              SizedBox(height: AppDimens.vSpacingLg),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: Text('Cancel', style: AppTextStyles.buttonSmall.copyWith(color: AppColors.textMuted)),
+                  ),
+                  SizedBox(width: 8.w),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final name = nameController.text.trim();
+                      if (name.isEmpty) return;
+                      Get.back();
+                      await _collectionController.createCollection(
+                        name: name,
+                        description: descController.text.trim(),
+                      );
+                      Get.snackbar(
+                        'Collection Created',
+                        '"$name" added to your collections',
+                        snackPosition: SnackPosition.BOTTOM,
+                        backgroundColor: AppColors.surface,
+                        colorText: AppColors.primary,
+                        duration: const Duration(seconds: 2),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                      ),
+                    ),
+                    child: Text('Create', style: AppTextStyles.buttonSmall),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

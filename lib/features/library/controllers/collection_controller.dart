@@ -40,6 +40,107 @@ class CollectionController extends GetxController {
   /// Map of `itemId` -> Set of `collectionId`s for O(1) bookmark status lookups
   final RxMap<String, Set<String>> itemCollectionMap = <String, Set<String>>{}.obs;
 
+  /// Map of `collectionId` -> List of saved image item records
+  final RxMap<String, List<Map<String, dynamic>>> collectionItemsCache = <String, List<Map<String, dynamic>>>{
+    '00000000-0000-4000-8000-000000000101': [
+      {
+        'id': 'fav-1',
+        'collection_id': '00000000-0000-4000-8000-000000000101',
+        'image_url': 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop',
+        'title': 'Neon Cyberpunk Geisha',
+        'category': 'Cyberpunk',
+      },
+      {
+        'id': 'fav-2',
+        'collection_id': '00000000-0000-4000-8000-000000000101',
+        'image_url': 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop',
+        'title': 'Cosmic Nebula Odyssey',
+        'category': 'Sci-Fi',
+      },
+      {
+        'id': 'fav-3',
+        'collection_id': '00000000-0000-4000-8000-000000000101',
+        'image_url': 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop',
+        'title': 'Ethereal Forest Spirit',
+        'category': 'Fantasy',
+      },
+      {
+        'id': 'fav-4',
+        'collection_id': '00000000-0000-4000-8000-000000000101',
+        'image_url': 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&auto=format&fit=crop',
+        'title': 'Golden Hour Portrait',
+        'category': 'Portrait',
+      },
+    ],
+    '00000000-0000-4000-8000-000000000102': [
+      {
+        'id': 'sci-1',
+        'collection_id': '00000000-0000-4000-8000-000000000102',
+        'image_url': 'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop',
+        'title': 'Cybernetic Megacity Night',
+        'category': 'Cyberpunk',
+      },
+      {
+        'id': 'sci-2',
+        'collection_id': '00000000-0000-4000-8000-000000000102',
+        'image_url': 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=600&auto=format&fit=crop',
+        'title': 'Android Prototype 07',
+        'category': 'Sci-Fi',
+      },
+      {
+        'id': 'sci-3',
+        'collection_id': '00000000-0000-4000-8000-000000000102',
+        'image_url': 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?w=600&auto=format&fit=crop',
+        'title': 'Neon Alleyway Stalker',
+        'category': 'Cyberpunk',
+      },
+      {
+        'id': 'sci-4',
+        'collection_id': '00000000-0000-4000-8000-000000000102',
+        'image_url': 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop',
+        'title': 'Holographic User Interface',
+        'category': 'Sci-Fi',
+      },
+      {
+        'id': 'sci-5',
+        'collection_id': '00000000-0000-4000-8000-000000000102',
+        'image_url': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
+        'title': 'Retro Synthwave Grid',
+        'category': 'Cyberpunk',
+      },
+      {
+        'id': 'sci-6',
+        'collection_id': '00000000-0000-4000-8000-000000000102',
+        'image_url': 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop',
+        'title': 'Quantum Singularity Event',
+        'category': 'Sci-Fi',
+      },
+    ],
+    '00000000-0000-4000-8000-000000000103': [
+      {
+        'id': 'char-1',
+        'collection_id': '00000000-0000-4000-8000-000000000103',
+        'image_url': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop',
+        'title': 'Studio Lighting Reference',
+        'category': 'Character',
+      },
+      {
+        'id': 'char-2',
+        'collection_id': '00000000-0000-4000-8000-000000000103',
+        'image_url': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop',
+        'title': '45 Degree Facial Angles',
+        'category': 'Character',
+      },
+      {
+        'id': 'char-3',
+        'collection_id': '00000000-0000-4000-8000-000000000103',
+        'image_url': 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop',
+        'title': 'Profile Bone Structure Reference',
+        'category': 'Character',
+      },
+    ],
+  }.obs;
+
   final RxBool isLoading = false.obs;
 
   static final RegExp _uuidRegex = RegExp(
@@ -76,13 +177,15 @@ class CollectionController extends GetxController {
         AppLogger.s('Loaded ${loaded.length} collections from Supabase', tag: 'COLLECTIONS');
       }
 
-      // 2. Fetch all saved bookmark mappings for O(1) state lookup
+      // 2. Fetch all saved bookmark mappings and cache image items for O(1) state lookup
       final itemsRes = await client
           .from('collection_items')
-          .select('collection_id, job_id, explore_prompt_id, item_id')
+          .select('collection_id, job_id, explore_prompt_id, item_id, image_url')
           .eq('user_id', userId);
 
       final map = <String, Set<String>>{};
+      final cache = <String, List<Map<String, dynamic>>>{};
+
       for (final row in itemsRes as List) {
         final cId = row['collection_id']?.toString();
         final rawTargets = [row['job_id'], row['explore_prompt_id'], row['item_id']];
@@ -92,8 +195,21 @@ class CollectionController extends GetxController {
             map.putIfAbsent(tId, () => <String>{}).add(cId);
           }
         }
+        if (cId != null && row['image_url'] != null) {
+          cache.putIfAbsent(cId, () => []).add({
+            'id': row['item_id']?.toString() ?? row['job_id']?.toString() ?? row['explore_prompt_id']?.toString() ?? '',
+            'collection_id': cId,
+            'image_url': row['image_url'].toString(),
+            'title': 'Saved Artwork',
+          });
+        }
       }
       itemCollectionMap.assignAll(map);
+      if (cache.isNotEmpty) {
+        for (final entry in cache.entries) {
+          collectionItemsCache[entry.key] = entry.value;
+        }
+      }
       AppLogger.s('Synchronized ${map.length} saved bookmarks from Supabase', tag: 'COLLECTIONS');
     } catch (e) {
       AppLogger.d('Cloud collection sync skipped: $e', tag: 'COLLECTIONS');
@@ -146,6 +262,26 @@ class CollectionController extends GetxController {
     return createdCol;
   }
 
+  /// Returns saved image items in a specific collection
+  List<Map<String, dynamic>> getCollectionItems(String collectionId) {
+    return collectionItemsCache[collectionId] ?? [];
+  }
+
+  /// Removes an item directly from a collection
+  Future<void> removeItemFromCollection({
+    required String collectionId,
+    required String itemId,
+  }) async {
+    final items = List<Map<String, dynamic>>.from(collectionItemsCache[collectionId] ?? []);
+    final target = items.firstWhereOrNull((i) => i['id'] == itemId || i['item_id'] == itemId);
+    final imageUrl = target?['image_url'] as String? ?? '';
+    await toggleSaveItem(
+      collectionId: collectionId,
+      itemId: itemId,
+      imageUrl: imageUrl,
+    );
+  }
+
   /// Checks if an item is bookmarked in a specific collection
   bool isItemInCollection(String collectionId, String itemId) {
     return itemCollectionMap[itemId]?.contains(collectionId) ?? false;
@@ -171,6 +307,9 @@ class CollectionController extends GetxController {
           itemCount: col.itemCount > 0 ? col.itemCount - 1 : 0,
         );
       }
+      final items = List<Map<String, dynamic>>.from(collectionItemsCache[collectionId] ?? []);
+      items.removeWhere((item) => item['id'] == itemId || item['item_id'] == itemId);
+      collectionItemsCache[collectionId] = items;
     } else {
       currentSet.add(collectionId);
       final idx = collections.indexWhere((c) => c.id == collectionId);
@@ -180,6 +319,17 @@ class CollectionController extends GetxController {
           itemCount: col.itemCount + 1,
           coverImageUrl: col.coverImageUrl ?? imageUrl,
         );
+      }
+      final items = List<Map<String, dynamic>>.from(collectionItemsCache[collectionId] ?? []);
+      if (!items.any((item) => item['id'] == itemId || item['item_id'] == itemId)) {
+        items.insert(0, {
+          'id': itemId,
+          'item_id': itemId,
+          'collection_id': collectionId,
+          'image_url': imageUrl,
+          'title': 'Saved Creation',
+        });
+        collectionItemsCache[collectionId] = items;
       }
     }
 

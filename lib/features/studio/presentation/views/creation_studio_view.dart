@@ -226,204 +226,6 @@ class CreationStudioView extends StatelessWidget {
                         );
                       }),
 
-                      // =========================================================================
-                      // SECTION 4: REFERENCE PHOTO INPUT SLOT & PRIVACY NOTICE
-                      // =========================================================================
-                      Obx(() {
-                        if (controller.referenceImages.isEmpty) {
-                          return GestureDetector(
-                            onTap: () => _showReferencePickerSheet(context, controller),
-                            child: Container(
-                              margin: EdgeInsets.only(top: AppDimens.vSpacingSm),
-                              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 9.h),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(6.w),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                                    ),
-                                    child: Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary, size: 16.sp),
-                                  ),
-                                  SizedBox(width: 10.w),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Add Image Reference (Face Lock / Style)',
-                                          style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
-                                        ),
-                                        Text(
-                                          'Upload photo to lock identity or guide AI style',
-                                          style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.surfaceLight,
-                                      borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                                      border: Border.all(color: AppColors.border),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.add, color: AppColors.primary, size: 12.sp),
-                                        SizedBox(width: 2.w),
-                                        Text(
-                                          'Upload',
-                                          style: AppTextStyles.captionXs.copyWith(
-                                            color: AppColors.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-
-                        return Container(
-                          margin: EdgeInsets.only(top: AppDimens.vSpacingSm),
-                          padding: EdgeInsets.all(AppDimens.spacingSm),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Obx(() {
-                                    final currentCount = controller.referenceImages.length;
-                                    return Row(
-                                      children: [
-                                        Icon(Icons.photo_library_outlined, size: 13.sp, color: AppColors.textPrimary),
-                                        SizedBox(width: 4.w),
-                                        Text(
-                                          'Active Reference Photos ($currentCount/3)',
-                                          style: AppTextStyles.captionBold.copyWith(
-                                            color: AppColors.textPrimary,
-                                            fontSize: 11.sp,
-                                          ),
-                                        ),
-                                        SizedBox(width: 8.w),
-                                        GestureDetector(
-                                          onTap: () => _showReferencePickerSheet(context, controller),
-                                          child: Text(
-                                            '+ Add More',
-                                            style: AppTextStyles.captionXs.copyWith(
-                                              color: AppColors.primary,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  }),
-                                ],
-                              ),
-                              SizedBox(height: 8.h),
-                              SizedBox(
-                                height: 56.h,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: controller.referenceImages.length,
-                                  separatorBuilder: (_, __) => SizedBox(width: AppDimens.spacingSm),
-                                  itemBuilder: (context, index) {
-                                    final url = controller.referenceImages[index];
-                                    return Stack(
-                                      children: [
-                                        Container(
-                                          width: 56.h,
-                                          height: 56.h,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                                            border: Border.all(color: AppColors.border),
-                                          ),
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                                            child: url.startsWith('http')
-                                                ? CachedNetworkImage(
-                                                    imageUrl: url,
-                                                    fit: BoxFit.cover,
-                                                    placeholder: (_, __) => Container(color: AppColors.surfaceLight),
-                                                    errorWidget: (_, __, ___) => Container(
-                                                      color: AppColors.surfaceLight,
-                                                      child: Icon(Icons.person, color: AppColors.textMuted, size: AppDimens.iconSm),
-                                                    ),
-                                                  )
-                                                : Image.file(
-                                                    File(url),
-                                                    fit: BoxFit.cover,
-                                                    errorBuilder: (_, __, ___) => Container(
-                                                      color: AppColors.surfaceLight,
-                                                      child: Icon(Icons.person, color: AppColors.textMuted, size: AppDimens.iconSm),
-                                                    ),
-                                                  ),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          top: 2.h,
-                                          right: 2.w,
-                                          child: GestureDetector(
-                                            onTap: () => controller.removeReferenceImage(index),
-                                            child: Container(
-                                              padding: EdgeInsets.all(2.r),
-                                              decoration: const BoxDecoration(
-                                                color: AppColors.surface,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Icon(Icons.close, color: AppColors.accentError, size: 12.sp),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                              SizedBox(height: 6.h),
-                              Row(
-                                children: [
-                                  Icon(Icons.shield_outlined, color: AppColors.accentSuccess, size: 11.sp),
-                                  SizedBox(width: 4.w),
-                                  Expanded(
-                                    child: Text(
-                                      'Zero-Retention Privacy: Photo will be auto-purged from cloud post-generation.',
-                                      style: AppTextStyles.captionXs.copyWith(
-                                        color: AppColors.textSecondary,
-                                        fontSize: 9.5.sp,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                      SizedBox(height: AppDimens.vSpacingMd),
-
-                      // =========================================================================
-                      // SECTION 4.5: GEOMETRIC ASPECT RATIO BAR (PHOTO STUDIO TIER)
-                      // =========================================================================
-                      _buildVisualAspectRatioBar(controller),
                       SizedBox(height: AppDimens.vSpacingMd),
 
                       // =========================================================================
@@ -589,21 +391,6 @@ class CreationStudioView extends StatelessWidget {
     }
   }
 
-  String _formatAspectRatioLabel(String ratio) {
-    switch (ratio) {
-      case '1:1':
-        return 'Square (1:1)';
-      case '9:16':
-        return 'Story (9:16)';
-      case '4:5':
-        return 'Portrait (4:5)';
-      case '16:9':
-        return 'Cinema (16:9)';
-      default:
-        return ratio;
-    }
-  }
-
   /// Visual 1-Tap Style Carousel for zero-typing aesthetic selection (Pinterest / PromptHero tier)
   Widget _buildVisualStyleCarousel(StudioController controller) {
     return Column(
@@ -655,7 +442,7 @@ class CreationStudioView extends StatelessWidget {
         ),
         SizedBox(height: 8.h),
         SizedBox(
-          height: (112.h).clamp(110.0, 140.0),
+          height: (104.h).clamp(100.0, 130.0),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: controller.visualStyles.length,
@@ -674,8 +461,8 @@ class CreationStudioView extends StatelessWidget {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    width: 124.w,
-                    padding: EdgeInsets.all(7.r),
+                    width: 112.w,
+                    padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 5.h),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
@@ -711,8 +498,8 @@ class CreationStudioView extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
-                              width: 28.r,
-                              height: 28.r,
+                              width: 22.r,
+                              height: 22.r,
                               decoration: BoxDecoration(
                                 color: AppColors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
@@ -722,7 +509,7 @@ class CreationStudioView extends StatelessWidget {
                                 child: Icon(
                                   _resolveStyleIcon(style['iconName'] as String?),
                                   color: AppColors.white,
-                                  size: 14.sp,
+                                  size: 11.sp,
                                 ),
                               ),
                             ),
@@ -783,7 +570,7 @@ class CreationStudioView extends StatelessWidget {
                               style['name'] as String,
                               style: TextStyle(
                                 color: AppColors.white,
-                                fontSize: 11.5.sp,
+                                fontSize: 10.5.sp,
                                 fontWeight: FontWeight.w800,
                               ),
                               maxLines: 1,
@@ -794,7 +581,7 @@ class CreationStudioView extends StatelessWidget {
                               style['subtitle'] as String? ?? '',
                               style: TextStyle(
                                 color: AppColors.white.withValues(alpha: 0.75),
-                                fontSize: 9.sp,
+                                fontSize: 8.5.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                               maxLines: 1,
@@ -884,140 +671,11 @@ class CreationStudioView extends StatelessWidget {
             spacing: 6.w,
             runSpacing: 8.h,
             children: [
-              // Left: Reference Photo (Voice input commented out for now per user instruction)
-              /*
-              GestureDetector(
-                onTap: () => _handleVoiceInput(context, controller),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.mic_rounded, color: AppColors.primary, size: 15.sp),
-                      SizedBox(width: 4.w),
-                      Text(
-                        'Voice',
-                        style: AppTextStyles.captionBold.copyWith(
-                          color: AppColors.primary,
-                          fontSize: 11.sp,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(width: 6.w),
-              */
-              GestureDetector(
-                onTap: () => _showReferencePickerSheet(context, controller),
-                child: Obx(() {
-                  final hasRef = controller.referenceImages.isNotEmpty;
-                  return Container(
-                    padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 6.h),
-                    decoration: BoxDecoration(
-                      color: hasRef ? AppColors.accentSuccess.withValues(alpha: 0.12) : AppColors.surfaceLight,
-                      borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                      border: Border.all(color: hasRef ? AppColors.accentSuccess : AppColors.border),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          hasRef ? Icons.check_circle_rounded : Icons.add_photo_alternate_outlined,
-                          color: hasRef ? AppColors.accentSuccess : AppColors.textSecondary,
-                          size: 14.sp,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          hasRef ? 'Photo (${controller.referenceImages.length})' : '+ Photo',
-                          style: AppTextStyles.captionBold.copyWith(
-                            color: hasRef ? AppColors.accentSuccess : AppColors.textSecondary,
-                            fontSize: 11.sp,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-
-              // Right: Clear Button + Copilot + AI Engine Selector + Polish Button
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              // Left: Polish Button + Aspect Ratio Dropdown adjacent to it
+              Row(
+                // mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Obx(() {
-                    if (controller.promptLength.value == 0) return const SizedBox.shrink();
-                    return GestureDetector(
-                      onTap: () => controller.promptController.clear(),
-                      child: Padding(
-                        padding: EdgeInsets.only(right: 6.w),
-                        child: Icon(Icons.cancel_rounded, color: AppColors.textMuted, size: 16.sp),
-                      ),
-                    );
-                  }),
-                  IconButton(
-                    constraints: const BoxConstraints(),
-                    padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
-                    icon: Icon(Icons.chat_bubble_outline_rounded, color: AppColors.copilotAccent, size: 16.sp),
-                    tooltip: AppStrings.btnCopilot,
-                    onPressed: controller.openPromptChatCopilot,
-                  ),
-                  IconButton(
-                    constraints: const BoxConstraints(),
-                    padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
-                    icon: Icon(Icons.document_scanner_outlined, color: AppColors.primary, size: 16.sp),
-                    tooltip: 'Scan Photo to Prompt (Vision)',
-                    onPressed: () => _handleVisionScan(context, controller),
-                  ),
-                  SizedBox(width: 4.w),
-                  // AI Engine Selector Chip (Gemini, Groq, Claude, GPT)
-                  Obx(() {
-                    final currentId = controller.selectedPromptEngine.value;
-                    final engine = controller.availablePromptEngines.firstWhere(
-                      (e) => e['id'] == currentId,
-                      orElse: () => controller.availablePromptEngines.first,
-                    );
-                    return GestureDetector(
-                      onTap: () => StudioPromptEngineSheet.show(context),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 5.h),
-                        margin: EdgeInsets.only(right: 6.w),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(engine['icon'] ?? '♊', style: TextStyle(fontSize: 11.sp)),
-                            SizedBox(width: 3.w),
-                            Text(
-                              engine['id'] == 'gemini'
-                                  ? 'Gemini'
-                                  : engine['id'] == 'groq'
-                                      ? 'Groq'
-                                      : engine['id'] == 'claude'
-                                          ? 'Claude'
-                                          : 'GPT-4o',
-                              style: AppTextStyles.captionXs.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Icon(Icons.arrow_drop_down_rounded, size: 14.sp, color: AppColors.textMuted),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
                   Obx(() {
                     final isEnhancing = controller.isEnhancing.value;
                     final hasPrompt = controller.promptLength.value > 0;
@@ -1061,174 +719,195 @@ class CreationStudioView extends StatelessWidget {
                       ),
                     );
                   }),
+                  SizedBox(width: 6.w),
+                  GestureDetector(
+                    onTap: () => _showReferencePickerSheet(context, controller),
+                    child: Obx(() {
+                      final hasRef = controller.referenceImages.isNotEmpty;
+                      return Container(
+                        padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 6.h),
+                        decoration: BoxDecoration(
+                          color: hasRef ? AppColors.accentSuccess.withValues(alpha: 0.12) : AppColors.surfaceLight,
+                          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                          border: Border.all(color: hasRef ? AppColors.accentSuccess : AppColors.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              hasRef ? Icons.check_circle_rounded : Icons.add_photo_alternate_outlined,
+                              color: hasRef ? AppColors.accentSuccess : AppColors.textSecondary,
+                              size: 14.sp,
+                            ),
+                            SizedBox(width: 4.w),
+                            Text(
+                              hasRef ? 'Photo (${controller.referenceImages.length})' : '+ Photo',
+                              style: AppTextStyles.captionBold.copyWith(
+                                color: hasRef ? AppColors.accentSuccess : AppColors.textSecondary,
+                                fontSize: 11.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
                 ],
               ),
-            ),
-          ],
-        ),
+
+              // Right: Tools (Clear, Copilot, Vision, Engine) + Photo Capsule at extreme right
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Obx(() {
+                      if (controller.promptLength.value == 0) return const SizedBox.shrink();
+                      return GestureDetector(
+                        onTap: () => controller.promptController.clear(),
+                        child: Padding(
+                          padding: EdgeInsets.only(right: 6.w),
+                          child: Icon(Icons.cancel_rounded, color: AppColors.textMuted, size: 16.sp),
+                        ),
+                      );
+                    }),
+                    IconButton(
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                      icon: Icon(Icons.chat_bubble_outline_rounded, color: AppColors.copilotAccent, size: 16.sp),
+                      tooltip: AppStrings.btnCopilot,
+                      onPressed: controller.openPromptChatCopilot,
+                    ),
+                    IconButton(
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                      icon: Icon(Icons.document_scanner_outlined, color: AppColors.primary, size: 16.sp),
+                      tooltip: 'Scan Photo to Prompt (Vision)',
+                      onPressed: () => _handleVisionScan(context, controller),
+                    ),
+                    SizedBox(width: 4.w),
+                    // AI Engine Selector Chip (Gemini, Groq, Claude, GPT)
+                    Obx(() {
+                      final currentId = controller.selectedPromptEngine.value;
+                      final engine = controller.availablePromptEngines.firstWhere(
+                        (e) => e['id'] == currentId,
+                        orElse: () => controller.availablePromptEngines.first,
+                      );
+                      return GestureDetector(
+                        onTap: () => StudioPromptEngineSheet.show(context),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 5.h),
+                          margin: EdgeInsets.only(right: 6.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(engine['icon'] ?? '♊', style: TextStyle(fontSize: 11.sp)),
+                              SizedBox(width: 3.w),
+                              Text(
+                                engine['id'] == 'gemini'
+                                    ? 'Gemini'
+                                    : engine['id'] == 'groq'
+                                        ? 'Groq'
+                                        : engine['id'] == 'claude'
+                                            ? 'Claude'
+                                            : 'GPT-4o',
+                                style: AppTextStyles.captionXs.copyWith(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Icon(Icons.arrow_drop_down_rounded, size: 14.sp, color: AppColors.textMuted),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    // Photo capsule moved to extreme right of the same row
+                    _buildAspectRatioDropdown(controller),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  /// Geometric Aspect Ratio Selector Bar (Photo Studio Tier)
-  Widget _buildVisualAspectRatioBar(StudioController controller) {
-    final ratios = const [
-      {
-        'id': '1:1',
-        'name': 'Square',
-        'sub': '1:1 Post',
-        'width': 20.0,
-        'height': 20.0,
-      },
-      {
-        'id': '9:16',
-        'name': 'Story',
-        'sub': '9:16 Reels',
-        'width': 13.0,
-        'height': 23.0,
-      },
-      {
-        'id': '4:5',
-        'name': 'Portrait',
-        'sub': '4:5 Feed',
-        'width': 16.0,
-        'height': 20.0,
-      },
-      {
-        'id': '16:9',
-        'name': 'Cinema',
-        'sub': '16:9 Wide',
-        'width': 24.0,
-        'height': 13.0,
-      },
+  /// Compact Aspect Ratio Dropdown placed adjacent to the Polish button
+  Widget _buildAspectRatioDropdown(StudioController controller) {
+    const ratios = [
+      {'id': '1:1', 'name': 'Square'},
+      {'id': '9:16', 'name': 'Story'},
+      {'id': '4:5', 'name': 'Portrait'},
+      {'id': '16:9', 'name': 'Cinema'},
     ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Icon(Icons.crop_outlined, size: 15.sp, color: AppColors.primary),
-                  SizedBox(width: 6.w),
-                  Flexible(
-                    child: Text(
-                      'Aspect Ratio & Frame',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+    return Obx(() {
+      final currentRatio = controller.selectedAspectRatio.value;
+      return Container(
+        height: 32.h,
+        padding: EdgeInsets.symmetric(horizontal: 8.w),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: ratios.any((r) => r['id'] == currentRatio) ? currentRatio : '1:1',
+            dropdownColor: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+            icon: Icon(Icons.arrow_drop_down_rounded, size: 16.sp, color: AppColors.textMuted),
+            isDense: true,
+            selectedItemBuilder: (context) {
+              return ratios.map((r) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.crop_outlined, size: 12.sp, color: AppColors.primary),
+                    SizedBox(width: 4.w),
+                    Text(
+                      r['id']!,
                       style: AppTextStyles.captionBold.copyWith(
                         color: AppColors.textPrimary,
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 11.sp,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 6.w),
-            Obx(() => Text(
-              _formatAspectRatioLabel(controller.selectedAspectRatio.value),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.captionXs.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-              ),
-            )),
-          ],
-        ),
-        SizedBox(height: 8.h),
-        Row(
-          children: ratios.map((r) {
-            final id = r['id'] as String;
-            final name = r['name'] as String;
-            final sub = r['sub'] as String;
-            final w = r['width'] as double;
-            final h = r['height'] as double;
-
-            return Expanded(
-              child: Obx(() {
-                final isSelected = controller.selectedAspectRatio.value == id;
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    controller.setAspectRatio(id);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    margin: EdgeInsets.symmetric(horizontal: 3.w),
-                    padding: EdgeInsets.symmetric(vertical: 8.h),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                      border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.border,
-                        width: isSelected ? 1.5 : 1.0,
-                      ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.2),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          height: 24.h,
-                          child: Center(
-                            child: Container(
-                              width: w.w,
-                              height: h.h,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(2.r),
-                                border: Border.all(
-                                  color: isSelected ? AppColors.surface : AppColors.textSecondary,
-                                  width: 1.5,
-                                ),
-                                color: isSelected
-                                    ? AppColors.surface.withValues(alpha: 0.25)
-                                    : AppColors.surfaceLight,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          name,
-                          style: TextStyle(
-                            color: isSelected ? AppColors.surface : AppColors.textPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 10.5.sp,
-                          ),
-                        ),
-                        Text(
-                          sub,
-                          style: TextStyle(
-                            color: isSelected ? AppColors.surface.withValues(alpha: 0.75) : AppColors.textMuted,
-                            fontSize: 9.sp,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 );
-              }),
-            );
-          }).toList(),
+              }).toList();
+            },
+            items: ratios.map((r) {
+              final isSelected = r['id'] == currentRatio;
+              return DropdownMenuItem<String>(
+                value: r['id'],
+                child: Text(
+                  '${r['name']} (${r['id']})',
+                  style: AppTextStyles.captionBold.copyWith(
+                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                    fontSize: 12.sp,
+                  ),
+                ),
+              );
+            }).toList(),
+            onChanged: controller.isBusy
+                ? null
+                : (val) {
+                    if (val != null) {
+                      HapticFeedback.selectionClick();
+                      controller.setAspectRatio(val);
+                    }
+                  },
+          ),
         ),
-      ],
-    );
+      );
+    });
   }
 
   /// Model and Advanced Parameter Bar
@@ -1768,6 +1447,93 @@ class CreationStudioView extends StatelessWidget {
                 ],
               ),
               SizedBox(height: AppDimens.vSpacingLg),
+
+              // Active Reference Photos (view and remove active references)
+              Obx(() {
+                if (controller.referenceImages.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Active Reference Photos (${controller.referenceImages.length}/3)',
+                          style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                        ),
+                        Text(
+                          'Tap × to remove',
+                          style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    SizedBox(
+                      height: 56.h,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: controller.referenceImages.length,
+                        separatorBuilder: (_, __) => SizedBox(width: AppDimens.spacingSm),
+                        itemBuilder: (context, index) {
+                          final url = controller.referenceImages[index];
+                          return Stack(
+                            children: [
+                              Container(
+                                width: 56.h,
+                                height: 56.h,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                                  child: url.startsWith('http')
+                                      ? CachedNetworkImage(
+                                          imageUrl: url,
+                                          fit: BoxFit.cover,
+                                          placeholder: (_, __) => Container(color: AppColors.surfaceLight),
+                                          errorWidget: (_, __, ___) => Container(
+                                            color: AppColors.surfaceLight,
+                                            child: Icon(Icons.person, color: AppColors.textMuted, size: AppDimens.iconSm),
+                                          ),
+                                        )
+                                      : Image.file(
+                                          File(url),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Container(
+                                            color: AppColors.surfaceLight,
+                                            child: Icon(Icons.person, color: AppColors.textMuted, size: AppDimens.iconSm),
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 2.h,
+                                right: 2.w,
+                                child: GestureDetector(
+                                  onTap: () => controller.removeReferenceImage(index),
+                                  child: Container(
+                                    padding: EdgeInsets.all(2.r),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.surface,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.close, color: AppColors.accentError, size: 12.sp),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(height: AppDimens.vSpacingMd),
+                    Divider(color: AppColors.border.withValues(alpha: 0.6), height: 1),
+                    SizedBox(height: AppDimens.vSpacingMd),
+                  ],
+                );
+              }),
+
               Row(
                 children: [
                   _buildSampleSlot(

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
+import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
+import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import '../controllers/shell_controller.dart';
 import '../../explore/views/explore_feed_view.dart';
 import '../../studio/presentation/views/creation_studio_view.dart';
+import '../../studio/presentation/controllers/studio_controller.dart';
 import '../../tools/views/ai_tools_view.dart';
 import '../../library/views/cloud_library_view.dart';
 import '../../profile/views/profile_view.dart';
@@ -27,8 +31,31 @@ class HomeShellView extends StatelessWidget {
       ProfileView(),
     ];
 
-    return Scaffold(
-      appBar: PreferredSize(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) return;
+
+        // 1. Back Navigation During Image Generation Check
+        if (Get.isRegistered<StudioController>()) {
+          final studioController = Get.find<StudioController>();
+          if (studioController.isGenerating.value) {
+            _showGenerationWarningDialog(context);
+            return;
+          }
+        }
+
+        // 2. Non-Explore tabs (Studio, AI Tools, Library, Profile) navigate to Explore (Tab 0)
+        if (controller.currentIndex.value != 0) {
+          controller.switchTab(0);
+          return;
+        }
+
+        // 3. Explore screen: Pressing back exits the application
+        SystemNavigator.pop();
+      },
+      child: Scaffold(
+        appBar: PreferredSize(
         preferredSize: Size.fromHeight(60.h),
         child: Container(
           decoration: BoxDecoration(
@@ -144,6 +171,72 @@ class HomeShellView extends StatelessWidget {
           ],
         ),
       ))),
+      ),
+    );
+  }
+
+  void _showGenerationWarningDialog(BuildContext context) {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+        ),
+        backgroundColor: AppColors.surface,
+        child: Padding(
+          padding: EdgeInsets.all(AppDimens.spacingLg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(12.r),
+                decoration: BoxDecoration(
+                  color: AppColors.accentWarning.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.hourglass_top_rounded,
+                  color: AppColors.accentWarning,
+                  size: 32.sp,
+                ),
+              ),
+              SizedBox(height: AppDimens.vSpacingMd),
+              Text(
+                'Generation in Progress',
+                style: AppTextStyles.h3.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                'An image is currently being generated. You cannot navigate back while image generation is in progress. Please wait for it to complete.',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppDimens.vSpacingLg),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Get.back(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                    ),
+                  ),
+                  child: Text('Understood', style: AppTextStyles.buttonSmall),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
     );
   }
 }
