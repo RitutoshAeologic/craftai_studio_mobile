@@ -8,6 +8,7 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
+import 'package:craftai_studio_mobile/features/library/widgets/download_paywall_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/publish_creation_sheet.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/widgets/studio_image_edit_actions_sheet.dart';
 
@@ -31,6 +32,26 @@ class _CreationDetailViewState extends State<CreationDetailView> {
   bool _isLiked = false;
   int _likeCount = 12;
   bool _isPromptExpanded = false;
+
+  bool get _isDownloadUnlocked {
+    if (Get.isRegistered<LibraryController>()) {
+      final found = Get.find<LibraryController>().myCreations.firstWhereOrNull((j) => j.jobId == widget.job.jobId);
+      if (found != null) return found.isDownloadUnlocked;
+    }
+    return widget.job.isDownloadUnlocked;
+  }
+
+  void _openDownloadPaywall(BuildContext context) {
+    final currentJob = (Get.isRegistered<LibraryController>())
+        ? (Get.find<LibraryController>().myCreations.firstWhereOrNull((j) => j.jobId == widget.job.jobId) ?? widget.job)
+        : widget.job;
+    Get.bottomSheet(
+      DownloadPaywallSheet(job: currentJob),
+      isScrollControlled: true,
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
+  }
 
   void _toggleLike() {
     setState(() {
@@ -305,6 +326,17 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // 4K Download button
+                            IconButton(
+                              onPressed: () => _openDownloadPaywall(context),
+                              icon: Icon(
+                                _isDownloadUnlocked ? Icons.download_done_rounded : Icons.file_download_outlined,
+                                size: 22.sp,
+                                color: _isDownloadUnlocked ? AppColors.accentSuccess : AppColors.textPrimary,
+                              ),
+                              tooltip: _isDownloadUnlocked ? 'Download 4K (Unlocked)' : 'Download 4K (2 Credits)',
+                            ),
+
                             // Delete button
                             IconButton(
                               onPressed: () => _showDeleteConfirmation(context),

@@ -86,6 +86,10 @@ class SupabaseService implements ISupabaseService {
   SupabaseQueryBuilder from(String table) => supabaseClient.from(table);
 
   @override
+  PostgrestFilterBuilder rpc(String fn, {Map<String, dynamic>? params}) =>
+      supabaseClient.rpc(fn, params: params);
+
+  @override
   SupabaseStorageClient get storage => supabaseClient.storage;
 
   @override

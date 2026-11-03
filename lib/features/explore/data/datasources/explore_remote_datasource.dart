@@ -74,15 +74,27 @@ class ExploreRemoteDataSource {
     return <ExploreCardModel>[];
   }
 
-  /// Toggles like counter in Supabase
+  /// Toggles like counter in Supabase via atomic RPC or safe increment fallback
   Future<bool> toggleLike(String cardId, bool isLiked) async {
     try {
-      await _supabase.from('explore_prompts').update({
-        'likes_count': isLiked ? 1 : 0,
-      }).eq('id', cardId);
+      await _supabase.rpc('toggle_prompt_like', params: {
+        'prompt_id': cardId,
+        'is_liked': isLiked,
+      });
       return true;
-    } catch (e) {
-      AppLogger.d('Cloud like sync skipped: $e', tag: 'EXPLORE_DS');
+    } catch (_) {
+      // Fallback: safely read current count and increment/decrement without hardcoding 1/0
+      try {
+        final row = await _supabase.from('explore_prompts').select('likes_count').eq('id', cardId).maybeSingle();
+        if (row != null) {
+          final current = (row['likes_count'] as num?)?.toInt() ?? 0;
+          final updated = (current + (isLiked ? 1 : -1)).clamp(0, 999999);
+          await _supabase.from('explore_prompts').update({'likes_count': updated}).eq('id', cardId);
+          return true;
+        }
+      } catch (e) {
+        AppLogger.d('Cloud like sync fallback skipped: $e', tag: 'EXPLORE_DS');
+      }
       return false;
     }
   }

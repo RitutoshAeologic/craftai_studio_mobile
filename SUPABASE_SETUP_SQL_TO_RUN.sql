@@ -9,191 +9,26 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ====================================================================
--- 1. COLLECTIONS TABLE (Folders / Bookmarks)
+-- 1. CHARACTERS TABLE (InstantID AI Avatars & Face-Lock)
 -- ====================================================================
-CREATE TABLE IF NOT EXISTS public.collections (
+CREATE TABLE IF NOT EXISTS public.characters (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    name TEXT NOT NULL CHECK (char_length(trim(name)) > 0),
-    description TEXT,
-    cover_image_url TEXT,
-    item_count INT NOT NULL DEFAULT 0,
-    is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    is_private BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    name TEXT NOT NULL,
+    gender TEXT,
+    reference_photo_urls TEXT[] NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE public.collections 
-    ADD COLUMN IF NOT EXISTS item_count INT NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    ADD COLUMN IF NOT EXISTS is_private BOOLEAN NOT NULL DEFAULT TRUE,
-    ADD COLUMN IF NOT EXISTS cover_image_url TEXT,
-    ADD COLUMN IF NOT EXISTS description TEXT;
-
-CREATE INDEX IF NOT EXISTS idx_collections_user ON public.collections (user_id, updated_at DESC);
-ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users manage own collections" ON public.collections;
-CREATE POLICY "Users manage own collections" ON public.collections
+ALTER TABLE public.characters ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own characters" ON public.characters;
+CREATE POLICY "Users manage own characters" ON public.characters
     FOR ALL USING ((SELECT auth.uid()) = user_id);
 
--- Auto-provision 'All Saved' default collection on new user signup
-CREATE OR REPLACE FUNCTION public.handle_new_user_default_collection()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.collections (user_id, name, is_default, is_private)
-    VALUES (NEW.id, 'All Saved', TRUE, TRUE)
-    ON CONFLICT DO NOTHING;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS trg_new_user_default_collection ON auth.users;
-CREATE TRIGGER trg_new_user_default_collection
-AFTER INSERT ON auth.users
-FOR EACH ROW EXECUTE FUNCTION public.handle_new_user_default_collection();
-
-GRANT ALL ON public.collections TO anon, authenticated, service_role;
+GRANT ALL ON public.characters TO anon, authenticated, service_role;
 
 -- ====================================================================
--- 2. COLLECTION ITEMS (Polymorphic Bookmark Junction Table)
--- ====================================================================
-CREATE TABLE IF NOT EXISTS public.collection_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    collection_id UUID NOT NULL REFERENCES public.collections(id) ON DELETE CASCADE,
-    job_id UUID REFERENCES public.jobs(id) ON DELETE CASCADE,
-    explore_prompt_id UUID REFERENCES public.explore_prompts(id) ON DELETE CASCADE,
-    artwork_id TEXT,
-    item_id TEXT,
-    image_url TEXT NOT NULL,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT chk_item_target CHECK (job_id IS NOT NULL OR explore_prompt_id IS NOT NULL OR item_id IS NOT NULL OR artwork_id IS NOT NULL)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_job 
-    ON public.collection_items (collection_id, job_id) 
-    WHERE job_id IS NOT NULL;
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_explore 
-    ON public.collection_items (collection_id, explore_prompt_id) 
-    WHERE explore_prompt_id IS NOT NULL;
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_artwork 
-    ON public.collection_items (collection_id, artwork_id) 
-    WHERE artwork_id IS NOT NULL;
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_item_generic 
-    ON public.collection_items (collection_id, item_id) 
-    WHERE item_id IS NOT NULL;
-
-ALTER TABLE public.collection_items 
-    ADD COLUMN IF NOT EXISTS collection_id UUID REFERENCES public.collections(id) ON DELETE CASCADE,
-    ADD COLUMN IF NOT EXISTS job_id UUID REFERENCES public.jobs(id) ON DELETE CASCADE,
-    ADD COLUMN IF NOT EXISTS explore_prompt_id UUID REFERENCES public.explore_prompts(id) ON DELETE CASCADE,
-    ADD COLUMN IF NOT EXISTS artwork_id TEXT,
-    ADD COLUMN IF NOT EXISTS item_id TEXT,
-    ADD COLUMN IF NOT EXISTS image_url TEXT,
-    ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
-
-CREATE INDEX IF NOT EXISTS idx_collection_items_col ON public.collection_items (collection_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_collection_items_user ON public.collection_items (user_id, created_at DESC);
-ALTER TABLE public.collection_items ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users manage own collection items" ON public.collection_items;
-CREATE POLICY "Users manage own collection items" ON public.collection_items
-    FOR ALL USING ((SELECT auth.uid()) = user_id);
-
--- O(1) Counter cache trigger functions for collection item counts
-CREATE OR REPLACE FUNCTION public.increment_collection_count()
-RETURNS TRIGGER AS $$
-BEGIN
-    UPDATE public.collections 
-    SET item_count = item_count + 1, updated_at = NOW()
-    WHERE id = NEW.collection_id;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS trg_collection_item_added ON public.collection_items;
-CREATE TRIGGER trg_collection_item_added
-AFTER INSERT ON public.collection_items
-FOR EACH ROW EXECUTE FUNCTION public.increment_collection_count();
-
-CREATE OR REPLACE FUNCTION public.decrement_collection_count()
-RETURNS TRIGGER AS $$
-BEGIN
-    UPDATE public.collections 
-    SET item_count = GREATEST(item_count - 1, 0), updated_at = NOW()
-    WHERE id = OLD.collection_id;
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS trg_collection_item_removed ON public.collection_items;
-CREATE TRIGGER trg_collection_item_removed
-AFTER DELETE ON public.collection_items
-FOR EACH ROW EXECUTE FUNCTION public.decrement_collection_count();
-
--- ====================================================================
--- 3. JOBS TABLE ENHANCEMENTS (Aliases, RLS, Indexes)
--- ====================================================================
-ALTER TABLE public.jobs 
-    ADD COLUMN IF NOT EXISTS job_id TEXT,
-    ADD COLUMN IF NOT EXISTS prompt TEXT,
-    ADD COLUMN IF NOT EXISTS prompt_text TEXT,
-    ADD COLUMN IF NOT EXISTS preview_url TEXT,
-    ADD COLUMN IF NOT EXISTS preview_image_url TEXT,
-    ADD COLUMN IF NOT EXISTS image_url TEXT,
-    ADD COLUMN IF NOT EXISTS master_image_url TEXT,
-    ADD COLUMN IF NOT EXISTS master_url TEXT,
-    ADD COLUMN IF NOT EXISTS is_download_unlocked BOOLEAN NOT NULL DEFAULT FALSE,
-    ADD COLUMN IF NOT EXISTS download_cost NUMERIC(10, 2) NOT NULL DEFAULT 2.00,
-    ADD COLUMN IF NOT EXISTS credits_deducted NUMERIC(10, 2) NOT NULL DEFAULT 2.00,
-    ADD COLUMN IF NOT EXISTS model_used VARCHAR(50) DEFAULT 'flux',
-    ADD COLUMN IF NOT EXISTS tool_applied TEXT NOT NULL DEFAULT 'text_to_image',
-    ADD COLUMN IF NOT EXISTS aspect_ratio VARCHAR(10) NOT NULL DEFAULT '1:1',
-    ADD COLUMN IF NOT EXISTS dimensions VARCHAR(20) DEFAULT '1024x1024',
-    ADD COLUMN IF NOT EXISTS seed BIGINT DEFAULT 42,
-    ADD COLUMN IF NOT EXISTS generation_time_ms INT DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL,
-    ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}'::jsonb;
-
--- Populate aliases seamlessly
-UPDATE public.jobs SET job_id = id::text WHERE job_id IS NULL;
-UPDATE public.jobs SET prompt = prompt_text WHERE prompt IS NULL AND prompt_text IS NOT NULL;
-UPDATE public.jobs SET prompt_text = prompt WHERE prompt_text IS NULL AND prompt IS NOT NULL;
-UPDATE public.jobs SET preview_url = preview_image_url WHERE preview_url IS NULL AND preview_image_url IS NOT NULL;
-UPDATE public.jobs SET preview_image_url = preview_url WHERE preview_image_url IS NULL AND preview_url IS NOT NULL;
-UPDATE public.jobs SET image_url = preview_url WHERE image_url IS NULL AND preview_url IS NOT NULL;
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_job_id ON public.jobs (job_id) WHERE job_id IS NOT NULL;
-
-ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users insert own jobs" ON public.jobs;
-CREATE POLICY "Users insert own jobs" ON public.jobs 
-    FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
-
-DROP POLICY IF EXISTS "Users view own jobs" ON public.jobs;
-CREATE POLICY "Users view own jobs" ON public.jobs 
-    FOR SELECT USING ((SELECT auth.uid()) = user_id);
-
-DROP POLICY IF EXISTS "Users update own jobs" ON public.jobs;
-CREATE POLICY "Users update own jobs" ON public.jobs 
-    FOR UPDATE USING ((SELECT auth.uid()) = user_id);
-
-DROP POLICY IF EXISTS "Users delete own jobs" ON public.jobs;
-CREATE POLICY "Users delete own jobs" ON public.jobs 
-    FOR DELETE USING ((SELECT auth.uid()) = user_id);
-
-GRANT ALL ON public.jobs TO anon, authenticated, service_role;
-
--- Full text search GIN index for jobs
-DROP INDEX IF EXISTS public.idx_jobs_prompt_fts;
-CREATE INDEX idx_jobs_prompt_fts ON public.jobs 
-USING gin (to_tsvector('english', COALESCE(prompt_text, '') || ' ' || COALESCE(prompt, '')));
-
--- ====================================================================
--- 4. EXPLORE PROMPTS (Full Text Search, Filtering & Uniform Aliases)
+-- 2. EXPLORE PROMPTS (Marketplace, Likes RPC, & Uniform Aliases)
 -- ====================================================================
 CREATE TABLE IF NOT EXISTS public.explore_prompts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -286,6 +121,240 @@ CREATE POLICY "Public prompts viewable by all" ON public.explore_prompts
     FOR SELECT USING (is_marketplace_public = TRUE OR (SELECT auth.uid()) = author_id OR (SELECT auth.uid()) = user_id);
 
 GRANT ALL ON public.explore_prompts TO anon, authenticated, service_role;
+
+-- Atomic like counter toggle RPC function (prevents overwriting like counts with 1/0)
+CREATE OR REPLACE FUNCTION public.toggle_prompt_like(prompt_id UUID, is_liked BOOLEAN)
+RETURNS INT AS $$
+DECLARE
+    new_count INT;
+BEGIN
+    UPDATE public.explore_prompts
+    SET likes_count = GREATEST(0, COALESCE(likes_count, 0) + (CASE WHEN is_liked THEN 1 ELSE -1 END))
+    WHERE id = prompt_id
+    RETURNING likes_count INTO new_count;
+    RETURN COALESCE(new_count, 0);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+GRANT EXECUTE ON FUNCTION public.toggle_prompt_like TO anon, authenticated, service_role;
+
+-- ====================================================================
+-- 3. JOBS TABLE (Generations, Pay-to-Download, & Cloud Library Ledger)
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS public.jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id TEXT,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    character_id UUID REFERENCES public.characters(id) ON DELETE SET NULL,
+    remixed_from_prompt_id UUID REFERENCES public.explore_prompts(id) ON DELETE SET NULL,
+    type TEXT NOT NULL DEFAULT 'IMAGE_GEN',
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+    prompt TEXT,
+    prompt_text TEXT,
+    preview_url TEXT,
+    preview_image_url TEXT,
+    image_url TEXT,
+    master_url TEXT,
+    master_image_url TEXT,
+    output_url TEXT,
+    tool_applied TEXT NOT NULL DEFAULT 'text_to_image',
+    aspect_ratio VARCHAR(10) NOT NULL DEFAULT '1:1',
+    dimensions VARCHAR(20) DEFAULT '1024x1024',
+    seed BIGINT DEFAULT 42,
+    model_used VARCHAR(50) DEFAULT 'flux',
+    tokens_analyzed INT NOT NULL DEFAULT 0,
+    credits_deducted NUMERIC(10, 2) NOT NULL DEFAULT 2.00,
+    is_download_unlocked BOOLEAN NOT NULL DEFAULT FALSE,
+    download_unlocked_at TIMESTAMPTZ,
+    download_cost NUMERIC(10, 2) NOT NULL DEFAULT 2.00,
+    generation_time_ms INT DEFAULT 0,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    deleted_at TIMESTAMPTZ DEFAULT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.jobs 
+    ADD COLUMN IF NOT EXISTS job_id TEXT,
+    ADD COLUMN IF NOT EXISTS prompt TEXT,
+    ADD COLUMN IF NOT EXISTS prompt_text TEXT,
+    ADD COLUMN IF NOT EXISTS preview_url TEXT,
+    ADD COLUMN IF NOT EXISTS preview_image_url TEXT,
+    ADD COLUMN IF NOT EXISTS image_url TEXT,
+    ADD COLUMN IF NOT EXISTS master_image_url TEXT,
+    ADD COLUMN IF NOT EXISTS master_url TEXT,
+    ADD COLUMN IF NOT EXISTS output_url TEXT,
+    ADD COLUMN IF NOT EXISTS is_download_unlocked BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS download_cost NUMERIC(10, 2) NOT NULL DEFAULT 2.00,
+    ADD COLUMN IF NOT EXISTS credits_deducted NUMERIC(10, 2) NOT NULL DEFAULT 2.00,
+    ADD COLUMN IF NOT EXISTS model_used VARCHAR(50) DEFAULT 'flux',
+    ADD COLUMN IF NOT EXISTS tool_applied TEXT NOT NULL DEFAULT 'text_to_image',
+    ADD COLUMN IF NOT EXISTS aspect_ratio VARCHAR(10) NOT NULL DEFAULT '1:1',
+    ADD COLUMN IF NOT EXISTS dimensions VARCHAR(20) DEFAULT '1024x1024',
+    ADD COLUMN IF NOT EXISTS seed BIGINT DEFAULT 42,
+    ADD COLUMN IF NOT EXISTS generation_time_ms INT DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+-- Populate aliases seamlessly
+UPDATE public.jobs SET job_id = id::text WHERE job_id IS NULL;
+UPDATE public.jobs SET prompt = prompt_text WHERE prompt IS NULL AND prompt_text IS NOT NULL;
+UPDATE public.jobs SET prompt_text = prompt WHERE prompt_text IS NULL AND prompt IS NOT NULL;
+UPDATE public.jobs SET preview_url = preview_image_url WHERE preview_url IS NULL AND preview_image_url IS NOT NULL;
+UPDATE public.jobs SET preview_image_url = preview_url WHERE preview_image_url IS NULL AND preview_url IS NOT NULL;
+UPDATE public.jobs SET image_url = preview_url WHERE image_url IS NULL AND preview_url IS NOT NULL;
+UPDATE public.jobs SET output_url = preview_url WHERE output_url IS NULL AND preview_url IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_job_id ON public.jobs (job_id) WHERE job_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_jobs_user_created ON public.jobs (user_id, created_at DESC);
+
+ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users insert own jobs" ON public.jobs;
+CREATE POLICY "Users insert own jobs" ON public.jobs 
+    FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users view own jobs" ON public.jobs;
+CREATE POLICY "Users view own jobs" ON public.jobs 
+    FOR SELECT USING ((SELECT auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users update own jobs" ON public.jobs;
+CREATE POLICY "Users update own jobs" ON public.jobs 
+    FOR UPDATE USING ((SELECT auth.uid()) = user_id);
+
+DROP POLICY IF EXISTS "Users delete own jobs" ON public.jobs;
+CREATE POLICY "Users delete own jobs" ON public.jobs 
+    FOR DELETE USING ((SELECT auth.uid()) = user_id);
+
+GRANT ALL ON public.jobs TO anon, authenticated, service_role;
+
+-- Full text search GIN index for jobs
+DROP INDEX IF EXISTS public.idx_jobs_prompt_fts;
+CREATE INDEX idx_jobs_prompt_fts ON public.jobs 
+USING gin (to_tsvector('english', COALESCE(prompt_text, '') || ' ' || COALESCE(prompt, '')));
+
+-- ====================================================================
+-- 4. COLLECTIONS TABLE (Folders / Bookmarks)
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS public.collections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL CHECK (char_length(trim(name)) > 0),
+    description TEXT,
+    cover_image_url TEXT,
+    item_count INT NOT NULL DEFAULT 0,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    is_private BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.collections 
+    ADD COLUMN IF NOT EXISTS item_count INT NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS is_private BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN IF NOT EXISTS cover_image_url TEXT,
+    ADD COLUMN IF NOT EXISTS description TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_collections_user ON public.collections (user_id, updated_at DESC);
+ALTER TABLE public.collections ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own collections" ON public.collections;
+CREATE POLICY "Users manage own collections" ON public.collections
+    FOR ALL USING ((SELECT auth.uid()) = user_id);
+
+-- Auto-provision 'All Saved' default collection on new user signup
+CREATE OR REPLACE FUNCTION public.handle_new_user_default_collection()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.collections (user_id, name, is_default, is_private)
+    VALUES (NEW.id, 'All Saved', TRUE, TRUE)
+    ON CONFLICT DO NOTHING;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_new_user_default_collection ON auth.users;
+CREATE TRIGGER trg_new_user_default_collection
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_new_user_default_collection();
+
+GRANT ALL ON public.collections TO anon, authenticated, service_role;
+
+-- ====================================================================
+-- 5. COLLECTION ITEMS (Polymorphic Bookmark Junction Table)
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS public.collection_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    collection_id UUID NOT NULL REFERENCES public.collections(id) ON DELETE CASCADE,
+    job_id UUID REFERENCES public.jobs(id) ON DELETE CASCADE,
+    explore_prompt_id UUID REFERENCES public.explore_prompts(id) ON DELETE CASCADE,
+    artwork_id TEXT,
+    item_id TEXT,
+    image_url TEXT NOT NULL,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_item_target CHECK (job_id IS NOT NULL OR explore_prompt_id IS NOT NULL OR item_id IS NOT NULL OR artwork_id IS NOT NULL)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_job 
+    ON public.collection_items (collection_id, job_id) 
+    WHERE job_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_explore 
+    ON public.collection_items (collection_id, explore_prompt_id) 
+    WHERE explore_prompt_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_artwork 
+    ON public.collection_items (collection_id, artwork_id) 
+    WHERE artwork_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_item_generic 
+    ON public.collection_items (collection_id, item_id) 
+    WHERE item_id IS NOT NULL;
+
+ALTER TABLE public.collection_items 
+    ADD COLUMN IF NOT EXISTS collection_id UUID REFERENCES public.collections(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS job_id UUID REFERENCES public.jobs(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS explore_prompt_id UUID REFERENCES public.explore_prompts(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS artwork_id TEXT,
+    ADD COLUMN IF NOT EXISTS item_id TEXT,
+    ADD COLUMN IF NOT EXISTS image_url TEXT,
+    ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_collection_items_col ON public.collection_items (collection_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_collection_items_user ON public.collection_items (user_id, created_at DESC);
+ALTER TABLE public.collection_items ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own collection items" ON public.collection_items;
+CREATE POLICY "Users manage own collection items" ON public.collection_items
+    FOR ALL USING ((SELECT auth.uid()) = user_id);
+
+-- O(1) Counter cache trigger functions for collection item counts
+CREATE OR REPLACE FUNCTION public.increment_collection_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.collections 
+    SET item_count = item_count + 1, updated_at = NOW()
+    WHERE id = NEW.collection_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_collection_item_added ON public.collection_items;
+CREATE TRIGGER trg_collection_item_added
+AFTER INSERT ON public.collection_items
+FOR EACH ROW EXECUTE FUNCTION public.increment_collection_count();
+
+CREATE OR REPLACE FUNCTION public.decrement_collection_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.collections 
+    SET item_count = GREATEST(item_count - 1, 0), updated_at = NOW()
+    WHERE id = OLD.collection_id;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_collection_item_removed ON public.collection_items;
+CREATE TRIGGER trg_collection_item_removed
+AFTER DELETE ON public.collection_items
+FOR EACH ROW EXECUTE FUNCTION public.decrement_collection_count();
 
 -- ====================================================================
 -- 5. WALLET & USER_WALLETS VIEW COMPATIBILITY
@@ -721,26 +790,7 @@ AFTER INSERT OR UPDATE ON public.explore_prompts
 FOR EACH ROW EXECUTE FUNCTION public.sync_explore_prompt_to_artworks();
 
 -- ====================================================================
--- 9. CHARACTERS TABLE (InstantID AI Avatars & Face-Lock)
--- ====================================================================
-CREATE TABLE IF NOT EXISTS public.characters (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    gender TEXT,
-    reference_photo_urls TEXT[] NOT NULL DEFAULT '{}',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-ALTER TABLE public.characters ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users manage own characters" ON public.characters;
-CREATE POLICY "Users manage own characters" ON public.characters
-    FOR ALL USING ((SELECT auth.uid()) = user_id);
-
-GRANT ALL ON public.characters TO anon, authenticated, service_role;
-
--- ====================================================================
--- 10. STORAGE BUCKETS & POLICIES (user_generations & reference-images)
+-- 9. STORAGE BUCKETS & POLICIES (user_generations & reference-images)
 -- ====================================================================
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('user_generations', 'user_generations', true)

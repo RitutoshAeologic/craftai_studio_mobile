@@ -21,6 +21,9 @@ abstract class ISupabaseService {
   /// Queries a specific database table
   SupabaseQueryBuilder from(String table);
 
+  /// Executes a Supabase Remote Procedure Call (RPC)
+  PostgrestFilterBuilder rpc(String fn, {Map<String, dynamic>? params});
+
   /// Accesses Supabase cloud storage buckets
   SupabaseStorageClient get storage;
 

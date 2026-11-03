@@ -81,8 +81,10 @@ class LibraryRemoteDataSource {
       'type': job.type,
       'status': 'completed',
       'prompt': job.prompt,
+      'prompt_text': job.prompt,
       'preview_url': job.previewUrl,
-      'output_url': job.previewUrl,
+      'preview_image_url': job.previewUrl,
+      'image_url': job.previewUrl,
       'credits_deducted': job.creditsDeducted,
       'is_download_unlocked': false,
       'metadata': job.metadata ?? {},
@@ -158,9 +160,16 @@ class LibraryRemoteDataSource {
   /// Updates download unlock status in `jobs` table
   Future<bool> unlock4KDownload(String jobId) async {
     try {
-      await _supabase.from('jobs').update({
-        'is_download_unlocked': true,
-      }).eq('job_id', jobId);
+      final isUuid = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(jobId);
+      if (isUuid) {
+        await _supabase.from('jobs').update({
+          'is_download_unlocked': true,
+        }).or('job_id.eq.$jobId,id.eq.$jobId');
+      } else {
+        await _supabase.from('jobs').update({
+          'is_download_unlocked': true,
+        }).eq('job_id', jobId);
+      }
       return true;
     } catch (e) {
       AppLogger.d('Cloud 4K unlock sync skipped: $e', tag: 'LIBRARY_DS');
