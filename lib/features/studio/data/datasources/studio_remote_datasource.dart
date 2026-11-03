@@ -452,7 +452,10 @@ class StudioRemoteDataSource {
         'aspect_ratio': aspectRatio,
         if (headline != null) 'headline': headline,
         if (subtext != null) 'subtext': subtext,
-        if (discountBadge != null) 'discount': discountBadge,
+        if (discountBadge != null) ...{
+          'discount': discountBadge,
+          'discount_badge': discountBadge,
+        },
         if (theme != null) 'theme': theme,
         'language': language,
         'quality': quality,
@@ -475,6 +478,7 @@ class StudioRemoteDataSource {
       data: {
         if (imageUrl != null && imageUrl.trim().isNotEmpty) 'image_url': imageUrl,
         'product_name': productName,
+        'productName': productName,
         if (userId != null) 'user_id': userId,
       },
       options: Options(receiveTimeout: const Duration(seconds: 120)),
@@ -493,7 +497,9 @@ class StudioRemoteDataSource {
       '/prompt-engineering/tools/magic-grab',
       data: {
         'image_url': imageUrl,
+        'imageUrl': imageUrl,
         'mask_base64': maskBase64,
+        'maskBase64': maskBase64,
         if (imageBase64 != null) 'image_base64': imageBase64,
       },
       options: Options(receiveTimeout: const Duration(seconds: 60)),
@@ -512,7 +518,9 @@ class StudioRemoteDataSource {
       '/prompt-engineering/tools/remove-object',
       data: {
         'image_url': imageUrl,
+        'imageUrl': imageUrl,
         'mask_base64': maskBase64,
+        'maskBase64': maskBase64,
         if (imageBase64 != null) 'image_base64': imageBase64,
       },
       options: Options(receiveTimeout: const Duration(seconds: 60)),

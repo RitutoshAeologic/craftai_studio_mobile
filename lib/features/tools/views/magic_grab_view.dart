@@ -231,7 +231,9 @@ class _MagicGrabViewState extends State<MagicGrabView> {
       setState(() {
         _isGrabbed = true;
         _cutoutUrl = result['cutout_url'] as String;
-        _backgroundUrl = result['background_url'] as String? ?? _imagePath;
+        _backgroundUrl = result['background_url'] as String? ??
+            result['clean_background_url'] as String? ??
+            _imagePath;
         _cutoutOffset = Offset.zero;
         _cutoutScale = 1.0;
       });

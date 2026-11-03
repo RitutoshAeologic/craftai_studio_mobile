@@ -60,7 +60,7 @@ class _ProductPackPreviewSheetState extends State<ProductPackPreviewSheet> {
         'aspectRatio': 1.0,
         'icon': '🛒',
         'desc': 'Pure white background (#FFFFFF) compliant with Amazon & Walmart standards',
-        'url': widget.pack['amazon_white'] as String? ?? '',
+        'url': widget.pack['amazon_white'] as String? ?? widget.pack['amazon_white_url'] as String? ?? '',
       },
       {
         'key': 'studio_pedestal',
@@ -69,7 +69,7 @@ class _ProductPackPreviewSheetState extends State<ProductPackPreviewSheet> {
         'aspectRatio': 4 / 5,
         'icon': '🏛️',
         'desc': 'Luxury marble podium with overhead keylight for premium Shopify catalog',
-        'url': widget.pack['studio_pedestal'] as String? ?? '',
+        'url': widget.pack['studio_pedestal'] as String? ?? widget.pack['studio_pedestal_url'] as String? ?? '',
       },
       {
         'key': 'lifestyle_table',
@@ -78,7 +78,7 @@ class _ProductPackPreviewSheetState extends State<ProductPackPreviewSheet> {
         'aspectRatio': 4 / 5,
         'icon': '☕',
         'desc': 'Cozy warm interior table setting for social commerce conversions',
-        'url': widget.pack['lifestyle_table'] as String? ?? '',
+        'url': widget.pack['lifestyle_table'] as String? ?? widget.pack['lifestyle_table_url'] as String? ?? '',
       },
       {
         'key': 'story_flyer',
@@ -87,7 +87,7 @@ class _ProductPackPreviewSheetState extends State<ProductPackPreviewSheet> {
         'aspectRatio': 9 / 16,
         'icon': '📱',
         'desc': 'Vertical storytelling visual with typography header for IG & TikTok ads',
-        'url': widget.pack['story_flyer'] as String? ?? '',
+        'url': widget.pack['story_flyer'] as String? ?? widget.pack['story_flyer_url'] as String? ?? '',
       },
     ];
   }

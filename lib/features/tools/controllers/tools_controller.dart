@@ -664,7 +664,9 @@ class ToolsController extends GetxController {
 
       if (result.data != null && result.data!['cutout_url'] != null) {
         final cutout = result.data!['cutout_url'] as String;
-        final bgPlate = result.data!['background_url'] as String? ?? remoteUrl;
+        final bgPlate = result.data!['background_url'] as String? ??
+            result.data!['clean_background_url'] as String? ??
+            remoteUrl;
         magicGrabCutoutUrl.value = cutout;
         magicGrabBackgroundUrl.value = bgPlate;
         resultImageUrl.value = cutout;
@@ -717,9 +719,19 @@ class ToolsController extends GetxController {
         productName: productName,
       );
 
-      if (result.data != null && result.data!['pack'] != null) {
-        productPackResults.value = result.data!;
-        final pack = result.data!['pack'] as Map<String, dynamic>;
+      if (result.data != null) {
+        final data = result.data!;
+        final pack = (data['pack'] as Map<String, dynamic>?) ?? {
+          'amazon_white': data['amazon_white_url'] as String? ?? '',
+          'studio_pedestal': data['studio_pedestal_url'] as String? ?? '',
+          'lifestyle_table': data['lifestyle_table_url'] as String? ?? '',
+          'story_flyer': data['story_flyer_url'] as String? ?? '',
+        };
+        final normalizedData = {
+          ...data,
+          'pack': pack,
+        };
+        productPackResults.value = normalizedData;
         final firstUrl = pack['amazon_white'] as String? ?? pack['studio_pedestal'] as String? ?? '';
         resultImageUrl.value = firstUrl;
 
@@ -739,7 +751,7 @@ class ToolsController extends GetxController {
             },
           );
         }
-        return result.data;
+        return normalizedData;
       } else {
         throw Exception(result.failure?.message ?? 'Failed to generate product pack');
       }
