@@ -436,13 +436,14 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                     },
                   ),
                 ),
-              ] else if (col.coverImageUrl != null &&
+              ] else if (count > 0 &&
+                  col.coverImageUrl != null &&
                   col.coverImageUrl!.isNotEmpty) ...[
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                   child: Container(
-                    height: 64.h,
-                    width: double.infinity,
+                    height: 72.h,
+                    width: 72.h,
                     color: AppColors.surfaceLight,
                     child: CachedNetworkImage(
                       imageUrl: col.coverImageUrl!,

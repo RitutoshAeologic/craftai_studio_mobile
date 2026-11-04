@@ -338,7 +338,9 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                                     width: 44.w,
                                     height: 44.h,
                                     color: AppColors.surfaceLight,
-                                    child: col.coverImageUrl != null && col.coverImageUrl!.isNotEmpty
+                                    child: col.coverImageUrl != null &&
+                                            col.coverImageUrl!.isNotEmpty &&
+                                            col.itemCount > 0
                                         ? CachedNetworkImage(
                                             imageUrl: col.coverImageUrl!,
                                             fit: BoxFit.cover,

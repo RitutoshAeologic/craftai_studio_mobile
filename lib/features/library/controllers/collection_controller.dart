@@ -177,6 +177,16 @@ class CollectionController extends GetxController {
         AppLogger.s('Loaded ${loaded.length} collections from Supabase', tag: 'COLLECTIONS');
       }
 
+      // Proactively clear stale cover_image_url in Supabase for any 0-item collections
+      for (final row in res as List) {
+        final count = (row['collection_items'] as List?)?.firstOrNull?['count'] as num? ?? 0;
+        final cover = row['cover_image_url'] as String?;
+        final cId = row['id']?.toString();
+        if (count == 0 && cover != null && cover.isNotEmpty && cId != null) {
+          client.from('collections').update({'cover_image_url': null}).eq('id', cId).then((_) {}).catchError((_) {});
+        }
+      }
+
       // 2. Fetch all saved bookmark mappings and cache image items for O(1) state lookup
       final itemsRes = await client
           .from('collection_items')
@@ -343,26 +353,24 @@ class CollectionController extends GetxController {
     // Optimistic UI state update
     if (isAlreadySaved) {
       currentSet.remove(collectionId);
-      final idx = collections.indexWhere((c) => c.id == collectionId);
-      if (idx != -1) {
-        final col = collections[idx];
-        collections[idx] = col.copyWith(
-          itemCount: col.itemCount > 0 ? col.itemCount - 1 : 0,
-        );
-      }
       final items = List<Map<String, dynamic>>.from(collectionItemsCache[collectionId] ?? []);
       items.removeWhere((item) => item['id'] == itemId || item['item_id'] == itemId);
       collectionItemsCache[collectionId] = items;
-    } else {
-      currentSet.add(collectionId);
+
+      final nextCoverUrl = items.isNotEmpty ? (items.first['image_url'] as String?) : null;
+
       final idx = collections.indexWhere((c) => c.id == collectionId);
       if (idx != -1) {
         final col = collections[idx];
+        final newItemCount = col.itemCount > 0 ? col.itemCount - 1 : 0;
         collections[idx] = col.copyWith(
-          itemCount: col.itemCount + 1,
-          coverImageUrl: col.coverImageUrl ?? imageUrl,
+          itemCount: newItemCount,
+          coverImageUrl: nextCoverUrl,
+          clearCoverImageUrl: newItemCount == 0 || nextCoverUrl == null,
         );
       }
+    } else {
+      currentSet.add(collectionId);
       final items = List<Map<String, dynamic>>.from(collectionItemsCache[collectionId] ?? []);
       if (!items.any((item) => item['id'] == itemId || item['item_id'] == itemId)) {
         items.insert(0, {
@@ -373,6 +381,15 @@ class CollectionController extends GetxController {
           'title': 'Saved Creation',
         });
         collectionItemsCache[collectionId] = items;
+      }
+
+      final idx = collections.indexWhere((c) => c.id == collectionId);
+      if (idx != -1) {
+        final col = collections[idx];
+        collections[idx] = col.copyWith(
+          itemCount: col.itemCount + 1,
+          coverImageUrl: col.coverImageUrl ?? imageUrl,
+        );
       }
     }
 
@@ -418,6 +435,15 @@ class CollectionController extends GetxController {
             query = query.eq('item_id', itemId);
           }
           await query;
+
+          // Keep collections.cover_image_url in sync with latest remaining item or null
+          final remainingItems = collectionItemsCache[collectionId] ?? [];
+          final nextCover = remainingItems.isNotEmpty ? remainingItems.first['image_url'] : null;
+          await client.from('collections').update({
+            'cover_image_url': nextCover,
+            'updated_at': DateTime.now().toIso8601String(),
+          }).eq('id', targetCollectionId);
+
           AppLogger.s('Removed item $itemId from collection $targetCollectionId in Supabase', tag: 'COLLECTIONS');
         } else {
           final payload = <String, dynamic>{

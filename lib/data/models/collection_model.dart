@@ -25,17 +25,21 @@ class CollectionModel {
     String? name,
     String? description,
     String? coverImageUrl,
+    bool clearCoverImageUrl = false,
     int? itemCount,
     bool? isDefault,
     bool? isPrivate,
     DateTime? updatedAt,
   }) {
+    final updatedItemCount = itemCount ?? this.itemCount;
     return CollectionModel(
       id: id,
       name: name ?? this.name,
       description: description ?? this.description,
-      coverImageUrl: coverImageUrl ?? this.coverImageUrl,
-      itemCount: itemCount ?? this.itemCount,
+      coverImageUrl: (clearCoverImageUrl || updatedItemCount == 0)
+          ? null
+          : (coverImageUrl ?? this.coverImageUrl),
+      itemCount: updatedItemCount,
       isDefault: isDefault ?? this.isDefault,
       isPrivate: isPrivate ?? this.isPrivate,
       createdAt: createdAt,
@@ -49,11 +53,16 @@ class CollectionModel {
     final countFromJoin = (json['collection_items'] as List?)?.firstOrNull?['count'] as num?;
     final resolvedCount = (countFromCol ?? countFromJoin ?? 0).toInt();
 
+    final rawCover = json['cover_image_url'] as String?;
+    final coverImageUrl = (resolvedCount > 0 && rawCover != null && rawCover.isNotEmpty)
+        ? rawCover
+        : null;
+
     return CollectionModel(
       id: (json['id'] ?? '').toString(),
       name: (json['name'] ?? '').toString(),
       description: json['description'] as String?,
-      coverImageUrl: json['cover_image_url'] as String?,
+      coverImageUrl: coverImageUrl,
       itemCount: resolvedCount,
       isDefault: json['is_default'] as bool? ?? false,
       isPrivate: json['is_private'] as bool? ?? true,
