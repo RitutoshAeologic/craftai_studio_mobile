@@ -216,7 +216,18 @@ class HomeShellView extends StatelessWidget {
                       height: 62.h,
                       indicatorColor: AppColors.primary.withValues(alpha: 0.14),
                       labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                        // ...same as before
+                        if (states.contains(WidgetState.selected)) {
+                          return TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w700,
+                          );
+                        }
+                        return TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w500,
+                        );
                       }),
                     ),
                     child: NavigationBar(

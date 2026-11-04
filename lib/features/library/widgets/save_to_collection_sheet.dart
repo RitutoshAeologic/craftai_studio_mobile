@@ -24,6 +24,7 @@ class SaveToCollectionSheet extends StatefulWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      useSafeArea: false,
       builder: (_) => SaveToCollectionSheet(itemId: itemId, imageUrl: imageUrl),
     );
   }
@@ -35,6 +36,7 @@ class SaveToCollectionSheet extends StatefulWidget {
 class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
   final TextEditingController _nameController = TextEditingController();
   bool _isCreating = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -43,61 +45,97 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
   }
 
   void _handleCreateCollection(CollectionController controller) async {
+    if (_isSubmitting) return;
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
 
-    final newCol = await controller.createCollection(
-      name: name,
-      coverImageUrl: widget.imageUrl,
+    // Prevent creating duplicate collections with the same name
+    final exists = controller.collections.any(
+      (c) => c.name.toLowerCase() == name.toLowerCase(),
     );
+    if (exists) {
+      Get.snackbar(
+        'Collection Exists',
+        'A collection named "$name" already exists.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.accentWarning,
+        margin: EdgeInsets.all(16.w),
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
 
-    // Automatically save current item into the newly created collection
-    await controller.toggleSaveItem(
-      collectionId: newCol.id,
-      itemId: widget.itemId,
-      imageUrl: widget.imageUrl,
-    );
-
-    _nameController.clear();
     setState(() {
-      _isCreating = false;
+      _isSubmitting = true;
     });
 
-    Get.snackbar(
-      'Collection Created',
-      'Saved to "$name"',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.surface,
-      colorText: AppColors.primary,
-      borderColor: AppColors.border,
-      borderWidth: 1,
-      duration: const Duration(seconds: 2),
-      margin: EdgeInsets.all(16.w),
-      icon: Icon(Icons.check_circle_outline, color: AppColors.accentSuccess),
-    );
+    try {
+      final newCol = await controller.createCollection(
+        name: name,
+        coverImageUrl: widget.imageUrl,
+      );
+
+      // Automatically save current item into the newly created collection
+      await controller.toggleSaveItem(
+        collectionId: newCol.id,
+        itemId: widget.itemId,
+        imageUrl: widget.imageUrl,
+      );
+
+      _nameController.clear();
+      if (mounted) {
+        setState(() {
+          _isCreating = false;
+          _isSubmitting = false;
+        });
+      }
+
+      Get.snackbar(
+        'Collection Created',
+        'Saved to "$name"',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.primary,
+        borderColor: AppColors.border,
+        borderWidth: 1,
+        duration: const Duration(seconds: 2),
+        margin: EdgeInsets.all(16.w),
+        icon: Icon(Icons.check_circle_outline, color: AppColors.accentSuccess),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final CollectionController controller = Get.put(CollectionController());
+    final viewInsetsBottom = MediaQuery.of(context).viewInsets.bottom;
+    final paddingBottom = MediaQuery.of(context).padding.bottom;
+    // When keyboard is visible, offset strictly by keyboard height without extra safe area dead space.
+    // When keyboard is hidden, clear the home indicator with clean ergonomic spacing.
+    final effectiveBottom = viewInsetsBottom > 0
+        ? viewInsetsBottom + 8.h
+        : (paddingBottom > 0 ? paddingBottom + 6.h : 16.h);
 
     return Container(
-      constraints: BoxConstraints(maxHeight: 0.85.sh),
+      constraints: BoxConstraints(maxHeight: 0.80.sh),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusXl)),
         border: Border.all(color: AppColors.border),
       ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      child: Padding(
+        padding: EdgeInsets.only(bottom: effectiveBottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               // Ergonomic drag handle
               Center(
                 child: Container(
@@ -166,16 +204,26 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                           ),
                           SizedBox(width: 12.w),
                           ElevatedButton(
-                            onPressed: () => _handleCreateCollection(controller),
+                            onPressed: _isSubmitting ? null : () => _handleCreateCollection(controller),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: AppColors.surface,
+                              backgroundColor: Colors.black,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.black38,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                               ),
-                              minimumSize: Size(64.w, 48.h),
+                              minimumSize: Size(72.w, 48.h),
                             ),
-                            child: const Text('Save'),
+                            child: _isSubmitting
+                                ? SizedBox(
+                                    width: 18.w,
+                                    height: 18.w,
+                                    child: const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                           SizedBox(width: 4.w),
                           IconButton(
@@ -249,10 +297,24 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                         final isSaved = controller.isItemInCollection(col.id, widget.itemId);
                         return InkWell(
                           onTap: () async {
+                            final wasSaved = controller.isItemInCollection(col.id, widget.itemId);
                             await controller.toggleSaveItem(
                               collectionId: col.id,
                               itemId: widget.itemId,
                               imageUrl: widget.imageUrl,
+                            );
+                            Get.snackbar(
+                              wasSaved ? 'Removed from Collection' : 'Saved to Collection',
+                              wasSaved ? 'Unsaved from "${col.name}"' : 'Saved to "${col.name}"',
+                              snackPosition: SnackPosition.BOTTOM,
+                              backgroundColor: AppColors.surface,
+                              colorText: AppColors.textPrimary,
+                              margin: EdgeInsets.all(16.w),
+                              duration: const Duration(seconds: 2),
+                              icon: Icon(
+                                wasSaved ? Icons.bookmark_remove_outlined : Icons.bookmark_added_rounded,
+                                color: wasSaved ? AppColors.textMuted : AppColors.accentSuccess,
+                              ),
                             );
                           },
                           borderRadius: BorderRadius.circular(AppDimens.radiusMd),
@@ -309,10 +371,11 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                                       ),
                                       SizedBox(height: 2.h),
                                       Text(
-                                        '${col.itemCount} items',
+                                        isSaved ? 'Saved • Tap to remove' : '${col.itemCount} items',
                                         style: AppTextStyles.caption.copyWith(
-                                          color: AppColors.textMuted,
+                                          color: isSaved ? AppColors.primary : AppColors.textMuted,
                                           fontSize: 12.sp,
+                                          fontWeight: isSaved ? FontWeight.w600 : FontWeight.w400,
                                         ),
                                       ),
                                     ],
@@ -347,11 +410,9 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                   );
                 }),
               ),
-              SizedBox(height: 16.h),
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

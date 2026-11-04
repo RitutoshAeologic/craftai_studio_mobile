@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,6 +11,7 @@ import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/data/models/collection_model.dart';
 import '../../../shared/widgets/app_network_image.dart';
+import '../../../shared/widgets/interactions/bouncy_tap.dart';
 import '../controllers/library_controller.dart';
 import '../controllers/collection_controller.dart';
 import '../views/creation_detail_view.dart';
@@ -371,6 +373,26 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                     ),
                   ),
                   SizedBox(width: 4.w),
+                  Tooltip(
+                    message: 'Delete Collection',
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _confirmDeleteCollection(context, col),
+                      child: Container(
+                        padding: EdgeInsets.all(5.r),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.black87,
+                          size: 16.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 4.w),
                   Icon(Icons.chevron_right_rounded,
                       color: AppColors.textMuted, size: 18.sp),
                 ],
@@ -453,118 +475,324 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
     });
   }
 
+  /// Confirmation dialog to delete a collection folder
+  void _confirmDeleteCollection(BuildContext context, CollectionModel col) {
+    bool isDeleting = false;
+    Get.dialog(
+      StatefulBuilder(
+        builder: (dialogCtx, setDialogState) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            insetPadding: EdgeInsets.symmetric(horizontal: 28.w),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24.r),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  padding: EdgeInsets.all(22.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.90),
+                    borderRadius: BorderRadius.circular(24.r),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      width: 1.2.w,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 28.r,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.border.withValues(alpha: 0.6),
+                            width: 1.w,
+                          ),
+                        ),
+                        child: Icon(Icons.delete_outline_rounded,
+                            color: Colors.black, size: 28.sp),
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Delete Collection?',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'Are you sure you want to delete "${col.name}"? Saved artwork will remain in your library.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12.sp,
+                          height: 1.4,
+                        ),
+                      ),
+                      SizedBox(height: 20.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: isDeleting ? null : () => Get.back(),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white.withValues(alpha: 0.50),
+                                side: BorderSide(color: AppColors.border),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: isDeleting
+                                  ? null
+                                  : () async {
+                                      setDialogState(() => isDeleting = true);
+                                      await _collectionController.deleteCollection(col.id);
+                                      Get.back();
+                                      Get.snackbar(
+                                        'Collection Deleted 🗑️',
+                                        '"${col.name}" removed from your collections',
+                                        snackPosition: SnackPosition.BOTTOM,
+                                        backgroundColor: AppColors.surface,
+                                        colorText: AppColors.textPrimary,
+                                        margin: const EdgeInsets.all(16),
+                                        borderRadius: 12,
+                                        duration: const Duration(seconds: 2),
+                                        icon: Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
+                                      );
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.black.withValues(alpha: 0.6),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                              ),
+                              child: isDeleting
+                                  ? SizedBox(
+                                      width: 18.w,
+                                      height: 18.w,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Delete',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showCreateCollectionDialog(BuildContext context) {
     final nameController = TextEditingController();
     final descController = TextEditingController();
+    bool isSubmitting = false;
 
     Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-        ),
-        backgroundColor: AppColors.surface,
-        child: Padding(
-          padding: EdgeInsets.all(AppDimens.spacingLg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('New Collection', style: AppTextStyles.h3),
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Icon(Icons.close, color: AppColors.textMuted),
-                  ),
-                ],
-              ),
-              SizedBox(height: AppDimens.vSpacingSm),
-              Text(
-                'Organize your saved artwork into custom themes.',
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.textSecondary),
-              ),
-              SizedBox(height: AppDimens.vSpacingMd),
-              TextField(
-                controller: nameController,
-                autofocus: true,
-                style: AppTextStyles.bodyMedium,
-                decoration: InputDecoration(
-                  hintText: 'Collection Name (e.g. Cyberpunk Vibes)',
-                  hintStyle: AppTextStyles.caption
-                      .copyWith(color: AppColors.textMuted),
-                  filled: true,
-                  fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                    borderSide: BorderSide(color: AppColors.border),
-                  ),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                ),
-              ),
-              SizedBox(height: 10.h),
-              TextField(
-                controller: descController,
-                style: AppTextStyles.bodyMedium,
-                decoration: InputDecoration(
-                  hintText: 'Description (optional)',
-                  hintStyle: AppTextStyles.caption
-                      .copyWith(color: AppColors.textMuted),
-                  filled: true,
-                  fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                    borderSide: BorderSide(color: AppColors.border),
-                  ),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                ),
-              ),
-              SizedBox(height: AppDimens.vSpacingLg),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Get.back(),
-                    child: Text('Cancel',
-                        style: AppTextStyles.buttonSmall
-                            .copyWith(color: AppColors.textMuted)),
-                  ),
-                  SizedBox(width: 8.w),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final name = nameController.text.trim();
-                      if (name.isEmpty) return;
-                      Get.back();
-                      await _collectionController.createCollection(
-                        name: name,
-                        description: descController.text.trim(),
-                      );
-                      Get.snackbar(
-                        'Collection Created',
-                        '"$name" added to your collections',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: AppColors.surface,
-                        colorText: AppColors.primary,
-                        duration: const Duration(seconds: 2),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                      ),
+      StatefulBuilder(
+        builder: (dialogCtx, setDialogState) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            insetPadding: EdgeInsets.symmetric(horizontal: 28.w),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24.r),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  padding: EdgeInsets.all(22.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(24.r),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      width: 1.2.w,
                     ),
-                    child: Text('Create', style: AppTextStyles.buttonSmall),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 28.r,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                ],
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('New Collection', style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold)),
+                          GestureDetector(
+                            onTap: () => Get.back(),
+                            child: Icon(Icons.close, color: AppColors.textMuted),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: AppDimens.vSpacingSm),
+                      Text(
+                        'Organize your saved artwork into custom themes.',
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                      ),
+                      SizedBox(height: AppDimens.vSpacingMd),
+                      TextField(
+                        controller: nameController,
+                        autofocus: true,
+                        style: AppTextStyles.bodyMediumBold.copyWith(color: AppColors.textPrimary),
+                        decoration: InputDecoration(
+                          hintText: 'Collection Name (e.g. Cyberpunk Vibes)',
+                          hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                          filled: true,
+                          fillColor: AppColors.surfaceLight,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                            borderSide: BorderSide(color: AppColors.border),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+                      TextField(
+                        controller: descController,
+                        style: AppTextStyles.bodyMedium,
+                        decoration: InputDecoration(
+                          hintText: 'Description (optional)',
+                          hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                          filled: true,
+                          fillColor: AppColors.surfaceLight,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                            borderSide: BorderSide(color: AppColors.border),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                        ),
+                      ),
+                      SizedBox(height: AppDimens.vSpacingLg),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: isSubmitting ? null : () => Get.back(),
+                            child: Text('Cancel', style: AppTextStyles.buttonSmall.copyWith(color: AppColors.textMuted)),
+                          ),
+                          SizedBox(width: 8.w),
+                          ElevatedButton(
+                            onPressed: isSubmitting
+                                ? null
+                                : () async {
+                                    final name = nameController.text.trim();
+                                    if (name.isEmpty) return;
+
+                                    final exists = _collectionController.collections.any(
+                                      (c) => c.name.toLowerCase() == name.toLowerCase(),
+                                    );
+                                    if (exists) {
+                                      Get.snackbar(
+                                        'Collection Exists',
+                                        'A collection named "$name" already exists.',
+                                        snackPosition: SnackPosition.BOTTOM,
+                                        backgroundColor: AppColors.surface,
+                                        colorText: AppColors.accentWarning,
+                                        margin: EdgeInsets.all(16.w),
+                                        duration: const Duration(seconds: 2),
+                                      );
+                                      return;
+                                    }
+
+                                    setDialogState(() => isSubmitting = true);
+                                    try {
+                                      await _collectionController.createCollection(
+                                        name: name,
+                                        description: descController.text.trim(),
+                                      );
+                                      Get.back();
+                                      Get.snackbar(
+                                        'Collection Created',
+                                        '"$name" added to your collections',
+                                        snackPosition: SnackPosition.BOTTOM,
+                                        backgroundColor: AppColors.surface,
+                                        colorText: AppColors.primary,
+                                        duration: const Duration(seconds: 2),
+                                      );
+                                    } catch (_) {
+                                      setDialogState(() => isSubmitting = false);
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.black45,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                              ),
+                              minimumSize: Size(72.w, 40.h),
+                            ),
+                            child: isSubmitting
+                                ? SizedBox(
+                                    width: 16.w,
+                                    height: 16.w,
+                                    child: const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : Text('Create', style: AppTextStyles.buttonSmall.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -666,30 +894,43 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                 ),
               ),
 
-              // Delete button (Top-right)
+              // Delete button (Top-right: glassy frosted effect with black icon)
               Positioned(
                 top: 8.h,
                 right: 8.w,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                child: BouncyTap(
                   onTap: () {
                     HapticFeedback.lightImpact();
                     _confirmDelete(context, _controller, job);
                   },
-                  child: Container(
-                    constraints:
-                        const BoxConstraints(minWidth: 40, minHeight: 40),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.65),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: AppColors.border.withValues(alpha: 0.3)),
-                    ),
-                    child: Icon(
-                      Icons.delete_outline_rounded,
-                      color: AppColors.accentError,
-                      size: 18.sp,
+                  child: ClipOval(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        width: 36.w,
+                        height: 36.w,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.70),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            width: 1.2.w,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 8.r,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.black,
+                          size: 18.sp,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -898,7 +1139,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
     });
   }
 
-  /// Safe delete confirmation dialog
+  /// Safe delete confirmation dialog with frosted glass styling and black delete button
   void _confirmDelete(
       BuildContext context, LibraryController controller, JobModel job) {
     bool isDeleting = false;
@@ -906,127 +1147,153 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
       StatefulBuilder(
         builder: (dialogContext, setDialogState) {
           return Dialog(
-            backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.r)),
-            child: Padding(
-              padding: EdgeInsets.all(20.w),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(12.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentError.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            insetPadding: EdgeInsets.symmetric(horizontal: 28.w),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24.r),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  padding: EdgeInsets.all(22.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.90),
+                    borderRadius: BorderRadius.circular(24.r),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      width: 1.2.w,
                     ),
-                    child: Icon(Icons.delete_forever_rounded,
-                        color: AppColors.accentError, size: 28.sp),
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    'Delete Creation?',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'Permanently remove this creation from your cloud library and storage? This cannot be undone.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12.sp,
-                      height: 1.4,
-                    ),
-                  ),
-                  SizedBox(height: 20.h),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: isDeleting
-                              ? null
-                              : () => Navigator.of(dialogContext).pop(),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppColors.border),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-                            padding: EdgeInsets.symmetric(vertical: 12.h),
-                          ),
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: isDeleting
-                              ? null
-                              : () async {
-                                  setDialogState(() {
-                                    isDeleting = true;
-                                  });
-                                  await controller.deleteCreation(job,
-                                      showSnackbar: false);
-                                  if (dialogContext.mounted) {
-                                    Navigator.of(dialogContext).pop();
-                                  }
-                                  if (Get.overlayContext != null &&
-                                      !Get.testMode) {
-                                    Get.snackbar(
-                                      'Image Deleted 🗑️',
-                                      'Image removed from your library and cloud storage.',
-                                      snackPosition: SnackPosition.BOTTOM,
-                                      backgroundColor: AppColors.surface,
-                                      colorText: AppColors.textPrimary,
-                                      icon: Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
-                                      margin: const EdgeInsets.all(16),
-                                      borderRadius: 12,
-                                      duration: const Duration(seconds: 2),
-                                    );
-                                  }
-                                },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accentError,
-                            foregroundColor: AppColors.white,
-                            disabledBackgroundColor:
-                                AppColors.accentError.withValues(alpha: 0.6),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.r)),
-                            padding: EdgeInsets.symmetric(vertical: 12.h),
-                          ),
-                          child: isDeleting
-                              ? SizedBox(
-                                  width: 18.w,
-                                  height: 18.w,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppColors.white),
-                                  ),
-                                )
-                              : Text(
-                                  'Delete',
-                                  style: TextStyle(
-                                    color: AppColors.white,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 28.r,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                ],
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.border.withValues(alpha: 0.6),
+                            width: 1.w,
+                          ),
+                        ),
+                        child: Icon(Icons.delete_outline_rounded,
+                            color: Colors.black, size: 28.sp),
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Delete Creation?',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'Permanently remove this creation from your cloud library and storage? This cannot be undone.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12.sp,
+                          height: 1.4,
+                        ),
+                      ),
+                      SizedBox(height: 20.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: isDeleting
+                                  ? null
+                                  : () => Navigator.of(dialogContext).pop(),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white.withValues(alpha: 0.50),
+                                side: BorderSide(color: AppColors.border),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: isDeleting
+                                  ? null
+                                  : () async {
+                                      setDialogState(() {
+                                        isDeleting = true;
+                                      });
+                                      await controller.deleteCreation(job,
+                                          showSnackbar: false);
+                                      if (dialogContext.mounted) {
+                                        Navigator.of(dialogContext).pop();
+                                      }
+                                      if (Get.overlayContext != null &&
+                                          !Get.testMode) {
+                                        Get.snackbar(
+                                          'Image Deleted 🗑️',
+                                          'Image removed from your library and cloud storage.',
+                                          snackPosition: SnackPosition.BOTTOM,
+                                          backgroundColor: AppColors.surface,
+                                          colorText: AppColors.textPrimary,
+                                          icon: Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
+                                          margin: const EdgeInsets.all(16),
+                                          borderRadius: 12,
+                                          duration: const Duration(seconds: 2),
+                                        );
+                                      }
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor:
+                                    Colors.black.withValues(alpha: 0.6),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12.r)),
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                              ),
+                              child: isDeleting
+                                  ? SizedBox(
+                                      width: 18.w,
+                                      height: 18.w,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                            AppColors.white),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Delete',
+                                      style: TextStyle(
+                                        color: AppColors.white,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           );

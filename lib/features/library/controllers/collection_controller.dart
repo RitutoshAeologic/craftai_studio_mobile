@@ -267,6 +267,49 @@ class CollectionController extends GetxController {
     return collectionItemsCache[collectionId] ?? [];
   }
 
+  /// Deletes a collection folder from local state and Supabase
+  Future<bool> deleteCollection(String collectionId) async {
+    HapticFeedback.lightImpact();
+
+    // Optimistic local state removal
+    final colIdx = collections.indexWhere((c) => c.id == collectionId);
+    if (colIdx != -1) {
+      collections.removeAt(colIdx);
+    }
+    collectionItemsCache.remove(collectionId);
+
+    // Remove references from itemCollectionMap
+    itemCollectionMap.forEach((itemId, colSet) {
+      colSet.remove(collectionId);
+    });
+
+    // Supabase persistence
+    try {
+      final client = SupabaseService.client;
+      final userId = client.auth.currentUser?.id;
+      if (userId != null) {
+        // Delete all items linked to this collection first
+        await client
+            .from('collection_items')
+            .delete()
+            .eq('collection_id', collectionId);
+
+        // Delete the collection itself
+        await client
+            .from('collections')
+            .delete()
+            .eq('id', collectionId)
+            .eq('user_id', userId);
+
+        AppLogger.s('Deleted collection $collectionId from Supabase', tag: 'COLLECTIONS');
+        return true;
+      }
+    } catch (e) {
+      AppLogger.e('Failed to delete collection from Supabase: $e', tag: 'COLLECTIONS');
+    }
+    return true;
+  }
+
   /// Removes an item directly from a collection
   Future<void> removeItemFromCollection({
     required String collectionId,

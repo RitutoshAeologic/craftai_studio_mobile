@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +12,7 @@ import 'package:craftai_studio_mobile/features/library/controllers/library_contr
 import 'package:craftai_studio_mobile/features/library/widgets/download_paywall_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/publish_creation_sheet.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/widgets/studio_image_edit_actions_sheet.dart';
+import '../../../shared/widgets/interactions/bouncy_tap.dart';
 
 /// [CreationDetailView] renders the full-screen MeiGen image detail screen.
 /// Features:
@@ -78,110 +80,137 @@ class _CreationDetailViewState extends State<CreationDetailView> {
       StatefulBuilder(
         builder: (dialogContext, setDialogState) {
           return Dialog(
-            backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-            child: Padding(
-              padding: EdgeInsets.all(20.w),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(12.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentError.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            insetPadding: EdgeInsets.symmetric(horizontal: 28.w),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24.r),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  padding: EdgeInsets.all(22.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.90),
+                    borderRadius: BorderRadius.circular(24.r),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      width: 1.2.w,
                     ),
-                    child: Icon(Icons.delete_forever_rounded, color: AppColors.accentError, size: 28.sp),
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    'Delete Creation?',
-                    style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    'This will permanently delete this image from your cloud library and Supabase storage. This action cannot be undone.',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, height: 1.4),
-                  ),
-                  SizedBox(height: 20.h),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: isDeleting ? null : () => Navigator.of(dialogContext).pop(),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppColors.border),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-                            padding: EdgeInsets.symmetric(vertical: 12.h),
-                          ),
-                          child: Text('Cancel', style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary)),
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: isDeleting
-                              ? null
-                              : () async {
-                                  setDialogState(() {
-                                    isDeleting = true;
-                                  });
-                                  final libCtrl = Get.isRegistered<LibraryController>()
-                                      ? Get.find<LibraryController>()
-                                      : Get.put(LibraryController());
-                                  
-                                  // Perform deletion without premature snackbar
-                                  await libCtrl.deleteCreation(widget.job, showSnackbar: false);
-                                  
-                                  // Close confirmation dialog
-                                  if (dialogContext.mounted) {
-                                    Navigator.of(dialogContext).pop();
-                                  }
-                                  
-                                  // Pop back from CreationDetailView immediately to Library list view
-                                  if (context.mounted) {
-                                    Navigator.of(context).pop(true);
-                                  }
-                                  
-                                  // Display prominent success toast on the Library list screen
-                                  if (Get.overlayContext != null && !Get.testMode) {
-                                    Get.snackbar(
-                                      'Image Deleted 🗑️',
-                                      'Image successfully removed from your library and cloud storage.',
-                                      snackPosition: SnackPosition.BOTTOM,
-                                      backgroundColor: AppColors.surface,
-                                      colorText: AppColors.textPrimary,
-                                      icon: Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
-                                      margin: EdgeInsets.all(16.w),
-                                      borderRadius: 12.r,
-                                      duration: const Duration(seconds: 3),
-                                    );
-                                  }
-                                },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accentError,
-                            foregroundColor: AppColors.white,
-                            disabledBackgroundColor: AppColors.accentError.withValues(alpha: 0.6),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-                            padding: EdgeInsets.symmetric(vertical: 12.h),
-                          ),
-                          child: isDeleting
-                              ? SizedBox(
-                                  width: 18.w,
-                                  height: 18.w,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
-                                  ),
-                                )
-                              : Text('Delete', style: AppTextStyles.captionBold.copyWith(color: AppColors.white)),
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 28.r,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                ],
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.border.withValues(alpha: 0.6),
+                            width: 1.w,
+                          ),
+                        ),
+                        child: Icon(Icons.delete_outline_rounded, color: Colors.black, size: 28.sp),
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Delete Creation?',
+                        style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'This will permanently delete this image from your cloud library and Supabase storage. This action cannot be undone.',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, height: 1.4),
+                      ),
+                      SizedBox(height: 20.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: isDeleting ? null : () => Navigator.of(dialogContext).pop(),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white.withValues(alpha: 0.50),
+                                side: BorderSide(color: AppColors.border),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                              ),
+                              child: Text('Cancel', style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary)),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: isDeleting
+                                  ? null
+                                  : () async {
+                                      setDialogState(() {
+                                        isDeleting = true;
+                                      });
+                                      final libCtrl = Get.isRegistered<LibraryController>()
+                                          ? Get.find<LibraryController>()
+                                          : Get.put(LibraryController());
+                                      
+                                      // Perform deletion without premature snackbar
+                                      await libCtrl.deleteCreation(widget.job, showSnackbar: false);
+                                      
+                                      // Close confirmation dialog
+                                      if (dialogContext.mounted) {
+                                        Navigator.of(dialogContext).pop();
+                                      }
+                                      
+                                      // Pop back from CreationDetailView immediately to Library list view
+                                      if (context.mounted) {
+                                        Navigator.of(context).pop(true);
+                                      }
+                                      
+                                      // Display prominent success toast on the Library list screen
+                                      if (Get.overlayContext != null && !Get.testMode) {
+                                        Get.snackbar(
+                                          'Image Deleted 🗑️',
+                                          'Image successfully removed from your library and cloud storage.',
+                                          snackPosition: SnackPosition.BOTTOM,
+                                          backgroundColor: AppColors.surface,
+                                          colorText: AppColors.textPrimary,
+                                          icon: Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
+                                          margin: EdgeInsets.all(16.w),
+                                          borderRadius: 12.r,
+                                          duration: const Duration(seconds: 3),
+                                        );
+                                      }
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.black.withValues(alpha: 0.6),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                              ),
+                              child: isDeleting
+                                  ? SizedBox(
+                                      width: 18.w,
+                                      height: 18.w,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                                      ),
+                                    )
+                                  : Text('Delete', style: AppTextStyles.captionBold.copyWith(color: AppColors.white)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           );
@@ -337,11 +366,39 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                               tooltip: _isDownloadUnlocked ? 'Download 4K (Unlocked)' : 'Download 4K (2 Credits)',
                             ),
 
-                            // Delete button
-                            IconButton(
-                              onPressed: () => _showDeleteConfirmation(context),
-                              icon: Icon(Icons.delete_outline_rounded, size: 22.sp, color: AppColors.accentError),
-                              tooltip: 'Delete Creation',
+                            // Delete button (Glassy frosted with black icon)
+                            Tooltip(
+                              message: 'Delete Creation',
+                              child: BouncyTap(
+                                onTap: () => _showDeleteConfirmation(context),
+                                child: Container(
+                                  width: 36.w,
+                                  height: 36.w,
+                                  margin: EdgeInsets.symmetric(horizontal: 4.w),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.70),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.border.withValues(alpha: 0.8),
+                                      width: 1.w,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.04),
+                                        blurRadius: 6.r,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 18.sp,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
 
                             // More options

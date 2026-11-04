@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -13,6 +14,7 @@ import 'package:craftai_studio_mobile/features/explore/views/explore_image_detai
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import '../controllers/collection_controller.dart';
 import '../../../shared/widgets/app_empty_state.dart';
+import '../../../shared/widgets/interactions/bouncy_tap.dart';
 
 /// [CollectionGalleryView] displays all saved images within a specific user collection.
 /// Users can browse their saved images in an organic masonry grid, tap to view full details,
@@ -62,6 +64,13 @@ class CollectionGalleryView extends StatelessWidget {
             }),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete_outline_rounded, color: AppColors.textPrimary),
+            tooltip: 'Delete Collection',
+            onPressed: () => _confirmDeleteCollection(context, controller, collection),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(1.h),
           child: Container(color: AppColors.border, height: 1.h),
@@ -169,26 +178,56 @@ class CollectionGalleryView extends StatelessWidget {
                             ),
                           ),
                           Positioned(
-                            top: 6.h,
-                            right: 6.w,
-                            child: GestureDetector(
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                controller.removeItemFromCollection(
-                                  collectionId: collection.id,
-                                  itemId: itemId,
-                                );
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(4.r),
-                                decoration: BoxDecoration(
-                                  color: AppColors.black.withValues(alpha: 0.65),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.bookmark_remove_rounded,
-                                  color: AppColors.white,
-                                  size: 15.sp,
+                            top: 8.h,
+                            right: 8.w,
+                            child: Tooltip(
+                              message: 'Unsave from collection',
+                              child: BouncyTap(
+                                onTap: () async {
+                                  HapticFeedback.mediumImpact();
+                                  await controller.removeItemFromCollection(
+                                    collectionId: collection.id,
+                                    itemId: itemId,
+                                  );
+                                  Get.snackbar(
+                                    'Image Unsaved',
+                                    'Removed from "${collection.name}"',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                    backgroundColor: AppColors.surface,
+                                    colorText: AppColors.textPrimary,
+                                    margin: const EdgeInsets.all(16),
+                                    borderRadius: 12,
+                                    duration: const Duration(seconds: 2),
+                                    icon: Icon(Icons.bookmark_remove_rounded, color: AppColors.textPrimary),
+                                  );
+                                },
+                                child: ClipOval(
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                    child: Container(
+                                      padding: EdgeInsets.all(6.r),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.85),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white.withValues(alpha: 0.90),
+                                          width: 1.2.w,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.15),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        Icons.bookmark_remove_rounded,
+                                        color: Colors.black,
+                                        size: 15.sp,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -215,6 +254,163 @@ class CollectionGalleryView extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+
+  /// Frosted glass confirmation dialog to delete this collection
+  void _confirmDeleteCollection(
+    BuildContext context,
+    CollectionController controller,
+    CollectionModel col,
+  ) {
+    bool isDeleting = false;
+    Get.dialog(
+      StatefulBuilder(
+        builder: (dialogCtx, setDialogState) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            insetPadding: EdgeInsets.symmetric(horizontal: 28.w),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24.r),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  padding: EdgeInsets.all(22.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.90),
+                    borderRadius: BorderRadius.circular(24.r),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      width: 1.2.w,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 28.r,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.border.withValues(alpha: 0.6),
+                            width: 1.w,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.black,
+                          size: 28.sp,
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'Delete Collection?',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        'Are you sure you want to delete "${col.name}"? Saved artwork will remain in your library.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12.sp,
+                          height: 1.4,
+                        ),
+                      ),
+                      SizedBox(height: 20.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: isDeleting ? null : () => Get.back(),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white.withValues(alpha: 0.50),
+                                side: BorderSide(color: AppColors.border),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: isDeleting
+                                  ? null
+                                  : () async {
+                                      setDialogState(() => isDeleting = true);
+                                      await controller.deleteCollection(col.id);
+                                      Get.back(); // Dismiss dialog
+                                      Get.back(); // Pop back to collections list view
+                                      Get.snackbar(
+                                        'Collection Deleted 🗑️',
+                                        '"${col.name}" removed from your collections',
+                                        snackPosition: SnackPosition.BOTTOM,
+                                        backgroundColor: AppColors.surface,
+                                        colorText: AppColors.textPrimary,
+                                        margin: const EdgeInsets.all(16),
+                                        borderRadius: 12,
+                                        duration: const Duration(seconds: 2),
+                                        icon: Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
+                                      );
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.black.withValues(alpha: 0.6),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                              ),
+                              child: isDeleting
+                                  ? SizedBox(
+                                      width: 18.w,
+                                      height: 18.w,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Delete',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
