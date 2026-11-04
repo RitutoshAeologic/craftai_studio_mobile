@@ -197,6 +197,7 @@ class HomeShellView extends StatelessWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Container(
+                  height: 62.h,
                   padding: EdgeInsets.symmetric(horizontal: 10.w),
                   decoration: BoxDecoration(
                     color: AppColors.glassSurface.withValues(alpha: 0.4),
@@ -206,15 +207,17 @@ class HomeShellView extends StatelessWidget {
                       width: 1.2.w,
                     ),
                   ),
-                  child: MediaQuery.removePadding(
-                    context: context,
-                    removeBottom: true,
+                  child: MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      padding: EdgeInsets.zero,
+                      viewPadding: EdgeInsets.zero,
+                    ),
                     child: NavigationBarTheme(
                       data: NavigationBarThemeData(
                         backgroundColor: Colors.transparent,
                         surfaceTintColor: Colors.transparent,
                         shadowColor: Colors.transparent,
-                        height: 60.h,
+                        height: 62.h,
                         indicatorColor: AppColors.primary.withValues(alpha: 0.14),
                         labelTextStyle: WidgetStateProperty.resolveWith((states) {
                           if (states.contains(WidgetState.selected)) {
@@ -232,6 +235,7 @@ class HomeShellView extends StatelessWidget {
                         }),
                       ),
                       child: NavigationBar(
+                        height: 62.h,
                         selectedIndex: controller.currentIndex.value,
                         onDestinationSelected: controller.switchTab,
                         backgroundColor: Colors.transparent,
