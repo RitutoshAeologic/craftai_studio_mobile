@@ -189,18 +189,16 @@ class HomeShellView extends StatelessWidget {
               left: 18.w,
               right: 18.w,
               bottom: MediaQuery.paddingOf(context).bottom > 0
-                  ? MediaQuery.paddingOf(context).bottom + 6.h
-                  : 18.h,
+                  ? 12.h
+                  : 14.h,
             ),
-            // No decoration/boxShadow here: it was what made the bar look grey/solid
             child: ClipRRect(
               borderRadius: BorderRadius.circular(28.r),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 10.w),
                   decoration: BoxDecoration(
-                    // lower alpha = more transparent (try 0.08 – 0.25)
                     color: AppColors.glassSurface.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(28.r),
                     border: Border.all(
@@ -208,72 +206,75 @@ class HomeShellView extends StatelessWidget {
                       width: 1.2.w,
                     ),
                   ),
-                  child: NavigationBarTheme(
-                    data: NavigationBarThemeData(
-                      backgroundColor: Colors.transparent,
-                      surfaceTintColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      height: 62.h,
-                      indicatorColor: AppColors.primary.withValues(alpha: 0.14),
-                      labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.selected)) {
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeBottom: true,
+                    child: NavigationBarTheme(
+                      data: NavigationBarThemeData(
+                        backgroundColor: Colors.transparent,
+                        surfaceTintColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        height: 60.h,
+                        indicatorColor: AppColors.primary.withValues(alpha: 0.14),
+                        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w700,
+                            );
+                          }
                           return TextStyle(
-                            color: AppColors.primary,
+                            color: AppColors.textSecondary,
                             fontSize: 11.sp,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w500,
                           );
-                        }
-                        return TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w500,
-                        );
-                      }),
-                    ),
-                    child: NavigationBar(
-                      selectedIndex: controller.currentIndex.value,
-                      onDestinationSelected: controller.switchTab,
-                      backgroundColor: Colors.transparent,
-                      surfaceTintColor: Colors.transparent,
-                      elevation: 0,
-                      labelTextStyle: WidgetStatePropertyAll(TextStyle(fontWeight: FontWeight.w700,fontSize: 12)),
-                      destinations: [
-                        NavigationDestination(
-                          icon: Icon(Icons.explore_outlined,
-                              color: AppColors.textSecondary),
-                          selectedIcon:
-                              Icon(Icons.explore, color: AppColors.primary),
-                          label: AppStrings.tabExplore,
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.auto_awesome_outlined,
-                              color: AppColors.textSecondary),
-                          selectedIcon: Icon(Icons.auto_awesome,
-                              color: AppColors.primary),
-                          label: AppStrings.tabStudio,
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.auto_fix_high_outlined,
-                              color: AppColors.textSecondary),
-                          selectedIcon: Icon(Icons.auto_fix_high,
-                              color: AppColors.primary),
-                          label: 'AI Tools',
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.folder_outlined,
-                              color: AppColors.textSecondary),
-                          selectedIcon:
-                              Icon(Icons.folder, color: AppColors.primary),
-                          label: AppStrings.tabLibrary,
-                        ),
-                        NavigationDestination(
-                          icon: Icon(Icons.person_outline,
-                              color: AppColors.textSecondary),
-                          selectedIcon:
-                              Icon(Icons.person, color: AppColors.primary),
-                          label: AppStrings.tabProfile,
-                        ),
-                      ],
+                        }),
+                      ),
+                      child: NavigationBar(
+                        selectedIndex: controller.currentIndex.value,
+                        onDestinationSelected: controller.switchTab,
+                        backgroundColor: Colors.transparent,
+                        surfaceTintColor: Colors.transparent,
+                        elevation: 0,
+                        destinations: [
+                          NavigationDestination(
+                            icon: Icon(Icons.explore_outlined,
+                                color: AppColors.textSecondary),
+                            selectedIcon:
+                                Icon(Icons.explore, color: AppColors.primary),
+                            label: AppStrings.tabExplore,
+                          ),
+                          NavigationDestination(
+                            icon: Icon(Icons.auto_awesome_outlined,
+                                color: AppColors.textSecondary),
+                            selectedIcon: Icon(Icons.auto_awesome,
+                                color: AppColors.primary),
+                            label: AppStrings.tabStudio,
+                          ),
+                          NavigationDestination(
+                            icon: Icon(Icons.auto_fix_high_outlined,
+                                color: AppColors.textSecondary),
+                            selectedIcon: Icon(Icons.auto_fix_high,
+                                color: AppColors.primary),
+                            label: 'AI Tools',
+                          ),
+                          NavigationDestination(
+                            icon: Icon(Icons.folder_outlined,
+                                color: AppColors.textSecondary),
+                            selectedIcon:
+                                Icon(Icons.folder, color: AppColors.primary),
+                            label: AppStrings.tabLibrary,
+                          ),
+                          NavigationDestination(
+                            icon: Icon(Icons.person_outline,
+                                color: AppColors.textSecondary),
+                            selectedIcon:
+                                Icon(Icons.person, color: AppColors.primary),
+                            label: AppStrings.tabProfile,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

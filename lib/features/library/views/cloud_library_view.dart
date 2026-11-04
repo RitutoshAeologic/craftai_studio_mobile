@@ -181,7 +181,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics()),
-          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
           itemCount: _controller.myCreations.length + 1,
           itemBuilder: (context, idx) {
             // Last item is the dynamic pagination footer
@@ -240,7 +240,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics()),
-          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
