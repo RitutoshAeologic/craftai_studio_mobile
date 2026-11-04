@@ -10,6 +10,8 @@ import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/explore/controllers/explore_controller.dart';
 import 'package:craftai_studio_mobile/features/explore/views/explore_image_detail_view.dart';
 import 'package:craftai_studio_mobile/features/explore/views/explore_category_view.dart';
+import 'package:craftai_studio_mobile/shared/widgets/interactions/bouncy_tap.dart';
+import 'package:craftai_studio_mobile/shared/widgets/loading/glass_shimmer_skeleton.dart';
 
 /// [ExploreCardWidget] renders an artwork card in the Scattered Masonry Explore feed.
 /// Tapping the card routes directly to [ExploreImageDetailView] full-page screen.
@@ -49,7 +51,7 @@ class ExploreCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final ExploreController controller = Get.find<ExploreController>();
 
-    return GestureDetector(
+    return BouncyTap(
       onTap: () {
         HapticFeedback.lightImpact();
         Get.to(() => ExploreImageDetailView(card: card));
@@ -58,11 +60,11 @@ class ExploreCardWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.glassBorderSubtle),
           boxShadow: [
             BoxShadow(
-              color: AppColors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 10.r,
               offset: const Offset(0, 3),
             ),
           ],
@@ -80,15 +82,12 @@ class ExploreCardWidget extends StatelessWidget {
                     imageUrl: card.previewUrl,
                     fit: BoxFit.cover,
                     memCacheWidth: 600,
-                    placeholder: (_, __) => Container(
-                      color: AppColors.surfaceLight,
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                      ),
+                    placeholder: (_, __) => const GlassShimmerSkeleton(
+                      borderRadius: BorderRadius.zero,
                     ),
                     errorWidget: (_, __, ___) => Container(
                       color: AppColors.surfaceLight,
-                      child: const Icon(Icons.broken_image, color: AppColors.textMuted),
+                      child: Icon(Icons.broken_image, color: AppColors.textMuted),
                     ),
                   ),
                 ),
@@ -114,7 +113,7 @@ class ExploreCardWidget extends StatelessWidget {
                         child: Text(
                           card.category,
                           style: AppTextStyles.captionXs.copyWith(
-                            color: AppColors.surface,
+                            color: AppColors.white,
                             fontSize: 9.sp,
                             fontWeight: FontWeight.bold,
                           ),
@@ -185,7 +184,7 @@ class ExploreCardWidget extends StatelessWidget {
                           width: 18.w,
                           height: 18.h,
                           fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) => const Icon(
+                          errorWidget: (_, __, ___) => Icon(
                             Icons.account_circle,
                             color: AppColors.textMuted,
                             size: 18,

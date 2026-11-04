@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -8,7 +9,12 @@ import 'package:craftai_studio_mobile/shared/widgets/app_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
+import 'package:craftai_studio_mobile/core/constants/app_icons.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
+import 'package:craftai_studio_mobile/shared/widgets/glass/glass_container.dart';
+import 'package:craftai_studio_mobile/shared/widgets/glass/glass_icon_tile.dart';
+import 'package:craftai_studio_mobile/shared/widgets/glass/luminous_mesh_canvas.dart';
+import 'package:craftai_studio_mobile/shared/widgets/interactions/bouncy_tap.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
@@ -33,10 +39,12 @@ class AiToolsView extends StatelessWidget {
         : Get.put(ToolsController());
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
+      backgroundColor: Colors.transparent,
+      body: LuminousMeshCanvas(
+        child: SafeArea(
+          bottom: false,
+          child: CustomScrollView(
+            slivers: [
             // =================================================================
             // HEADER BAR
             // =================================================================
@@ -104,17 +112,34 @@ class AiToolsView extends StatelessWidget {
                     final cat = controller.categories[idx];
                     return Obx(() {
                       final isSel = controller.selectedCategory.value == cat;
-                      return GestureDetector(
+                      return BouncyTap(
                         onTap: () => controller.setCategory(cat),
-                        child: Container(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
                           padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
                           decoration: BoxDecoration(
-                            color: isSel ? AppColors.primary : AppColors.surface,
+                            gradient: isSel ? AppColors.aiCosmicGradient : null,
+                            color: isSel ? null : AppColors.surface,
                             borderRadius: BorderRadius.circular(AppDimens.radiusRound),
                             border: Border.all(
-                              color: isSel ? AppColors.primary : AppColors.border,
+                              color: isSel ? Colors.transparent : AppColors.border,
                               width: 1.0,
                             ),
+                            boxShadow: isSel
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.primary.withValues(alpha: 0.28),
+                                      blurRadius: 8.r,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : [
+                                    BoxShadow(
+                                      color: const Color(0xFF090D16).withValues(alpha: 0.04),
+                                      blurRadius: 4.r,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
                           ),
                           child: Center(
                             child: Text(
@@ -180,27 +205,21 @@ class AiToolsView extends StatelessWidget {
             )),
 
             SliverToBoxAdapter(
-              child: SizedBox(height: 24.h),
+              child: SizedBox(height: 100.h),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildInteractiveHeroCard(BuildContext context, ToolsController controller) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return GlassContainer(
+      tintColor: AppColors.surface.withValues(alpha: 0.85),
+      border: Border.all(
+        color: AppColors.accentSuccess.withValues(alpha: 0.35),
+        width: 1.0.w,
       ),
       padding: EdgeInsets.all(AppDimens.spacingLg),
       child: Column(
@@ -211,17 +230,13 @@ class AiToolsView extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(8.r),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF00F5D4), Color(0xFF0EA5E9)],
-                        ),
-                        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                      ),
-                      child: Text('✂️', style: TextStyle(fontSize: 16.sp)),
+                    const GlassIconTile(
+                      icon: AppIcons.bgRemover,
+                      size: 38,
+                      iconSize: 18,
+                      accentColor: AppColors.accentSuccess,
                     ),
-                    SizedBox(width: 10.w),
+                    SizedBox(width: 12.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +248,7 @@ class AiToolsView extends StatelessWidget {
                           ),
                           Text(
                             'Zero-Token • Local CPU U2-Net',
-                            style: AppTextStyles.captionXs.copyWith(color: AppColors.primary),
+                            style: AppTextStyles.captionXs.copyWith(color: AppColors.accentSuccess),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
@@ -335,7 +350,7 @@ class AiToolsView extends StatelessWidget {
                 onTap: controller.clearActiveSession,
                 child: Container(
                   padding: EdgeInsets.all(4.r),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.surface,
                     shape: BoxShape.circle,
                   ),
@@ -356,7 +371,7 @@ class AiToolsView extends StatelessWidget {
                   SizedBox(
                     width: 14.w,
                     height: 14.w,
-                    child: const CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                   ),
                   SizedBox(width: 8.w),
                   Text(
@@ -442,7 +457,7 @@ class AiToolsView extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: controller.clearActiveSession,
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.border),
+                  side: BorderSide(color: AppColors.border),
                   padding: EdgeInsets.symmetric(vertical: 8.h),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSm)),
                 ),
@@ -485,88 +500,93 @@ class AiToolsView extends StatelessWidget {
 
   Widget _buildToolListCard(BuildContext context, Map<String, dynamic> tool, ToolsController controller) {
     final toolId = tool['id'] as String;
-    final bgTint = (tool['bgTint'] as Color?) ?? AppColors.surface;
     final accentColor = (tool['accentColor'] as Color?) ?? AppColors.primary;
+    final iconData = (tool['iconData'] as IconData?) ?? AppIcons.magicEraser;
 
-    return InkWell(
-      onTap: () {
-        controller.clearActiveSession();
-        switch (toolId) {
-          case 'magic_eraser':
-            Get.to(() => const MagicObjectEraserView());
-            break;
-          // [TEMPORARILY COMMENTED FOR PHASE 1]
-          // case 'magic_grab':
-          //   Get.to(() => const MagicGrabView());
-          //   break;
-          case 'photo_colorizer':
-            Get.to(() => const PhotoColorizerView());
-            break;
-          case 'bg_remover':
-            _showImageSourceSheet(context, controller);
-            break;
-          case 'ai_background':
-            AiBackgroundsSheet.show(context);
-            break;
-          case 'ai_expand':
-            AiExpandSheet.show(context);
-            break;
-          case 'upscaler':
-            UpscaleSheet.show(context);
-            break;
-          // [TEMPORARILY COMMENTED FOR PHASE 1: Product Detail, 4-Pack & Marketing Poster]
-          // case 'product_detail':
-          //   ProductDetailSheet.show(context);
-          //   break;
-          // case 'product_pack':
-          //   ProductDetailSheet.show(context, isPackMode: true);
-          //   break;
-          // case 'marketing_poster':
-          //   MarketingPosterSheet.show(context);
-          //   break;
-          case 'remix_lab':
-            _showRemixImageSourceSheet(context);
-            break;
-          default:
-            _showImageSourceSheet(context, controller);
-        }
-      },
-      borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+    void handleTap() {
+      controller.clearActiveSession();
+      switch (toolId) {
+        case 'magic_eraser':
+          Get.to(() => const MagicObjectEraserView());
+          break;
+        // [TEMPORARILY COMMENTED FOR PHASE 1]
+        // case 'magic_grab':
+        //   Get.to(() => const MagicGrabView());
+        //   break;
+        case 'photo_colorizer':
+          Get.to(() => const PhotoColorizerView());
+          break;
+        case 'bg_remover':
+          _showImageSourceSheet(context, controller);
+          break;
+        case 'ai_background':
+          AiBackgroundsSheet.show(context);
+          break;
+        case 'ai_expand':
+          AiExpandSheet.show(context);
+          break;
+        case 'upscaler':
+          UpscaleSheet.show(context);
+          break;
+        // [TEMPORARILY COMMENTED FOR PHASE 1: Product Detail, 4-Pack & Marketing Poster]
+        // case 'product_detail':
+        //   ProductDetailSheet.show(context);
+        //   break;
+        // case 'product_pack':
+        //   ProductDetailSheet.show(context, isPackMode: true);
+        //   break;
+        // case 'marketing_poster':
+        //   MarketingPosterSheet.show(context);
+        //   break;
+        case 'remix_lab':
+          _showRemixImageSourceSheet(context);
+          break;
+        default:
+          _showImageSourceSheet(context, controller);
+      }
+    }
+
+    return BouncyTap(
+      onTap: handleTap,
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         decoration: BoxDecoration(
-          color: bgTint,
-          borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-          border: Border.all(color: accentColor.withValues(alpha: 0.20), width: 1.0),
+          borderRadius: BorderRadius.circular(18.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
+              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+              blurRadius: 16.r,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: accentColor.withValues(alpha: 0.04),
+              blurRadius: 8.r,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Row(
-          children: [
-            // Circular icon badge with white circle
-            Container(
-              width: 44.w,
-              height: 44.w,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18.r),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
               decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                color: Colors.white.withValues(alpha: 0.82),
+                borderRadius: BorderRadius.circular(18.r),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.90),
+                  width: 1.2.w,
+                ),
               ),
-              child: Center(
-                child: Text(tool['icon'] as String, style: TextStyle(fontSize: 20.sp)),
-              ),
+              child: Row(
+          children: [
+            // Modern iridescent frosted glass icon tile (No raw emojis)
+            GlassIconTile(
+              icon: iconData,
+              size: 44,
+              iconSize: 20,
+              accentColor: accentColor,
             ),
             SizedBox(width: 14.w),
 
@@ -592,9 +612,9 @@ class AiToolsView extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.85),
+                          color: accentColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                          border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+                          border: Border.all(color: accentColor.withValues(alpha: 0.35)),
                         ),
                         child: Text(
                           tool['credits'] as String,
@@ -625,7 +645,10 @@ class AiToolsView extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ),
+  ),
+),
+);
   }
 
   void _showRemixImageSourceSheet(BuildContext context) {
@@ -752,7 +775,7 @@ class AiToolsView extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 16.h),
-                    const Divider(color: AppColors.border, height: 1),
+                    Divider(color: AppColors.border, height: 1),
                     SizedBox(height: 8.h),
                   ],
                 );

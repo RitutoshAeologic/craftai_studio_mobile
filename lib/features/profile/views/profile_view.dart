@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimens.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/theme/theme_controller.dart';
+import '../../../shared/widgets/interactions/bouncy_tap.dart';
 import '../controllers/profile_controller.dart';
 
 /// [ProfileView] displays full creator account credentials, active session status,
@@ -14,77 +16,96 @@ class ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ProfileController controller = Get.put(ProfileController());
+    final ThemeController themeController = Get.isRegistered<ThemeController>()
+        ? Get.find<ThemeController>()
+        : Get.put(ThemeController());
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
+    return Obx(() {
+      final activePreset = themeController.currentPreset.value;
+
+      return Scaffold(
+        key: ValueKey('profile_scaffold_${activePreset.name}'),
         backgroundColor: AppColors.background,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text(
-          'Profile',
-          style: AppTextStyles.h1,
-        ),
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1.h),
-          child: Container(
-            color: AppColors.border,
-            height: 1.h,
+        appBar: AppBar(
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          title: Text(
+            'Profile',
+            style: AppTextStyles.h1,
+          ),
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(1.h),
+            child: Container(
+              color: AppColors.border,
+              height: 1.h,
+            ),
           ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppDimens.spacingLg,
-          vertical: AppDimens.vSpacingXl,
+        body: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppDimens.spacingLg,
+            vertical: AppDimens.vSpacingXl,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // =========================================================================
+              // 1. CREATOR HERO CARD
+              // =========================================================================
+              _buildCreatorHeroCard(controller),
+              SizedBox(height: AppDimens.vSpacingXl),
+
+              // =========================================================================
+              // 2. WALLET & CREDITS SHORTCUT CARD
+              // =========================================================================
+              _buildWalletQuickCard(controller),
+              SizedBox(height: AppDimens.vSpacingXl),
+
+              // =========================================================================
+              // 3. STUDIO APPEARANCE & THEME
+              // =========================================================================
+              Text(
+                'Studio Appearance & Theme',
+                style: AppTextStyles.h2,
+              ),
+              SizedBox(height: AppDimens.vSpacingMd),
+              _buildThemeSelectorCard(context, themeController, activePreset),
+              SizedBox(height: AppDimens.vSpacingXl),
+
+              // =========================================================================
+              // 4. ACCOUNT & SESSION SECTION (FROM BOTTOM SHEET)
+              // =========================================================================
+              Text(
+                'Account & Session',
+                style: AppTextStyles.h2,
+              ),
+              SizedBox(height: AppDimens.vSpacingMd),
+              _buildAccountDetailsCard(controller),
+              SizedBox(height: AppDimens.vSpacingXl),
+
+              // =========================================================================
+              // 5. APP & SYSTEM INFO
+              // =========================================================================
+              Text(
+                'About CraftAI Studio',
+                style: AppTextStyles.h2,
+              ),
+              SizedBox(height: AppDimens.vSpacingMd),
+              _buildAppInfoCard(),
+              SizedBox(height: AppDimens.vSpacingXl),
+
+              // =========================================================================
+              // 6. SIGN OUT ACTION (FROM BOTTOM SHEET)
+              // =========================================================================
+              _buildSignOutTile(controller),
+              SizedBox(height: AppDimens.vSpacingXxl),
+            ],
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // =========================================================================
-            // 1. CREATOR HERO CARD
-            // =========================================================================
-            _buildCreatorHeroCard(controller),
-            SizedBox(height: AppDimens.vSpacingXl),
-
-            // =========================================================================
-            // 2. WALLET & CREDITS SHORTCUT CARD
-            // =========================================================================
-            _buildWalletQuickCard(controller),
-            SizedBox(height: AppDimens.vSpacingXl),
-
-            // =========================================================================
-            // 3. ACCOUNT & SESSION SECTION (FROM BOTTOM SHEET)
-            // =========================================================================
-            Text(
-              'Account & Session',
-              style: AppTextStyles.h2,
-            ),
-            SizedBox(height: AppDimens.vSpacingMd),
-            _buildAccountDetailsCard(controller),
-            SizedBox(height: AppDimens.vSpacingXl),
-
-            // =========================================================================
-            // 4. APP & SYSTEM INFO
-            // =========================================================================
-            Text(
-              'About CraftAI Studio',
-              style: AppTextStyles.h2,
-            ),
-            SizedBox(height: AppDimens.vSpacingMd),
-            _buildAppInfoCard(),
-            SizedBox(height: AppDimens.vSpacingXl),
-
-            // =========================================================================
-            // 5. SIGN OUT ACTION (FROM BOTTOM SHEET)
-            // =========================================================================
-            _buildSignOutTile(controller),
-            SizedBox(height: AppDimens.vSpacingXxl),
-          ],
-        ),
-      ),
-    );
+      );
+    });
   }
 
   /// Displays avatar, display name, email, and verified status badges.
@@ -276,6 +297,178 @@ class ProfileView extends StatelessWidget {
     );
   }
 
+  /// Interactive live theme switcher for visual style customization
+  Widget _buildThemeSelectorCard(
+    BuildContext context,
+    ThemeController themeController,
+    AppThemePreset active,
+  ) {
+    final presets = [
+      AppThemePreset.luminousAurora,
+      AppThemePreset.warmCashmere,
+      AppThemePreset.coolPlatinum,
+      AppThemePreset.deepObsidian,
+    ];
+
+    return Container(
+      padding: EdgeInsets.all(AppDimens.spacingLg),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusXl),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 16.r,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.palette_outlined, size: 20.sp, color: AppColors.primary),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'Theme & Visual Style',
+                  style: AppTextStyles.bodyMediumBold.copyWith(color: AppColors.textPrimary),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            'Choose your preferred visual style across CraftAI Studio.',
+            style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary),
+          ),
+          SizedBox(height: 14.h),
+          Column(
+            children: presets.map((preset) {
+              final isSelected = active == preset;
+              final name = themeController.getPresetName(preset);
+              final desc = themeController.getPresetDescription(preset);
+
+              IconData getPresetIcon() {
+                switch (preset) {
+                  case AppThemePreset.luminousAurora:
+                    return Icons.auto_awesome;
+                  case AppThemePreset.warmCashmere:
+                    return Icons.spa_outlined;
+                  case AppThemePreset.coolPlatinum:
+                    return Icons.tune_rounded;
+                  case AppThemePreset.deepObsidian:
+                    return Icons.dark_mode_outlined;
+                }
+              }
+
+              Color getPresetAccent() {
+                switch (preset) {
+                  case AppThemePreset.luminousAurora:
+                    return AppColors.primary;
+                  case AppThemePreset.warmCashmere:
+                    return const Color(0xFFD97706);
+                  case AppThemePreset.coolPlatinum:
+                    return const Color(0xFF06B6D4);
+                  case AppThemePreset.deepObsidian:
+                    return const Color(0xFFA855F7);
+                }
+              }
+
+              return BouncyTap(
+                onTap: () => themeController.switchTheme(preset),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: EdgeInsets.only(bottom: 8.h),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.08)
+                        : AppColors.surfaceLight.withValues(alpha: 0.50),
+                    borderRadius: BorderRadius.circular(14.r),
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : AppColors.border,
+                      width: isSelected ? 1.5 : 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32.w,
+                        height: 32.w,
+                        decoration: BoxDecoration(
+                          color: getPresetAccent().withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          getPresetIcon(),
+                          size: 16.sp,
+                          color: getPresetAccent(),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    name,
+                                    style: AppTextStyles.bodySmallBold.copyWith(
+                                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (preset == AppThemePreset.luminousAurora) ...[
+                                  SizedBox(width: 6.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.accentSuccess.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                                    ),
+                                    child: Text(
+                                      'Active',
+                                      style: TextStyle(
+                                        color: AppColors.accentSuccess,
+                                        fontSize: 8.5.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              desc,
+                              style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        isSelected ? Icons.check_circle_rounded : Icons.radio_button_off_rounded,
+                        color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                        size: 18.sp,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Account information details (matches and expands bottom sheet items)
   Widget _buildAccountDetailsCard(ProfileController controller) {
     return Container(
@@ -399,7 +592,7 @@ class ProfileView extends StatelessWidget {
               color: AppColors.accentError.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8.r),
             ),
-            child: const Icon(Icons.logout_rounded, color: AppColors.accentError),
+            child: Icon(Icons.logout_rounded, color: AppColors.accentError),
           ),
           title: Text(
             'Sign Out',

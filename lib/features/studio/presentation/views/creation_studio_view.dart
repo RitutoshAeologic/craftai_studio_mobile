@@ -17,6 +17,7 @@ import '../widgets/studio_model_sheet.dart';
 import '../widgets/studio_advanced_settings_sheet.dart';
 import '../widgets/studio_prompt_engine_sheet.dart';
 import '../../../../shared/widgets/app_button.dart';
+import 'package:craftai_studio_mobile/shared/widgets/interactions/bouncy_tap.dart';
 
 class CreationStudioView extends StatelessWidget {
   const CreationStudioView({super.key});
@@ -80,7 +81,7 @@ class CreationStudioView extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 8.w),
-                  Obx(() => GestureDetector(
+                  Obx(() => BouncyTap(
                     onTap: controller.isBusy
                         ? null
                         : () {
@@ -90,12 +91,14 @@ class CreationStudioView extends StatelessWidget {
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                       decoration: BoxDecoration(
-                        color: controller.isBusy ? AppColors.surface.withValues(alpha: 0.5) : AppColors.surface,
+                        color: controller.isBusy
+                            ? AppColors.surfaceLight.withValues(alpha: 0.3)
+                            : AppColors.surfaceLight.withValues(alpha: 0.7),
                         borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: AppColors.glassBorderSubtle),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.black.withValues(alpha: 0.04),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 1),
                           ),
@@ -276,8 +279,8 @@ class CreationStudioView extends StatelessWidget {
                                   width: 16.sp,
                                   height: 16.sp,
                                   child: isDone
-                                      ? const Icon(Icons.check_circle, color: AppColors.accentSuccess, size: 16)
-                                      : const CircularProgressIndicator(
+                                      ? Icon(Icons.check_circle, color: AppColors.accentSuccess, size: 16)
+                                      : CircularProgressIndicator(
                                           strokeWidth: 2,
                                           valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                                         ),
@@ -357,7 +360,7 @@ class CreationStudioView extends StatelessWidget {
                   label: label,
                   onPressed: isBusy ? null : controller.generateVisual,
                   isLoading: isGen,
-                  icon: const Icon(Icons.auto_awesome, color: AppColors.surface),
+                  icon: const Icon(Icons.auto_awesome, color: Colors.white),
                 );
               }),
               SizedBox(height: AppDimens.vSpacingMd),
@@ -698,7 +701,7 @@ class CreationStudioView extends StatelessWidget {
                               SizedBox(
                                 width: 12.sp,
                                 height: 12.sp,
-                                child: const CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.surface),
+                                child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.surface),
                               )
                             else
                               Icon(
@@ -1054,7 +1057,7 @@ class CreationStudioView extends StatelessWidget {
                   onTap: controller.closeResultHero,
                   child: Container(
                     padding: EdgeInsets.all(4.r),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.surfaceLight,
                       shape: BoxShape.circle,
                     ),
@@ -1081,7 +1084,7 @@ class CreationStudioView extends StatelessWidget {
                   ),
                   errorWidget: (_, __, ___) => Container(
                     color: AppColors.surfaceLight,
-                    child: const Center(
+                    child: Center(
                       child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 40),
                     ),
                   ),
@@ -1423,7 +1426,7 @@ class CreationStudioView extends StatelessWidget {
                 children: [
                   Text(AppStrings.selectSampleReference, style: AppTextStyles.h3),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.white70),
+                    icon: Icon(Icons.close, color: AppColors.white70),
                     onPressed: () => Get.back(),
                   ),
                 ],
@@ -1514,7 +1517,7 @@ class CreationStudioView extends StatelessWidget {
                                   onTap: () => controller.removeReferenceImage(index),
                                   child: Container(
                                     padding: EdgeInsets.all(2.r),
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: AppColors.surface,
                                       shape: BoxShape.circle,
                                     ),
@@ -1569,7 +1572,7 @@ class CreationStudioView extends StatelessWidget {
                         }
                       },
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.border),
+                        side: BorderSide(color: AppColors.border),
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd)),
                       ),
@@ -1592,7 +1595,7 @@ class CreationStudioView extends StatelessWidget {
                         }
                       },
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.border),
+                        side: BorderSide(color: AppColors.border),
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd)),
                       ),

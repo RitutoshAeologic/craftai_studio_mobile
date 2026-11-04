@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimens.dart';
 import '../../core/constants/app_text_styles.dart';
+import 'interactions/bouncy_tap.dart';
 
 /// [CreditCostChip] is a shared, reusable credit badge component used across
 /// HomeShell, CreationStudio, CloudLibrary, and Bottom Sheets per rules.md §5.
@@ -55,20 +56,30 @@ class CreditCostChip extends StatelessWidget {
           ? amount.toInt().toString()
           : amount.toStringAsFixed(1);
 
-      return GestureDetector(
+      return BouncyTap(
         onTap: onTap,
         child: Container(
           padding: effectivePadding,
           decoration: BoxDecoration(
             color: isHighlighted
                 ? AppColors.primary.withValues(alpha: 0.12)
-                : AppColors.surface,
+                : Colors.white.withValues(alpha: 0.80),
             borderRadius: BorderRadius.circular(AppDimens.radiusRound),
             border: Border.all(
               color: isHighlighted
-                  ? AppColors.primary.withValues(alpha: 0.4)
-                  : AppColors.border,
+                  ? AppColors.primary.withValues(alpha: 0.40)
+                  : AppColors.glassBorderSubtle,
+              width: 1.0.w,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: isHighlighted
+                    ? AppColors.primary.withValues(alpha: 0.20)
+                    : const Color(0xFF0F172A).withValues(alpha: 0.04),
+                blurRadius: 8.r,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -84,7 +95,9 @@ class CreditCostChip extends StatelessWidget {
               Text(
                 text,
                 style: AppTextStyles.captionBold.copyWith(
-                  color: AppColors.primary,
+                  color: isHighlighted ? AppColors.textPrimary : AppColors.textSecondary,
+                  fontSize: 11.sp,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],

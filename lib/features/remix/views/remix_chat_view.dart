@@ -53,7 +53,7 @@ class _RemixChatViewState extends State<RemixChatView> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
           onPressed: () => Get.back(),
         ),
         title: Row(
@@ -61,7 +61,7 @@ class _RemixChatViewState extends State<RemixChatView> {
             Container(
               padding: EdgeInsets.all(AppDimens.spacingSm),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [AppColors.purpleAccent, AppColors.primary],
                 ),
                 borderRadius: BorderRadius.circular(AppDimens.radiusMd),
@@ -425,7 +425,7 @@ class _RemixChatViewState extends State<RemixChatView> {
                       child: SizedBox(
                         width: 10.w,
                         height: 10.w,
-                        child: const CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.primary),
+                        child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.primary),
                       ),
                     ),
                   Text(
@@ -467,7 +467,7 @@ class _RemixChatViewState extends State<RemixChatView> {
               backgroundColor: AppColors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                side: const BorderSide(color: AppColors.border),
+                side: BorderSide(color: AppColors.border),
               ),
               padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 0),
               onPressed: () => controller.addModifierTag(chip),
@@ -523,7 +523,7 @@ class _RemixChatViewState extends State<RemixChatView> {
                       ? SizedBox(
                           width: 18.w,
                           height: 18.w,
-                          child: const CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                         )
                       : Icon(
                           Icons.arrow_upward_rounded,

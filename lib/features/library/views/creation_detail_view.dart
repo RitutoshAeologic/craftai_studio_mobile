@@ -111,7 +111,7 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                         child: OutlinedButton(
                           onPressed: isDeleting ? null : () => Navigator.of(dialogContext).pop(),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.border),
+                            side: BorderSide(color: AppColors.border),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
                             padding: EdgeInsets.symmetric(vertical: 12.h),
                           ),
@@ -152,7 +152,7 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                                       snackPosition: SnackPosition.BOTTOM,
                                       backgroundColor: AppColors.surface,
                                       colorText: AppColors.textPrimary,
-                                      icon: const Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
+                                      icon: Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
                                       margin: EdgeInsets.all(16.w),
                                       borderRadius: 12.r,
                                       duration: const Duration(seconds: 3),
@@ -171,7 +171,7 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                               ? SizedBox(
                                   width: 18.w,
                                   height: 18.w,
-                                  child: const CircularProgressIndicator(
+                                  child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                                   ),
@@ -230,7 +230,7 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                             backgroundColor: AppColors.surface,
                             foregroundColor: AppColors.textPrimary,
                             elevation: 0,
-                            side: const BorderSide(color: AppColors.border),
+                            side: BorderSide(color: AppColors.border),
                             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusRound)),
                           ),
@@ -271,7 +271,7 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                             placeholder: (_, __) => Container(color: AppColors.surfaceLight),
                             errorWidget: (_, __, ___) => Container(
                               color: AppColors.surfaceLight,
-                              child: const Center(child: Icon(Icons.broken_image, color: AppColors.textMuted)),
+                              child: Center(child: Icon(Icons.broken_image, color: AppColors.textMuted)),
                             ),
                           ),
                         ),
@@ -450,7 +450,7 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                        side: const BorderSide(color: AppColors.border),
+                        side: BorderSide(color: AppColors.border),
                       ),
                     ),
                     icon: Icon(Icons.edit_outlined, size: 16.sp, color: AppColors.primary),

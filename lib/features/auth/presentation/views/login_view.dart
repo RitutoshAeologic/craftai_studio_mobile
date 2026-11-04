@@ -172,7 +172,7 @@ class LoginView extends StatelessWidget {
           height: 54.w,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16.r),
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [AppColors.primary, AppColors.vip],

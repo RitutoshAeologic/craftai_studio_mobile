@@ -91,7 +91,7 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
       borderWidth: 1,
       duration: const Duration(seconds: 2),
       margin: EdgeInsets.all(16.w),
-      icon: const Icon(Icons.check_circle_outline, color: AppColors.accentSuccess),
+      icon: Icon(Icons.check_circle_outline, color: AppColors.accentSuccess),
     );
 
     Future.delayed(const Duration(seconds: 2), () {
@@ -128,7 +128,7 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
       borderWidth: 1,
       duration: const Duration(seconds: 2),
       margin: EdgeInsets.all(16.w),
-      icon: const Icon(Icons.share, color: AppColors.primary),
+      icon: Icon(Icons.share, color: AppColors.primary),
     );
   }
 
@@ -140,7 +140,7 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
           constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           tooltip: 'Back',
           onPressed: () {
@@ -159,7 +159,7 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.bookmark_border, color: AppColors.textPrimary),
+            icon: Icon(Icons.bookmark_border, color: AppColors.textPrimary),
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             tooltip: 'Save to Collection',
             onPressed: () {
@@ -172,7 +172,7 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.share_outlined, color: AppColors.textPrimary),
+            icon: Icon(Icons.share_outlined, color: AppColors.textPrimary),
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             tooltip: 'Share Artwork',
             onPressed: _shareArtwork,
@@ -285,7 +285,7 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
                   ),
                   errorWidget: (_, __, ___) => Container(
                     color: AppColors.surfaceLight,
-                    child: const Icon(Icons.broken_image, color: AppColors.textMuted, size: 40),
+                    child: Icon(Icons.broken_image, color: AppColors.textMuted, size: 40),
                   ),
                 ),
               ),
@@ -347,7 +347,7 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
                     width: 38.w,
                     height: 38.h,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => const Icon(Icons.account_circle, color: AppColors.textMuted, size: 38),
+                    errorWidget: (_, __, ___) => Icon(Icons.account_circle, color: AppColors.textMuted, size: 38),
                   ),
                 ),
                 SizedBox(width: 10.w),

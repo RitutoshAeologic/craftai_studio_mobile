@@ -24,7 +24,7 @@ class PromptChatCopilotView extends StatelessWidget {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          icon: Icon(Icons.close, color: AppColors.textPrimary),
           onPressed: () => Get.back(),
         ),
         title: Row(
@@ -32,7 +32,7 @@ class PromptChatCopilotView extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppDimens.spacingSm),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [AppColors.primary, AppColors.secondary],
                 ),
                 borderRadius: BorderRadius.circular(AppDimens.radiusMd),
@@ -259,7 +259,7 @@ class PromptChatCopilotView extends StatelessWidget {
             backgroundColor: AppColors.surfaceLight,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-              side: const BorderSide(color: AppColors.border),
+              side: BorderSide(color: AppColors.border),
             ),
             label: Text(
               chip['label']!,
@@ -469,7 +469,7 @@ class PromptChatCopilotView extends StatelessWidget {
                       ? SizedBox(
                           width: 18.w,
                           height: 18.w,
-                          child: const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+                          child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
                         )
                       : Icon(Icons.send, color: AppColors.primary, size: AppDimens.iconLg),
                   onPressed: controller.isLoading.value
@@ -490,7 +490,7 @@ class PromptChatCopilotView extends StatelessWidget {
                     onPressed: () => controller.applyPromptToStudio(),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary, width: 1.2),
+                      side: BorderSide(color: AppColors.primary, width: 1.2),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(AppDimens.radiusLg),
                       ),

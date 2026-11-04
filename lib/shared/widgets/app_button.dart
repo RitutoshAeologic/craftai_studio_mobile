@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimens.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../widgets/interactions/bouncy_tap.dart';
 
 /// [AppButton] is a shared, enterprise-grade action button component.
 /// Mandated by rules.md §5 to prevent inline button duplication.
@@ -105,7 +106,7 @@ class AppButton extends StatelessWidget {
       ],
     );
 
-    return SizedBox(
+    final buttonWidget = SizedBox(
       width: width ?? double.infinity,
       height: effectiveHeight,
       child: ElevatedButton(
@@ -119,6 +120,15 @@ class AppButton extends StatelessWidget {
         ),
         child: childContent,
       ),
+    );
+
+    if (isLoading || onPressed == null) {
+      return buttonWidget;
+    }
+
+    return BouncyTap(
+      onTap: onPressed,
+      child: buttonWidget,
     );
   }
 }

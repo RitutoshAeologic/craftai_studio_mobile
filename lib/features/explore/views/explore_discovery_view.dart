@@ -83,7 +83,7 @@ class _ExploreDiscoveryViewState extends State<ExploreDiscoveryView> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
           constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           onPressed: () => Get.back(),
         ),
@@ -96,7 +96,7 @@ class _ExploreDiscoveryViewState extends State<ExploreDiscoveryView> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.bookmark_border, color: AppColors.textPrimary),
+            icon: Icon(Icons.bookmark_border, color: AppColors.textPrimary),
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             onPressed: () {
               SaveToCollectionSheet.show(
@@ -212,7 +212,7 @@ class _ExploreDiscoveryViewState extends State<ExploreDiscoveryView> {
                                     placeholder: (_, __) => Container(color: AppColors.surfaceLight),
                                     errorWidget: (_, __, ___) => Container(
                                       color: AppColors.surfaceLight,
-                                      child: const Icon(Icons.broken_image, color: AppColors.textMuted),
+                                      child: Icon(Icons.broken_image, color: AppColors.textMuted),
                                     ),
                                   ),
                                 ),
@@ -384,7 +384,7 @@ class _ExploreDiscoveryViewState extends State<ExploreDiscoveryView> {
                 placeholder: (_, __) => Container(color: AppColors.surfaceLight),
                 errorWidget: (_, __, ___) => Container(
                   color: AppColors.surfaceLight,
-                  child: const Icon(Icons.broken_image, color: AppColors.textMuted),
+                  child: Icon(Icons.broken_image, color: AppColors.textMuted),
                 ),
               ),
             ),

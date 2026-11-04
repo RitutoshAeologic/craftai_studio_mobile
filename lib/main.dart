@@ -7,6 +7,7 @@ import 'core/constants/app_strings.dart';
 import 'core/services/network_service.dart';
 import 'core/services/supabase_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_controller.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/studio/domain/repositories/i_studio_repository.dart';
 import 'features/studio/data/repositories/studio_repository_impl.dart';
@@ -22,6 +23,7 @@ void main() async {
   // Register AuthController as permanent — alive for the full app session.
   // Every auth screen calls Get.find<AuthController>() instead of Get.put().
   Get.put(AuthController(), permanent: true);
+  Get.put(ThemeController(), permanent: true);
 
   // Global repository bindings for studio & tools features
   Get.lazyPut<IStudioRepository>(() => StudioRepositoryImpl());
@@ -42,7 +44,9 @@ class CraftAIStudioApp extends StatelessWidget {
         return GetMaterialApp(
           title: AppStrings.appName,
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.darkTheme,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.lightTheme,
+          themeMode: ThemeMode.light,
           initialRoute: AppRoutes.splash,
           getPages: AppPages.pages,
           // Global snackbar / dialog theme matching dark neon palette.

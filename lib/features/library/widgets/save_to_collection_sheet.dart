@@ -73,7 +73,7 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
       borderWidth: 1,
       duration: const Duration(seconds: 2),
       margin: EdgeInsets.all(16.w),
-      icon: const Icon(Icons.check_circle_outline, color: AppColors.accentSuccess),
+      icon: Icon(Icons.check_circle_outline, color: AppColors.accentSuccess),
     );
   }
 
@@ -126,7 +126,7 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                      icon: Icon(Icons.close, color: AppColors.textSecondary),
                       constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
@@ -155,11 +155,11 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                                 contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                                  borderSide: const BorderSide(color: AppColors.border),
+                                  borderSide: BorderSide(color: AppColors.border),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                                  borderSide: BorderSide(color: AppColors.primary, width: 1.5),
                                 ),
                               ),
                             ),
@@ -179,7 +179,7 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                           ),
                           SizedBox(width: 4.w),
                           IconButton(
-                            icon: const Icon(Icons.close, size: 20, color: AppColors.textMuted),
+                            icon: Icon(Icons.close, size: 20, color: AppColors.textMuted),
                             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                             onPressed: () => setState(() => _isCreating = false),
                           ),
@@ -204,7 +204,7 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                                   color: AppColors.primary,
                                   borderRadius: BorderRadius.circular(AppDimens.radiusSm),
                                 ),
-                                child: const Icon(Icons.add, color: AppColors.surface, size: 20),
+                                child: Icon(Icons.add, color: AppColors.surface, size: 20),
                               ),
                               SizedBox(width: 12.w),
                               Expanded(
@@ -280,12 +280,12 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                                         ? CachedNetworkImage(
                                             imageUrl: col.coverImageUrl!,
                                             fit: BoxFit.cover,
-                                            errorWidget: (_, __, ___) => const Icon(
+                                            errorWidget: (_, __, ___) => Icon(
                                               Icons.folder_outlined,
                                               color: AppColors.textMuted,
                                             ),
                                           )
-                                        : const Icon(
+                                        : Icon(
                                             Icons.folder_outlined,
                                             color: AppColors.textMuted,
                                           ),
@@ -331,7 +331,7 @@ class _SaveToCollectionSheetState extends State<SaveToCollectionSheet> {
                                     ),
                                   ),
                                   child: isSaved
-                                      ? const Icon(
+                                      ? Icon(
                                           Icons.check,
                                           color: AppColors.surface,
                                           size: 16,

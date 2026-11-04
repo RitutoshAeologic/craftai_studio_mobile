@@ -51,7 +51,7 @@ class AppNetworkImage extends StatelessWidget {
         errorWidget ??
         Container(
           color: AppColors.surfaceLight,
-          child: const Center(
+          child: Center(
             child: Icon(
               Icons.broken_image_outlined,
               color: AppColors.textMuted,

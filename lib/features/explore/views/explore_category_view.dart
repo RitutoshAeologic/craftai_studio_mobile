@@ -28,7 +28,7 @@ class ExploreCategoryView extends StatelessWidget {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
           constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           tooltip: 'Back',
           onPressed: () {

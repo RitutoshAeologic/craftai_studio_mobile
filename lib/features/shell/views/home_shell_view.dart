@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -14,7 +15,9 @@ import '../../tools/views/ai_tools_view.dart';
 import '../../library/views/cloud_library_view.dart';
 import '../../profile/views/profile_view.dart';
 import '../../wallet/views/wallet_view.dart';
+import '../../../core/theme/theme_controller.dart';
 import '../../../shared/widgets/credit_cost_chip.dart';
+import '../../../shared/widgets/glass/luminous_mesh_canvas.dart';
 
 class HomeShellView extends StatelessWidget {
   const HomeShellView({super.key});
@@ -22,14 +25,9 @@ class HomeShellView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ShellController controller = Get.put(ShellController());
-
-    final List<Widget> screens = const [
-      ExploreFeedView(),
-      CreationStudioView(),
-      AiToolsView(),
-      CloudLibraryView(),
-      ProfileView(),
-    ];
+    final ThemeController themeController = Get.isRegistered<ThemeController>()
+        ? Get.find<ThemeController>()
+        : Get.put(ThemeController());
 
     return PopScope(
       canPop: false,
@@ -54,124 +52,215 @@ class HomeShellView extends StatelessWidget {
         // 3. Explore screen: Pressing back exits the application
         SystemNavigator.pop();
       },
-      child: Scaffold(
-        appBar: PreferredSize(
-        preferredSize: Size.fromHeight(60.h),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            border: Border(bottom: BorderSide(color: AppColors.border, width: 1.w)),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 32.w,
-                          height: 32.w,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Center(
-                            child: Text('C', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18.sp)),
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Flexible(
-                          child: RichText(
-                            overflow: TextOverflow.ellipsis,
-                            text: TextSpan(
-                              text: 'CraftAI ',
-                              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                              children: const [
-                                TextSpan(text: 'Studio', style: TextStyle(color: AppColors.textSecondary)),
+      child: Obx(() {
+        final activePreset = themeController.currentPreset.value;
+
+        final List<Widget> screens = [
+          KeyedSubtree(key: ValueKey('explore_${activePreset.name}'), child: const ExploreFeedView()),
+          KeyedSubtree(key: ValueKey('studio_${activePreset.name}'), child: const CreationStudioView()),
+          KeyedSubtree(key: ValueKey('tools_${activePreset.name}'), child: const AiToolsView()),
+          KeyedSubtree(key: ValueKey('library_${activePreset.name}'), child: const CloudLibraryView()),
+          KeyedSubtree(key: ValueKey('profile_${activePreset.name}'), child: const ProfileView()),
+        ];
+
+        return Scaffold(
+          key: ValueKey('shell_$activePreset'),
+          extendBody: true,
+          backgroundColor: AppColors.background,
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(60.h),
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.glassDarkSurface,
+                    border: Border(
+                      bottom: BorderSide(color: AppColors.glassBorderSubtle, width: 1.w),
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 34.w,
+                                  height: 34.w,
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.aiCosmicGradient,
+                                    borderRadius: BorderRadius.circular(10.r),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primary.withValues(alpha: 0.35),
+                                        blurRadius: 10.r,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      'C',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 18.sp,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 10.w),
+                                Flexible(
+                                  child: RichText(
+                                    overflow: TextOverflow.ellipsis,
+                                    text: TextSpan(
+                                      text: 'CraftAI ',
+                                      style: TextStyle(
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                        letterSpacing: -0.3,
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text: 'Studio',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
+                          Row(
+                            children: [
+                              CreditCostChip(
+                                creditsRx: controller.userCredits,
+                                onTap: () => Get.to(() => const WalletView()),
+                                isHighlighted: true,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          body: LuminousMeshCanvas(
+            showOrbs: AppColors.showAuroraOrbs,
+            child: IndexedStack(
+              key: ValueKey('stack_$activePreset'),
+              index: controller.currentIndex.value,
+              children: screens,
+            ),
+          ),
+          bottomNavigationBar: Container(
+            margin: EdgeInsets.only(left: 18.w, right: 18.w, bottom: 18.h),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28.r),
+              boxShadow: [
+                BoxShadow(
+                  color: activePreset == AppThemePreset.deepObsidian
+                      ? Colors.black.withValues(alpha: 0.35)
+                      : const Color(0xFF0F172A).withValues(alpha: 0.08),
+                  blurRadius: 24.r,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.05),
+                  blurRadius: 10.r,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28.r),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.glassSurface,
+                    borderRadius: BorderRadius.circular(28.r),
+                    border: Border.all(
+                      color: AppColors.glassBorder,
+                      width: 1.2.w,
+                    ),
+                  ),
+                  child: NavigationBarTheme(
+                    data: NavigationBarThemeData(
+                      backgroundColor: Colors.transparent,
+                      surfaceTintColor: Colors.transparent,
+                      height: 62.h,
+                      indicatorColor: AppColors.primary.withValues(alpha: 0.14),
+                      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w700,
+                          );
+                        }
+                        return TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w500,
+                        );
+                      }),
+                    ),
+                    child: NavigationBar(
+                      selectedIndex: controller.currentIndex.value,
+                      onDestinationSelected: controller.switchTab,
+                      backgroundColor: Colors.transparent,
+                      surfaceTintColor: Colors.transparent,
+                      elevation: 0,
+                      destinations: [
+                        NavigationDestination(
+                          icon: Icon(Icons.explore_outlined, color: AppColors.textSecondary),
+                          selectedIcon: Icon(Icons.explore, color: AppColors.primary),
+                          label: AppStrings.tabExplore,
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.auto_awesome_outlined, color: AppColors.textSecondary),
+                          selectedIcon: Icon(Icons.auto_awesome, color: AppColors.primary),
+                          label: AppStrings.tabStudio,
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.auto_fix_high_outlined, color: AppColors.textSecondary),
+                          selectedIcon: Icon(Icons.auto_fix_high, color: AppColors.primary),
+                          label: 'AI Tools',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.folder_outlined, color: AppColors.textSecondary),
+                          selectedIcon: Icon(Icons.folder, color: AppColors.primary),
+                          label: AppStrings.tabLibrary,
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.person_outline, color: AppColors.textSecondary),
+                          selectedIcon: Icon(Icons.person, color: AppColors.primary),
+                          label: AppStrings.tabProfile,
                         ),
                       ],
                     ),
                   ),
-                  Row(
-                    children: [
-                      CreditCostChip(
-                        creditsRx: controller.userCredits,
-                        onTap: () => Get.to(() => const WalletView()),
-                        isHighlighted: true,
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
-      body: Obx(() => IndexedStack(
-        index: controller.currentIndex.value,
-        children: screens,
-      )),
-      bottomNavigationBar: Obx(() => Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1.w)),
-        ),
-        child: NavigationBarTheme(
-          data: NavigationBarThemeData(
-            backgroundColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-            height: 64.h,
-            indicatorColor: AppColors.border.withValues(alpha: 0.5),
-            labelTextStyle: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return TextStyle(color: AppColors.primary, fontSize: 11.sp, fontWeight: FontWeight.bold);
-              }
-              return TextStyle(color: AppColors.textSecondary, fontSize: 11.sp);
-            }),
-          ),
-          child: NavigationBar(
-            selectedIndex: controller.currentIndex.value,
-            onDestinationSelected: controller.switchTab,
-            backgroundColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-            elevation: 0,
-            destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.explore_outlined, color: AppColors.textSecondary),
-              selectedIcon: Icon(Icons.explore, color: AppColors.primary),
-              label: AppStrings.tabExplore,
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.auto_awesome_outlined, color: AppColors.textSecondary),
-              selectedIcon: Icon(Icons.auto_awesome, color: AppColors.primary),
-              label: AppStrings.tabStudio,
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.auto_fix_high_outlined, color: AppColors.textSecondary),
-              selectedIcon: Icon(Icons.auto_fix_high, color: AppColors.primary),
-              label: 'AI Tools',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.folder_outlined, color: AppColors.textSecondary),
-              selectedIcon: Icon(Icons.folder, color: AppColors.primary),
-              label: AppStrings.tabLibrary,
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline, color: AppColors.textSecondary),
-              selectedIcon: Icon(Icons.person, color: AppColors.primary),
-              label: AppStrings.tabProfile,
-            ),
-          ],
-        ),
-      ))),
-      ),
+        );
+      }),
     );
   }
 

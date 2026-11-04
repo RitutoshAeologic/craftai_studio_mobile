@@ -37,7 +37,7 @@ class CollectionGalleryView extends StatelessWidget {
         backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
           onPressed: () => Get.back(),
         ),
         title: Column(
@@ -164,7 +164,7 @@ class CollectionGalleryView extends StatelessWidget {
                               ),
                               errorWidget: (_, __, ___) => Container(
                                 color: AppColors.surfaceLight,
-                                child: const Icon(Icons.broken_image, color: AppColors.textMuted),
+                                child: Icon(Icons.broken_image, color: AppColors.textMuted),
                               ),
                             ),
                           ),

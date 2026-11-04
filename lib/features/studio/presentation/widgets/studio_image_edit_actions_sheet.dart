@@ -179,7 +179,7 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                     snackPosition: SnackPosition.BOTTOM,
                     backgroundColor: AppColors.surface,
                     colorText: AppColors.primary,
-                    icon: const Icon(Icons.movie_creation_outlined, color: AppColors.purpleAccent),
+                    icon: Icon(Icons.movie_creation_outlined, color: AppColors.purpleAccent),
                     duration: const Duration(seconds: 3),
                   );
                 },
@@ -322,7 +322,7 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                         child: OutlinedButton(
                           onPressed: isDeleting ? null : () => Navigator.of(dialogContext).pop(),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.border),
+                            side: BorderSide(color: AppColors.border),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
                             padding: EdgeInsets.symmetric(vertical: 12.h),
                           ),
@@ -360,7 +360,7 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                                       snackPosition: SnackPosition.BOTTOM,
                                       backgroundColor: AppColors.surface,
                                       colorText: AppColors.textPrimary,
-                                      icon: const Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
+                                      icon: Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
                                       margin: EdgeInsets.all(16.w),
                                       borderRadius: 12.r,
                                       duration: const Duration(seconds: 3),
@@ -379,7 +379,7 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                               ? SizedBox(
                                   width: 18.w,
                                   height: 18.w,
-                                  child: const CircularProgressIndicator(
+                                  child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                                   ),

@@ -213,7 +213,7 @@ class LibraryController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: AppColors.surface,
           colorText: AppColors.textPrimary,
-          icon: const Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
+          icon: Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
           margin: const EdgeInsets.all(16),
           borderRadius: 12,
           duration: const Duration(seconds: 2),

@@ -56,7 +56,7 @@ class _ImageDetailsBottomSheetState extends State<ImageDetailsBottomSheet> {
       borderWidth: 1,
       duration: const Duration(seconds: 2),
       margin: EdgeInsets.all(16.w),
-      icon: const Icon(Icons.check_circle_outline, color: AppColors.accentSuccess),
+      icon: Icon(Icons.check_circle_outline, color: AppColors.accentSuccess),
     );
 
     Future.delayed(const Duration(seconds: 2), () {
@@ -176,7 +176,7 @@ class _ImageDetailsBottomSheetState extends State<ImageDetailsBottomSheet> {
                   ),
                   errorWidget: (_, __, ___) => Container(
                     color: AppColors.surfaceLight,
-                    child: const Icon(Icons.broken_image, color: AppColors.textMuted),
+                    child: Icon(Icons.broken_image, color: AppColors.textMuted),
                   ),
                 ),
               ),
@@ -221,7 +221,7 @@ class _ImageDetailsBottomSheetState extends State<ImageDetailsBottomSheet> {
                     width: 36.w,
                     height: 36.h,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => const Icon(Icons.account_circle, color: AppColors.textMuted),
+                    errorWidget: (_, __, ___) => Icon(Icons.account_circle, color: AppColors.textMuted),
                   ),
                 ),
                 SizedBox(width: 10.w),

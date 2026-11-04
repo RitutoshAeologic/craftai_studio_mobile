@@ -536,7 +536,7 @@ class ExploreCardDetailSheet extends StatelessWidget {
                               controller.useAsRef(card);
                             },
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppColors.border),
+                              side: BorderSide(color: AppColors.border),
                               padding: EdgeInsets.symmetric(vertical: 12.h),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(AppDimens.radiusSm),
@@ -615,7 +615,7 @@ class ExploreCardDetailSheet extends StatelessWidget {
                           padding: EdgeInsets.symmetric(vertical: 11.h),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                            side: const BorderSide(color: AppColors.purpleAccent),
+                            side: BorderSide(color: AppColors.purpleAccent),
                           ),
                         ),
                         icon: Icon(Icons.shuffle_rounded, size: 16.sp, color: AppColors.purpleAccent),
@@ -641,7 +641,7 @@ class ExploreCardDetailSheet extends StatelessWidget {
                           padding: EdgeInsets.symmetric(vertical: 10.h),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                            side: const BorderSide(color: AppColors.border),
+                            side: BorderSide(color: AppColors.border),
                           ),
                         ),
                         icon: Icon(Icons.face_retouching_natural, size: 16.sp, color: AppColors.orangeAccent),

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:craftai_studio_mobile/core/constants/app_icons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
@@ -54,11 +55,12 @@ class ToolsController extends GetxController {
       'title': 'Remove Background',
       'desc': 'One tap, transparent PNG',
       'icon': '✂️',
+      'iconData': AppIcons.bgRemover,
       'badge': 'Zero-Token • Instant',
       'credits': '0 Cr',
       'cost': 0.0,
-      'bgTint': Color(0xFFEAF1ED),
-      'accentColor': Color(0xFF2E7D32),
+      'bgTint': Color(0xFF161B26),
+      'accentColor': Color(0xFF10B981),
       'category': 'Edit',
     },
     {
@@ -66,11 +68,12 @@ class ToolsController extends GetxController {
       'title': 'Magic Object Eraser',
       'desc': 'Erase unwanted objects & text',
       'icon': '🪄',
+      'iconData': AppIcons.magicEraser,
       'badge': 'Zero-Token • LaMa',
       'credits': '0 Cr',
       'cost': 0.0,
-      'bgTint': Color(0xFFF3E8FF),
-      'accentColor': Color(0xFF9333EA),
+      'bgTint': Color(0xFF161B26),
+      'accentColor': Color(0xFFA855F7),
       'category': 'Edit',
     },
     // [TEMPORARILY COMMENTED FOR PHASE 1]
@@ -91,11 +94,12 @@ class ToolsController extends GetxController {
       'title': 'Vintage Photo Colorizer',
       'desc': 'Restore B&W photos to vivid color',
       'icon': '🎨',
+      'iconData': AppIcons.photoColorizer,
       'badge': 'DDColor • Neural',
       'credits': '0 Cr',
       'cost': 0.0,
-      'bgTint': Color(0xFFFFF7ED),
-      'accentColor': Color(0xFFEA580C),
+      'bgTint': Color(0xFF161B26),
+      'accentColor': Color(0xFFF59E0B),
       'category': 'Edit',
     },
     {
@@ -103,11 +107,12 @@ class ToolsController extends GetxController {
       'title': 'AI Backgrounds',
       'desc': 'Swap backgrounds, your way',
       'icon': '🖼️',
+      'iconData': AppIcons.aiBackgrounds,
       'badge': 'Pure White / Smart',
       'credits': '10 Cr',
       'cost': 10.0,
-      'bgTint': Color(0xFFF5EFE6),
-      'accentColor': Color(0xFF8D6E63),
+      'bgTint': Color(0xFF161B26),
+      'accentColor': Color(0xFF6366F1),
       'category': 'Edit',
     },
     {
@@ -115,11 +120,12 @@ class ToolsController extends GetxController {
       'title': 'AI Expand',
       'desc': 'Extend your photo to any ratio',
       'icon': '📐',
+      'iconData': AppIcons.aiExpand,
       'badge': 'Multi-Ratio Outpaint',
       'credits': '10 Cr',
       'cost': 10.0,
-      'bgTint': Color(0xFFEBEBFA),
-      'accentColor': Color(0xFF5C6BC0),
+      'bgTint': Color(0xFF161B26),
+      'accentColor': Color(0xFF06B6D4),
       'category': 'Enhance',
     },
     {
@@ -127,11 +133,12 @@ class ToolsController extends GetxController {
       'title': 'Upscale 4K',
       'desc': 'Enlarge images & videos in HD',
       'icon': '🔍',
+      'iconData': AppIcons.upscaler,
       'badge': 'Super Resolution',
       'credits': '2 Cr',
       'cost': 2.0,
-      'bgTint': Color(0xFFE6EFF5),
-      'accentColor': Color(0xFF0288D1),
+      'bgTint': Color(0xFF161B26),
+      'accentColor': Color(0xFF3B82F6),
       'category': 'Enhance',
     },
     // [TEMPORARILY COMMENTED FOR PHASE 1: Product Details, E-Commerce 4-Pack & Marketing Poster]

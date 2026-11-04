@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
+import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
+import 'package:craftai_studio_mobile/core/theme/theme_controller.dart';
 import 'package:craftai_studio_mobile/features/auth/data/auth_repository.dart';
 import 'package:craftai_studio_mobile/features/auth/domain/auth_user_model.dart';
 import 'package:craftai_studio_mobile/features/auth/presentation/controllers/auth_controller.dart';
@@ -127,6 +129,71 @@ void main() {
 
       // Top app bar has HomeShellView mounted cleanly
       expect(find.byType(HomeShellView), findsOneWidget);
+    });
+  });
+
+  group('ThemeController & Profile Theme Switcher Tests', () {
+    test('ThemeController switches presets and updates AppColors', () {
+      final themeCtrl = Get.put(ThemeController());
+
+      // Default
+      expect(themeCtrl.currentPreset.value, AppThemePreset.luminousAurora);
+
+      // Switch to Warm Cashmere
+      themeCtrl.switchTheme(AppThemePreset.warmCashmere);
+      expect(themeCtrl.currentPreset.value, AppThemePreset.warmCashmere);
+      expect(AppColors.background, const Color(0xFFFAF9F6));
+
+      // Switch to Cool Platinum
+      themeCtrl.switchTheme(AppThemePreset.coolPlatinum);
+      expect(themeCtrl.currentPreset.value, AppThemePreset.coolPlatinum);
+      expect(AppColors.background, const Color(0xFFF1F5F9));
+
+      // Switch to Deep Obsidian
+      themeCtrl.switchTheme(AppThemePreset.deepObsidian);
+      expect(themeCtrl.currentPreset.value, AppThemePreset.deepObsidian);
+      expect(AppColors.background, const Color(0xFF0B0D14));
+
+      // Revert to Luminous Aurora
+      themeCtrl.switchTheme(AppThemePreset.luminousAurora);
+      expect(themeCtrl.currentPreset.value, AppThemePreset.luminousAurora);
+      expect(AppColors.background, const Color(0xFFF8FAFC));
+    });
+
+    testWidgets('ProfileView renders Theme & Visual Style card and switches presets',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      Get.put(ThemeController());
+
+      await tester.pumpWidget(wrapWithScreenUtil(const ProfileView()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Check section header
+      expect(find.text('Studio Appearance & Theme'), findsOneWidget);
+      expect(find.text('Theme & Visual Style'), findsOneWidget);
+      expect(find.text('TL Review'), findsNothing);
+      expect(find.text('Choose your preferred visual style across CraftAI Studio.'), findsOneWidget);
+
+      // Check 4 presets listed
+      expect(find.text('Luminous Aurora'), findsOneWidget);
+      expect(find.text('Warm Cashmere'), findsOneWidget);
+      expect(find.text('Cool Platinum Slate'), findsOneWidget);
+      expect(find.text('Deep Obsidian Dark'), findsOneWidget);
+
+      // Tap on Warm Cashmere
+      await tester.tap(find.text('Warm Cashmere'));
+      await tester.pumpAndSettle();
+
+      expect(AppColors.currentPreset, AppThemePreset.warmCashmere);
+
+      // Revert back to Luminous Aurora
+      await tester.tap(find.text('Luminous Aurora'));
+      await tester.pumpAndSettle();
+
+      expect(AppColors.currentPreset, AppThemePreset.luminousAurora);
     });
   });
 }

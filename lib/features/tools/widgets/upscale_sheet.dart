@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -7,6 +8,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
+import 'package:craftai_studio_mobile/shared/widgets/interactions/bouncy_tap.dart';
+import 'package:craftai_studio_mobile/shared/widgets/glass/modern_ai_button.dart';
 import 'package:craftai_studio_mobile/features/tools/controllers/tools_controller.dart';
 import 'tool_result_preview_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
@@ -58,101 +61,105 @@ class _UpscaleSheetState extends State<UpscaleSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.82,
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusXl)),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 12.h, 16.w, 12.h),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Upscale 4K',
-                  style: AppTextStyles.h2.copyWith(fontSize: 18.sp, fontWeight: FontWeight.w700),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
+    return ClipRRect(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.82,
+          decoration: BoxDecoration(
+            color: AppColors.glassDarkSurface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+            border: Border(
+              top: BorderSide(color: AppColors.glassBorder, width: 1.2.w),
             ),
           ),
-          Divider(height: 1.h, color: AppColors.border),
-
-          // Scrollable Form
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              children: [
-                Text('Enlarge images & videos in HD', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
-                SizedBox(height: 14.h),
-
-                // Upload Section
-                _buildUploadSection(),
-                SizedBox(height: 16.h),
-
-                // Scale Selection
-                _buildScaleSelector(),
-                SizedBox(height: 16.h),
-              ],
-            ),
-          ),
-
-          // Bottom Action Button
-          Container(
-            padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border(top: BorderSide(color: AppColors.border)),
-            ),
-            child: Obx(() {
-              final isProcessing = controller.isProcessing.value;
-              return SizedBox(
-                width: double.infinity,
-                height: 50.h,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.textPrimary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+          child: Column(
+            children: [
+              // Drag handle
+              SizedBox(height: 10.h),
+              Container(
+                width: 36.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.28),
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: EdgeInsets.fromLTRB(20.w, 8.h, 16.w, 12.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Upscale 4K',
+                      style: AppTextStyles.h2.copyWith(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
                     ),
-                    elevation: 0,
-                  ),
-                  onPressed: isProcessing ? null : _handleUpscale,
-                  child: isProcessing
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 18.w,
-                              height: 18.w,
-                              child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            ),
-                            SizedBox(width: 10.w),
-                            Text(
-                              controller.processingMessage.value.isNotEmpty
-                                  ? controller.processingMessage.value
-                                  : 'Enhancing resolution...',
-                              style: AppTextStyles.button.copyWith(color: Colors.white, fontSize: 13.sp),
-                            ),
-                          ],
-                        )
-                      : Text(
-                          'Upscale to 4K ✦ 2',
-                          style: AppTextStyles.button.copyWith(color: Colors.white, fontSize: 15.sp),
+                    BouncyTap(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        padding: EdgeInsets.all(6.r),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceLight.withValues(alpha: 0.60),
+                          shape: BoxShape.circle,
                         ),
+                        child: Icon(Icons.close, size: 18.sp, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
                 ),
-              );
-            }),
+              ),
+              Divider(height: 1.h, color: AppColors.glassBorderSubtle),
+
+              // Scrollable Form
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                  children: [
+                    Text(
+                      'Enlarge images & videos in HD',
+                      style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary),
+                    ),
+                    SizedBox(height: 14.h),
+
+                    // Upload Section
+                    _buildUploadSection(),
+                    SizedBox(height: 16.h),
+
+                    // Scale Selection
+                    _buildScaleSelector(),
+                    SizedBox(height: 16.h),
+                  ],
+                ),
+              ),
+
+              // Bottom Action Button
+              Container(
+                padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
+                decoration: BoxDecoration(
+                  color: AppColors.glassDarkSurface,
+                  border: Border(top: BorderSide(color: AppColors.glassBorderSubtle)),
+                ),
+                child: Obx(() {
+                  final isProcessing = controller.isProcessing.value;
+                  return ModernAiButton(
+                    label: 'Upscale to 4K ✦ 2',
+                    isLoading: isProcessing,
+                    loadingMessage: controller.processingMessage.value.isNotEmpty
+                        ? controller.processingMessage.value
+                        : 'Enhancing resolution...',
+                    onPressed: isProcessing ? null : _handleUpscale,
+                  );
+                }),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -298,7 +305,7 @@ class _UpscaleSheetState extends State<UpscaleSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_library, color: AppColors.primary),
+                leading: Icon(Icons.photo_library, color: AppColors.primary),
                 title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.pop(context);
@@ -306,7 +313,7 @@ class _UpscaleSheetState extends State<UpscaleSheet> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+                leading: Icon(Icons.camera_alt, color: AppColors.primary),
                 title: const Text('Take a Photo'),
                 onTap: () {
                   Navigator.pop(context);

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -72,33 +73,39 @@ class ToolResultPreviewSheet extends StatelessWidget {
         originalImageUrl != null &&
         originalImageUrl!.isNotEmpty;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.90,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Drag Handle
-            Center(
-              child: Container(
-                margin: EdgeInsets.only(top: 10.h, bottom: 8.h),
-                width: 36.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                ),
-              ),
+    return ClipRRect(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.90,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.glassDarkSurface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+            border: Border(
+              top: BorderSide(color: AppColors.glassBorder, width: 1.2.w),
             ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    margin: EdgeInsets.only(top: 10.h, bottom: 8.h),
+                    width: 36.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.28),
+                      borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                    ),
+                  ),
+                ),
 
             // Header Bar
             Padding(
@@ -161,7 +168,7 @@ class ToolResultPreviewSheet extends StatelessWidget {
               ),
             ),
 
-            const Divider(color: AppColors.border, height: 1),
+            Divider(color: AppColors.border, height: 1),
 
             // Scrollable Content
             Flexible(
@@ -209,7 +216,7 @@ class ToolResultPreviewSheet extends StatelessWidget {
                                     ),
                                     errorWidget: (_, __, ___) => Container(
                                       color: AppColors.surface,
-                                      child: const Center(
+                                      child: Center(
                                         child: Icon(Icons.broken_image, color: AppColors.textMuted),
                                       ),
                                     ),
@@ -320,7 +327,7 @@ class ToolResultPreviewSheet extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppColors.border),
+                              side: BorderSide(color: AppColors.border),
                               padding: EdgeInsets.symmetric(vertical: 12.h),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(AppDimens.radiusMd),
@@ -350,7 +357,7 @@ class ToolResultPreviewSheet extends StatelessWidget {
                               padding: EdgeInsets.symmetric(vertical: 12.h),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                                side: const BorderSide(color: AppColors.border),
+                                side: BorderSide(color: AppColors.border),
                               ),
                               elevation: 0,
                             ),
@@ -371,6 +378,8 @@ class ToolResultPreviewSheet extends StatelessWidget {
           ],
         ),
       ),
+    ),
+    ),
     );
   }
 }

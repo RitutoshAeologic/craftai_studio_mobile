@@ -112,7 +112,7 @@ void main() {
       final cardDeleteIcon = find.byIcon(Icons.delete_outline_rounded);
       expect(cardDeleteIcon, findsOneWidget);
 
-      await tester.tap(cardDeleteIcon, warnIfMissed: false);
+      await tester.tap(cardDeleteIcon);
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.text('Delete Creation?'), findsOneWidget);

@@ -3,46 +3,49 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 
 class AppTheme {
-  static ThemeData get darkTheme {
+  static ThemeData getThemeForPreset(AppThemePreset preset) {
+    final isDark = preset == AppThemePreset.deepObsidian;
     return ThemeData(
-      brightness: Brightness.light,
+      brightness: isDark ? Brightness.dark : Brightness.light,
       scaffoldBackgroundColor: AppColors.background,
       primaryColor: AppColors.primary,
       canvasColor: AppColors.background,
       cardColor: AppColors.card,
       dividerColor: AppColors.border,
-      colorScheme: const ColorScheme.light(
+      colorScheme: ColorScheme(
+        brightness: isDark ? Brightness.dark : Brightness.light,
         primary: AppColors.primary,
         secondary: AppColors.secondary,
         surface: AppColors.surface,
-        surfaceContainer: AppColors.surface,
-        surfaceContainerLow: AppColors.background,
-        surfaceContainerHigh: AppColors.surfaceLight,
-        surfaceContainerHighest: AppColors.surfaceLight,
         onSurface: AppColors.textPrimary,
+        error: AppColors.accentError,
+        onError: Colors.white,
         onPrimary: Colors.white,
+        onSecondary: Colors.white,
       ),
-      snackBarTheme: const SnackBarThemeData(
+      snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.surface,
         contentTextStyle: TextStyle(color: AppColors.textPrimary),
         actionTextColor: AppColors.primary,
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
       ),
-      dialogTheme: const DialogThemeData(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: AppColors.border.withValues(alpha: 0.4),
+        indicatorColor: AppColors.primary.withValues(alpha: 0.14),
       ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.background,
+      textTheme: isDark
+          ? GoogleFonts.interTextTheme(ThemeData.dark().textTheme)
+          : GoogleFonts.interTextTheme(ThemeData.light().textTheme),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
@@ -50,4 +53,7 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get lightTheme => getThemeForPreset(AppColors.currentPreset);
+  static ThemeData get darkTheme => getThemeForPreset(AppThemePreset.deepObsidian);
 }

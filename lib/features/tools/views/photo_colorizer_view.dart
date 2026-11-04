@@ -97,14 +97,14 @@ class _PhotoColorizerViewState extends State<PhotoColorizerView> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text('Vintage Photo Colorizer', style: AppTextStyles.h2.copyWith(fontSize: 18.sp)),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
+            icon: Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
             onPressed: () => _pickImage(ImageSource.gallery),
           ),
         ],

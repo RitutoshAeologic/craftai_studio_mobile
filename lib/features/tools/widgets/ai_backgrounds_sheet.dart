@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -6,7 +7,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
+import 'package:craftai_studio_mobile/core/constants/app_icons.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
+import 'package:craftai_studio_mobile/shared/widgets/interactions/bouncy_tap.dart';
+import 'package:craftai_studio_mobile/shared/widgets/glass/modern_ai_button.dart';
 import 'package:craftai_studio_mobile/features/tools/controllers/tools_controller.dart';
 import 'tool_result_preview_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
@@ -47,17 +51,17 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
       'id': 'pure_white',
       'title': 'Pure white',
       'subtitle': 'Commercial Cyclo',
-      'icon': '⚪',
+      'iconData': AppIcons.backdropPureWhite,
       'mode': 'pure_white',
       'backdrop': '',
       'isFree': true,
-      'accent': Color(0xFF64748B),
+      'accent': Color(0xFF94A3B8),
     },
     {
       'id': 'smart',
       'title': 'Smart',
       'subtitle': 'Product Keylight',
-      'icon': '🏢',
+      'iconData': AppIcons.backdropSmart,
       'mode': 'smart',
       'backdrop': 'commercial photorealistic studio keylight',
       'isFree': false,
@@ -67,27 +71,27 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
       'id': 'marble',
       'title': 'Luxury Marble',
       'subtitle': 'Studio Pedestal',
-      'icon': '🏛️',
+      'iconData': AppIcons.backdropMarble,
       'mode': 'marble',
       'backdrop': 'luxury marble pedestal overhead soft spotlight',
       'isFree': false,
-      'accent': Color(0xFFD97706),
+      'accent': Color(0xFFF59E0B),
     },
     {
       'id': 'wood',
       'title': 'Warm Wood',
       'subtitle': 'Cozy Cafe Table',
-      'icon': '🪵',
+      'iconData': AppIcons.backdropWood,
       'mode': 'wood',
       'backdrop': 'warm wooden tabletop cafe ambient lighting',
       'isFree': false,
-      'accent': Color(0xFFB45309),
+      'accent': Color(0xFFD97706),
     },
     {
       'id': 'neon',
       'title': 'Cyber Neon',
       'subtitle': 'Futuristic Glow',
-      'icon': '🌆',
+      'iconData': AppIcons.backdropNeon,
       'mode': 'neon',
       'backdrop': 'cyberpunk neon city illumination reflections',
       'isFree': false,
@@ -97,7 +101,7 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
       'id': 'custom',
       'title': 'Custom Backdrop',
       'subtitle': 'Write Any Prompt',
-      'icon': '✍️',
+      'iconData': AppIcons.backdropCustom,
       'mode': 'custom',
       'backdrop': '',
       'isFree': false,
@@ -132,145 +136,150 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
     final isPureWhite = _selectedMode == 'pure_white';
     final creditCost = isPureWhite ? 0 : (_selectedQuality == '1k' ? 10 : 14);
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.88,
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusXl)),
-      ),
-      child: Column(
-        children: [
-          // Drag handle & Header
-          Padding(
-            padding: EdgeInsets.fromLTRB(20.w, 12.h, 16.w, 12.h),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'AI Backgrounds',
-                  style: AppTextStyles.h2.copyWith(fontSize: 18.sp, fontWeight: FontWeight.w700),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
+    return ClipRRect(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.88,
+          decoration: BoxDecoration(
+            color: AppColors.glassDarkSurface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+            border: Border(
+              top: BorderSide(color: AppColors.glassBorder, width: 1.2.w),
             ),
           ),
-          Divider(height: 1.h, color: AppColors.border),
-
-          // Scrollable Options
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              children: [
-                // 1. Upload Section
-                _buildUploadSection(),
-                SizedBox(height: 16.h),
-
-                // 2. Choose a Background (Segmented Control)
-                _buildModeSelector(),
-                SizedBox(height: 16.h),
-
-                // 3. Custom Backdrop / Prompt Refinement Input
-                if (_selectedMode != 'pure_white') ...[
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 6.h),
-                    child: Text(
-                      _selectedTemplateId == 'custom'
-                          ? 'Describe Desired Scene'
-                          : 'Refine Scene Prompt (Optional)',
-                      style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary),
-                    ),
-                  ),
-                  TextField(
-                    controller: _customBackdropCtrl,
-                    style: AppTextStyles.bodySmall,
-                    decoration: InputDecoration(
-                      hintText: _selectedTemplateId == 'custom'
-                          ? 'e.g. Modern marble podium with sunlight'
-                          : 'Tweak lighting, materials or background details...',
-                      hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
-                      filled: true,
-                      fillColor: AppColors.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                        borderSide: BorderSide(color: AppColors.border),
+          child: Column(
+            children: [
+              // Drag handle
+              SizedBox(height: 10.h),
+              Container(
+                width: 36.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.28),
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: EdgeInsets.fromLTRB(20.w, 8.h, 16.w, 12.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'AI Backgrounds',
+                      style: AppTextStyles.h2.copyWith(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
                       ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                     ),
-                  ),
-                  SizedBox(height: 16.h),
-                ],
-
-                // 4. Output Ratio Dropdown
-                _buildRatioDropdown(),
-                SizedBox(height: 16.h),
-
-                // 5. Lighting Harmonization (CIELAB Color Match & Edge Rim synthesis)
-                if (!isPureWhite) ...[
-                  _buildHarmonizationToggle(),
-                  SizedBox(height: 16.h),
-                ],
-
-                // 6. Choose Quality
-                if (!isPureWhite) ...[
-                  _buildQualitySelector(),
-                  SizedBox(height: 16.h),
-                ],
-              ],
-            ),
-          ),
-
-          // Bottom Fixed Action Button
-          Container(
-            padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border(top: BorderSide(color: AppColors.border)),
-            ),
-            child: Obx(() {
-              final isProcessing = controller.isProcessing.value;
-              return SizedBox(
-                width: double.infinity,
-                height: 50.h,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.textPrimary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: isProcessing ? null : _handleReplaceBackground,
-                  child: isProcessing
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 18.w,
-                              height: 18.w,
-                              child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            ),
-                            SizedBox(width: 10.w),
-                            Text(
-                              controller.processingMessage.value.isNotEmpty
-                                  ? controller.processingMessage.value
-                                  : 'Processing...',
-                              style: AppTextStyles.button.copyWith(color: Colors.white, fontSize: 13.sp),
-                            ),
-                          ],
-                        )
-                      : Text(
-                          isPureWhite ? 'Replace background (Free)' : 'Replace background ✦ $creditCost',
-                          style: AppTextStyles.button.copyWith(color: Colors.white, fontSize: 15.sp),
+                    BouncyTap(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        padding: EdgeInsets.all(6.r),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceLight.withValues(alpha: 0.60),
+                          shape: BoxShape.circle,
                         ),
+                        child: Icon(Icons.close, size: 18.sp, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
                 ),
-              );
-            }),
+              ),
+              Divider(height: 1.h, color: AppColors.glassBorderSubtle),
+
+              // Scrollable Options
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                  children: [
+                    // 1. Upload Section
+                    _buildUploadSection(),
+                    SizedBox(height: 16.h),
+
+                    // 2. Choose a Background (Segmented Control)
+                    _buildModeSelector(),
+                    SizedBox(height: 16.h),
+
+                    // 3. Custom Backdrop / Prompt Refinement Input
+                    if (_selectedMode != 'pure_white') ...[
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 6.h),
+                        child: Text(
+                          _selectedTemplateId == 'custom'
+                              ? 'Describe Desired Scene'
+                              : 'Refine Scene Prompt (Optional)',
+                          style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary),
+                        ),
+                      ),
+                      TextField(
+                        controller: _customBackdropCtrl,
+                        style: AppTextStyles.bodySmall,
+                        decoration: InputDecoration(
+                          hintText: _selectedTemplateId == 'custom'
+                              ? 'e.g. Modern marble podium with sunlight'
+                              : 'Tweak lighting, materials or background details...',
+                          hintStyle: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
+                          filled: true,
+                          fillColor: AppColors.surfaceLight.withValues(alpha: 0.50),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                            borderSide: BorderSide(color: AppColors.glassBorderSubtle),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                    ],
+
+                    // 4. Output Ratio Dropdown
+                    _buildRatioDropdown(),
+                    SizedBox(height: 16.h),
+
+                    // 5. Lighting Harmonization (CIELAB Color Match & Edge Rim synthesis)
+                    if (!isPureWhite) ...[
+                      _buildHarmonizationToggle(),
+                      SizedBox(height: 16.h),
+                    ],
+
+                    // 6. Choose Quality
+                    if (!isPureWhite) ...[
+                      _buildQualitySelector(),
+                      SizedBox(height: 16.h),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Bottom Fixed Action Button
+              Container(
+                padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
+                decoration: BoxDecoration(
+                  color: AppColors.glassDarkSurface,
+                  border: Border(top: BorderSide(color: AppColors.glassBorderSubtle)),
+                ),
+                child: Obx(() {
+                  final isProcessing = controller.isProcessing.value;
+                  final buttonLabel = isPureWhite
+                      ? 'Replace background (Free)'
+                      : 'Replace background ✦ $creditCost';
+
+                  return ModernAiButton(
+                    label: buttonLabel,
+                    isLoading: isProcessing,
+                    loadingMessage: controller.processingMessage.value.isNotEmpty
+                        ? controller.processingMessage.value
+                        : 'Diffusing Background...',
+                    onPressed: isProcessing ? null : _handleReplaceBackground,
+                  );
+                }),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -358,7 +367,7 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
               itemBuilder: (_, idx) {
                 final t = _backdropTemplates[idx];
                 final isSelected = _selectedTemplateId == t['id'];
-                return GestureDetector(
+                return BouncyTap(
                   onTap: () {
                     setState(() {
                       _selectedTemplateId = t['id'] as String;
@@ -375,17 +384,19 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
                     width: 112.w,
                     padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.surfaceLight : AppColors.background,
+                      color: isSelected
+                          ? (t['accent'] as Color).withValues(alpha: 0.16)
+                          : AppColors.surfaceLight.withValues(alpha: 0.50),
                       borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                       border: Border.all(
-                        color: isSelected ? (t['accent'] as Color) : AppColors.border,
-                        width: isSelected ? 2.0 : 1.0,
+                        color: isSelected ? (t['accent'] as Color) : AppColors.glassBorderSubtle,
+                        width: isSelected ? 1.5 : 1.0,
                       ),
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: (t['accent'] as Color).withValues(alpha: 0.15),
-                                blurRadius: 6,
+                                color: (t['accent'] as Color).withValues(alpha: 0.25),
+                                blurRadius: 8.r,
                                 offset: const Offset(0, 2),
                               )
                             ]
@@ -399,7 +410,11 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(t['icon'] as String, style: TextStyle(fontSize: 16.sp)),
+                              Icon(
+                                (t['iconData'] as IconData?) ?? AppIcons.backdropSmart,
+                                size: 18.sp,
+                                color: isSelected ? (t['accent'] as Color) : AppColors.textSecondary,
+                              ),
                               if (t['isFree'] == true)
                                 Container(
                                   padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
@@ -600,7 +615,7 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_library, color: AppColors.primary),
+                leading: Icon(Icons.photo_library, color: AppColors.primary),
                 title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.pop(context);
@@ -608,7 +623,7 @@ class _AiBackgroundsSheetState extends State<AiBackgroundsSheet> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+                leading: Icon(Icons.camera_alt, color: AppColors.primary),
                 title: const Text('Take a Photo'),
                 onTap: () {
                   Navigator.pop(context);

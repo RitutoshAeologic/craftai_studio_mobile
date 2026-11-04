@@ -90,7 +90,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                  icon: Icon(Icons.close, color: AppColors.textSecondary),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -444,7 +444,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_library, color: AppColors.primary),
+              leading: Icon(Icons.photo_library, color: AppColors.primary),
               title: const Text('Choose from Gallery'),
               onTap: () {
                 Navigator.pop(context);
@@ -452,7 +452,7 @@ class _ProductDetailSheetState extends State<ProductDetailSheet> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+              leading: Icon(Icons.camera_alt, color: AppColors.primary),
               title: const Text('Take a Photo'),
               onTap: () {
                 Navigator.pop(context);

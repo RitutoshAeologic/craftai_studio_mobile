@@ -22,7 +22,7 @@ class WalletView extends StatelessWidget {
               elevation: 0,
               scrolledUnderElevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 18),
+                icon: Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 18),
                 onPressed: () => Get.back(),
               ),
               title: Text(
@@ -45,7 +45,7 @@ class WalletView extends StatelessWidget {
             Obx(() => Container(
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [AppColors.surface, AppColors.card],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -157,7 +157,7 @@ class WalletView extends StatelessWidget {
                             backgroundColor: AppColors.surface,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16.r),
-                              side: const BorderSide(color: AppColors.border),
+                              side: BorderSide(color: AppColors.border),
                             ),
                             title: Text(
                               'Sign Out?',

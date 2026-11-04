@@ -38,7 +38,9 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _controller = Get.put(LibraryController());
+    _controller = Get.isRegistered<LibraryController>()
+        ? Get.find<LibraryController>()
+        : Get.put(LibraryController());
     _collectionController = Get.isRegistered<CollectionController>()
         ? Get.find<CollectionController>()
         : Get.put(CollectionController());
@@ -205,8 +207,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
               SizedBox(
                 width: 32.w,
                 height: 32.w,
-                child: const CircularProgressIndicator(
-                    strokeWidth: 2.5, color: AppColors.primary),
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.primary),
               ),
               SizedBox(height: 16.h),
               Text(
@@ -405,11 +406,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                           child: CachedNetworkImage(
                             imageUrl: imgUrl,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) =>
-                                Container(color: AppColors.surfaceLight),
-                            errorWidget: (_, __, ___) => const Icon(
-                                Icons.broken_image,
-                                color: AppColors.textMuted),
+                            placeholder: (_, __) => Container(color: AppColors.surfaceLight),
+                            errorWidget: (_, __, ___) => Icon(Icons.broken_image, color: AppColors.textMuted),
                           ),
                         ),
                       );
@@ -427,11 +425,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                     child: CachedNetworkImage(
                       imageUrl: col.coverImageUrl!,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: AppColors.surfaceLight),
-                      errorWidget: (_, __, ___) => const Icon(
-                          Icons.broken_image,
-                          color: AppColors.textMuted),
+                      placeholder: (_, __) => Container(color: AppColors.surfaceLight),
+                      errorWidget: (_, __, ___) => Icon(Icons.broken_image, color: AppColors.textMuted),
                     ),
                   ),
                 ),
@@ -480,7 +475,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                   Text('New Collection', style: AppTextStyles.h3),
                   GestureDetector(
                     onTap: () => Get.back(),
-                    child: const Icon(Icons.close, color: AppColors.textMuted),
+                    child: Icon(Icons.close, color: AppColors.textMuted),
                   ),
                 ],
               ),
@@ -503,7 +498,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                   fillColor: AppColors.surfaceLight,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: AppColors.border),
                   ),
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
@@ -521,7 +516,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                   fillColor: AppColors.surfaceLight,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: AppColors.border),
                   ),
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
@@ -583,7 +578,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
           SizedBox(
             width: 32.w,
             height: 32.w,
-            child: const CircularProgressIndicator(
+            child: CircularProgressIndicator(
               strokeWidth: 2.5,
               color: AppColors.primary,
             ),
@@ -626,7 +621,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                   Get.to(() => CreationDetailView(job: job));
                 },
                 child: Container(
-                  // height: 220.h,
+                  height: 220.h,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: AppColors.surfaceLight,
@@ -635,15 +630,15 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Center(
-                    child: CachedNetworkImage(
+                    child: AppNetworkImage(
                       imageUrl: job.previewUrl.isNotEmpty && job.previewUrl.startsWith('http')
                           ? job.previewUrl
                           : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop',
                       fit: BoxFit.contain,
-                      placeholder: (_, __) => Container(color: AppColors.surfaceLight),
-                      errorWidget: (_, __, ___) => Container(
+                      placeholder: Container(color: AppColors.surfaceLight),
+                      errorWidget: Container(
                         color: AppColors.surfaceLight,
-                        child: const Center(child: Icon(Icons.broken_image, color: AppColors.textMuted)),
+                        child: Center(child: Icon(Icons.broken_image, color: AppColors.textMuted)),
                       ),
                     ),
                   ),
@@ -797,7 +792,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
               SizedBox(
                 width: 16.w,
                 height: 16.w,
-                child: const CircularProgressIndicator(
+                child: CircularProgressIndicator(
                   strokeWidth: 2.0,
                   color: AppColors.primary,
                 ),
@@ -956,9 +951,8 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                               ? null
                               : () => Navigator.of(dialogContext).pop(),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.border),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.r)),
+                            side: BorderSide(color: AppColors.border),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
                             padding: EdgeInsets.symmetric(vertical: 12.h),
                           ),
                           child: Text(
@@ -993,9 +987,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                                       snackPosition: SnackPosition.BOTTOM,
                                       backgroundColor: AppColors.surface,
                                       colorText: AppColors.textPrimary,
-                                      icon: const Icon(
-                                          Icons.check_circle_rounded,
-                                          color: AppColors.accentSuccess),
+                                      icon: Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess),
                                       margin: const EdgeInsets.all(16),
                                       borderRadius: 12,
                                       duration: const Duration(seconds: 2),
@@ -1016,7 +1008,7 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                               ? SizedBox(
                                   width: 18.w,
                                   height: 18.w,
-                                  child: const CircularProgressIndicator(
+                                  child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         AppColors.white),

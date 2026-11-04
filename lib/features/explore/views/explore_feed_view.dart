@@ -88,7 +88,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
           Obx(() {
             if (_controller.isSearching.value) {
               return IconButton(
-                icon: const Icon(Icons.close, color: AppColors.textPrimary),
+                icon: Icon(Icons.close, color: AppColors.textPrimary),
                 constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 tooltip: 'Clear search',
                 onPressed: () {
@@ -98,7 +98,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
               );
             }
             return IconButton(
-              icon: const Icon(Icons.search, color: AppColors.textPrimary),
+              icon: Icon(Icons.search, color: AppColors.textPrimary),
               constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               tooltip: 'Search creations',
               onPressed: () {
@@ -307,7 +307,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
           SizedBox(
             width: 32.w,
             height: 32.w,
-            child: const CircularProgressIndicator(
+            child: CircularProgressIndicator(
               strokeWidth: 2.5,
               color: AppColors.primary,
             ),
@@ -400,7 +400,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
               SizedBox(
                 width: 16.w,
                 height: 16.w,
-                child: const CircularProgressIndicator(
+                child: CircularProgressIndicator(
                   strokeWidth: 2.0,
                   color: AppColors.primary,
                 ),

@@ -294,7 +294,7 @@ class _MagicGrabViewState extends State<MagicGrabView> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -305,12 +305,12 @@ class _MagicGrabViewState extends State<MagicGrabView> {
         actions: [
           if (!_isGrabbed)
             IconButton(
-              icon: const Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
+              icon: Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
               onPressed: () => _pickImage(ImageSource.gallery),
             )
           else
             TextButton.icon(
-              icon: const Icon(Icons.refresh, size: 16, color: AppColors.textSecondary),
+              icon: Icon(Icons.refresh, size: 16, color: AppColors.textSecondary),
               label: Text('Reset', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
               onPressed: () {
                 setState(() {
@@ -662,11 +662,11 @@ class _MagicGrabViewState extends State<MagicGrabView> {
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.border),
+                    side: BorderSide(color: AppColors.border),
                     padding: EdgeInsets.symmetric(vertical: 12.h),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd)),
                   ),
-                  icon: const Icon(Icons.brush, size: 16, color: AppColors.textSecondary),
+                  icon: Icon(Icons.brush, size: 16, color: AppColors.textSecondary),
                   label: Text('Re-brush', style: AppTextStyles.captionBold.copyWith(color: AppColors.textSecondary)),
                   onPressed: () {
                     setState(() {

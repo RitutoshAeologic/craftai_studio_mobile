@@ -75,7 +75,7 @@ class _SplashViewState extends State<SplashView>
                         height: 82.w,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(26.r),
-                          gradient: const LinearGradient(
+                          gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [AppColors.primary, AppColors.vip],
@@ -97,7 +97,7 @@ class _SplashViewState extends State<SplashView>
                       SizedBox(height: 28.h),
                       // App name with gradient shader
                       ShaderMask(
-                        shaderCallback: (b) => const LinearGradient(
+                        shaderCallback: (b) => LinearGradient(
                           colors: [AppColors.primary, AppColors.secondary],
                         ).createShader(b),
                         child: Text(

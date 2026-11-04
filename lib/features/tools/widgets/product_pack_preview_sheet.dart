@@ -202,7 +202,7 @@ class _ProductPackPreviewSheetState extends State<ProductPackPreviewSheet> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                    icon: Icon(Icons.close, color: AppColors.textSecondary),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -246,7 +246,7 @@ class _ProductPackPreviewSheetState extends State<ProductPackPreviewSheet> {
                                     ),
                                     errorWidget: (_, __, ___) => Container(
                                       color: AppColors.surface,
-                                      child: const Center(
+                                      child: Center(
                                         child: Icon(Icons.broken_image, color: AppColors.textMuted),
                                       ),
                                     ),
@@ -389,13 +389,13 @@ class _ProductPackPreviewSheetState extends State<ProductPackPreviewSheet> {
                     // Secondary Action: Remix in Lab
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.border),
+                        side: BorderSide(color: AppColors.border),
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                         ),
                       ),
-                      icon: const Icon(Icons.auto_awesome, size: 16, color: AppColors.primary),
+                      icon: Icon(Icons.auto_awesome, size: 16, color: AppColors.primary),
                       label: Text(
                         'Remix Active Format in Lab',
                         style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
@@ -423,7 +423,7 @@ class _ProductPackPreviewSheetState extends State<ProductPackPreviewSheet> {
                         Expanded(
                           child: OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppColors.border),
+                              side: BorderSide(color: AppColors.border),
                               padding: EdgeInsets.symmetric(vertical: 10.h),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(AppDimens.radiusMd),
@@ -455,7 +455,7 @@ class _ProductPackPreviewSheetState extends State<ProductPackPreviewSheet> {
                               padding: EdgeInsets.symmetric(vertical: 10.h),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                                side: const BorderSide(color: AppColors.border),
+                                side: BorderSide(color: AppColors.border),
                               ),
                               elevation: 0,
                             ),

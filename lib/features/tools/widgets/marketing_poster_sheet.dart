@@ -85,7 +85,7 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
                   style: AppTextStyles.h2.copyWith(fontSize: 18.sp, fontWeight: FontWeight.w700),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                  icon: Icon(Icons.close, color: AppColors.textSecondary),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -616,7 +616,7 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
               Text('Select Product / Subject Photo', style: AppTextStyles.h3),
               SizedBox(height: 16.h),
               ListTile(
-                leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
+                leading: Icon(Icons.photo_library_outlined, color: AppColors.primary),
                 title: Text('Choose from Gallery', style: AppTextStyles.bodyMedium),
                 onTap: () async {
                   Navigator.pop(ctx);
@@ -627,7 +627,7 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primary),
+                leading: Icon(Icons.camera_alt_outlined, color: AppColors.primary),
                 title: Text('Take a Photo', style: AppTextStyles.bodyMedium),
                 onTap: () async {
                   Navigator.pop(ctx);
