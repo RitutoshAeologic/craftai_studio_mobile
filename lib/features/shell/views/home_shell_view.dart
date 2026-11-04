@@ -71,7 +71,7 @@ class HomeShellView extends StatelessWidget {
             preferredSize: Size.fromHeight(60.h),
             child: ClipRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColors.glassDarkSurface,
@@ -168,7 +168,13 @@ class HomeShellView extends StatelessWidget {
             ),
           ),
           bottomNavigationBar: Container(
-            margin: EdgeInsets.only(left: 18.w, right: 18.w, bottom: 18.h),
+            margin: EdgeInsets.only(
+              left: 18.w,
+              right: 18.w,
+              bottom: MediaQuery.paddingOf(context).bottom > 0
+                  ? MediaQuery.paddingOf(context).bottom + 6.h
+                  : 18.h,
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28.r),
               boxShadow: [
@@ -189,7 +195,7 @@ class HomeShellView extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(28.r),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColors.glassSurface,

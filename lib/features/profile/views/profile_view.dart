@@ -44,9 +44,11 @@ class ProfileView extends StatelessWidget {
           ),
         ),
         body: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppDimens.spacingLg,
-            vertical: AppDimens.vSpacingXl,
+          padding: EdgeInsets.fromLTRB(
+            AppDimens.spacingLg,
+            AppDimens.vSpacingXl,
+            AppDimens.spacingLg,
+            MediaQuery.paddingOf(context).bottom + 110.h,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -576,51 +578,74 @@ class ProfileView extends StatelessWidget {
 
   /// Sign out ListTile matching the exact functionality and text from the bottom sheet
   Widget _buildSignOutTile(ProfileController controller) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusXl),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: ListTile(
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-          leading: Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: AppColors.accentError.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Icon(Icons.logout_rounded, color: AppColors.accentError),
-          ),
-          title: Text(
-            'Sign Out',
-            style: TextStyle(
-              color: AppColors.accentError,
-              fontSize: 14.sp,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          subtitle: Text(
-            'End your current session on this device',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 11.sp,
-            ),
-          ),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: AppColors.accentError,
-            size: 20.sp,
-          ),
-          onTap: controller.confirmSignOut,
+    return Obx(() {
+      final isSigningOut = controller.authController.isSigningOut.value;
+      return Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppDimens.radiusXl),
+          border: Border.all(color: AppColors.border),
         ),
-      ),
-    );
+        child: Material(
+          color: Colors.transparent,
+          child: ListTile(
+            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+            leading: Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: AppColors.accentError.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: isSigningOut
+                  ? SizedBox(
+                      width: 20.w,
+                      height: 20.w,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.accentError),
+                      ),
+                    )
+                  : Icon(Icons.logout_rounded, color: AppColors.accentError),
+            ),
+            title: Text(
+              isSigningOut ? 'Signing Out...' : 'Sign Out',
+              style: TextStyle(
+                color: AppColors.accentError,
+                fontSize: 14.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            subtitle: Text(
+              isSigningOut
+                  ? 'Ending session on this device...'
+                  : 'End your current session on this device',
+              style: TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 11.sp,
+              ),
+            ),
+            trailing: isSigningOut
+                ? SizedBox(
+                    width: 18.w,
+                    height: 18.w,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.accentError),
+                    ),
+                  )
+                : Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.accentError,
+                    size: 20.sp,
+                  ),
+            onTap: isSigningOut ? null : controller.confirmSignOut,
+          ),
+        ),
+      );
+    });
   }
 
-  Widget _buildInfoRow({
+    Widget _buildInfoRow({
     required IconData icon,
     required String title,
     required String value,

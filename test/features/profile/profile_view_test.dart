@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
+import 'package:craftai_studio_mobile/core/routes/app_routes.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/theme/theme_controller.dart';
 import 'package:craftai_studio_mobile/features/auth/data/auth_repository.dart';
@@ -31,7 +32,13 @@ class MockAuthRepository extends AuthRepository {
   Stream<AuthState> get authStateChanges => _authStateController.stream;
 
   @override
-  Future<void> signOut() async {}
+  Future<void> signOut() async {
+    if (signOutCompleter != null) {
+      await signOutCompleter!.future;
+    }
+  }
+
+  Completer<void>? signOutCompleter;
 
   void dispose() {
     _authStateController.close();
@@ -60,6 +67,9 @@ void main() {
       designSize: const Size(390, 844),
       builder: (context, _) => GetMaterialApp(
         home: child,
+        getPages: [
+          GetPage(name: AppRoutes.login, page: () => const Scaffold(body: Text('Login Screen'))),
+        ],
       ),
     );
   }
@@ -194,6 +204,103 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(AppColors.currentPreset, AppThemePreset.luminousAurora);
+    });
+  });
+
+  group('Sign Out Button Spacing Tests', () {
+    testWidgets('ProfileView SingleChildScrollView applies generous bottom spacing ensuring no overlap with bottom app bar',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(wrapWithScreenUtil(const ProfileView()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final scrollViewFinder = find.byType(SingleChildScrollView);
+      expect(scrollViewFinder, findsOneWidget);
+
+      final SingleChildScrollView scrollView = tester.widget(scrollViewFinder);
+      final EdgeInsets padding = scrollView.padding as EdgeInsets;
+
+      // Bottom padding must be at least 110dp to guarantee complete clearance above floating bottom app bar
+      expect(padding.bottom, greaterThanOrEqualTo(110.0));
+      expect(find.text('Sign Out'), findsOneWidget);
+    });
+  });
+
+  group('Logout Loader & Duplicate Sign Out Prevention Tests', () {
+    testWidgets('tapping Sign Out opens confirmation dialog, shows loader upon confirm, and prevents duplicate requests',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(wrapWithScreenUtil(const ProfileView()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Scroll down to reveal Sign Out tile
+      await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+
+      // Tap Sign Out tile to open confirmation dialog
+      final signOutTileFinder = find.text('Sign Out');
+      expect(signOutTileFinder, findsOneWidget);
+      await tester.tap(signOutTileFinder);
+      await tester.pumpAndSettle();
+
+      // Verify dialog is open
+      expect(find.text('Are you sure you want to sign out of CraftAI Studio?'), findsOneWidget);
+      final confirmBtnFinder = find.widgetWithText(ElevatedButton, 'Sign Out');
+      expect(confirmBtnFinder, findsOneWidget);
+
+      mockRepo.signOutCompleter = Completer<void>();
+
+      // Confirm sign out
+      await tester.tap(confirmBtnFinder);
+      await tester.pump();
+
+      // AuthController.isSigningOut is now true
+      expect(authController.isSigningOut.value, isTrue);
+
+      // Dialog now shows loading message & progress indicator
+      expect(find.text('Signing Out...'), findsWidgets);
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
+
+      // Duplicate sign-out is prevented while in progress
+      expect(authController.isSigningOut.value, isTrue);
+      await authController.signOut(); // Ignored because isSigningOut is true
+
+      // Complete the pending signOut
+      mockRepo.signOutCompleter!.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Login Screen'), findsOneWidget);
+      expect(authController.isSigningOut.value, isFalse);
+    });
+  });
+
+  group('Bottom App Bar Translucency & Styling Tests', () {
+    testWidgets('HomeShellView bottom navigation bar has translucent frosted glass styling with BackdropFilter',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Verify Scaffold has extendBody: true for background content visibility
+      final scaffoldFinder = find.byType(Scaffold).first;
+      final Scaffold scaffold = tester.widget(scaffoldFinder);
+      expect(scaffold.extendBody, isTrue);
+
+      // Verify BackdropFilter exists for bottom navigation frosted glass
+      expect(find.byType(BackdropFilter), findsWidgets);
+
+      // Verify glass surface color is slightly transparent (< 1.0 opacity)
+      expect(AppColors.glassSurface.a, lessThan(0.90));
+      expect(AppColors.glassSurface.a, greaterThan(0.60));
     });
   });
 }

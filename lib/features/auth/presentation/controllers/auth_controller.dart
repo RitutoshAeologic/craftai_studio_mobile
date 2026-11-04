@@ -24,6 +24,7 @@ class AuthController extends GetxController {
   // ── Observable state ──────────────────────────────────────────────────────
   final Rx<AuthUserModel?> currentUser = Rx<AuthUserModel?>(null);
   final RxBool isLoading = false.obs;
+  final RxBool isSigningOut = false.obs;
   final RxString errorMessage = ''.obs;
 
   // ── Real-time validation observables ──────────────────────────────────────
@@ -348,27 +349,55 @@ class AuthController extends GetxController {
   // ── Sign Out ──────────────────────────────────────────────────────────────
 
   Future<void> signOut() async {
-    AppLogger.i('Signing out user: ${currentUser.value?.email ?? "anonymous"}', tag: 'AUTH_UI');
-    try {
-      final token = SupabaseService.instance.isInitialized
-          ? SupabaseService.client.auth.currentSession?.accessToken
-          : null;
-      if (token != null && token.isNotEmpty) {
-        await ApiClient.instance.post(
-          '/auth/signout',
-          options: Options(
-            connectTimeout: const Duration(milliseconds: 1500),
-            receiveTimeout: const Duration(milliseconds: 1500),
-          ),
-        );
-      }
-    } catch (e) {
-      AppLogger.w('Backend signout notification notice: $e', tag: 'AUTH_UI');
+    if (isSigningOut.value) {
+      AppLogger.w('Sign-out already in progress, ignoring duplicate call', tag: 'AUTH_UI');
+      return;
     }
-    await _repo.signOut();
-    currentUser.value = null;
-    AppLogger.s('User signed out -> Navigating to Login', tag: 'AUTH_UI');
-    Get.offAllNamed(AppRoutes.login);
+
+    isSigningOut.value = true;
+    AppLogger.i('Signing out user: ${currentUser.value?.email ?? "anonymous"}', tag: 'AUTH_UI');
+
+    try {
+      try {
+        final token = SupabaseService.instance.isInitialized
+            ? SupabaseService.client.auth.currentSession?.accessToken
+            : null;
+        if (token != null && token.isNotEmpty) {
+          await ApiClient.instance.post(
+            '/auth/signout',
+            options: Options(
+              connectTimeout: const Duration(milliseconds: 1500),
+              receiveTimeout: const Duration(milliseconds: 1500),
+            ),
+          );
+        }
+      } catch (e) {
+        AppLogger.w('Backend signout notification notice: $e', tag: 'AUTH_UI');
+      }
+
+      await _repo.signOut();
+      currentUser.value = null;
+      AppLogger.s('User signed out -> Navigating to Login', tag: 'AUTH_UI');
+      Get.offAllNamed(AppRoutes.login);
+    } catch (e, st) {
+      AppLogger.e('Sign-out error: $e', tag: 'AUTH_UI', error: e, stackTrace: st);
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      Get.snackbar(
+        'Sign Out Failed',
+        'Could not complete sign out. Please check your network and try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.accentError,
+        borderColor: AppColors.accentError.withValues(alpha: 0.3),
+        borderWidth: 1,
+        borderRadius: 12,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      );
+    } finally {
+      isSigningOut.value = false;
+    }
   }
 
   // ── UI toggles ────────────────────────────────────────────────────────────

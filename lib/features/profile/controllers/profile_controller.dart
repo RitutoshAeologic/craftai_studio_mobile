@@ -111,55 +111,89 @@ class ProfileController extends GetxController {
 
   /// Prompts user with sign-out confirmation dialog and executes sign-out
   void confirmSignOut() {
+    if (authController.isSigningOut.value) return;
+
     Get.dialog(
-      AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
-          side: BorderSide(color: AppColors.border),
-        ),
-        title: Text(
-          'Sign Out?',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to sign out of CraftAI Studio?',
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 13.sp,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 13.sp),
+      Obx(() {
+        final isSigningOut = authController.isSigningOut.value;
+        return PopScope(
+          canPop: !isSigningOut,
+          child: AlertDialog(
+            backgroundColor: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.r),
+              side: BorderSide(color: AppColors.border),
             ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accentError,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+            title: Text(
+              isSigningOut ? 'Signing Out...' : 'Sign Out?',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            onPressed: () {
-              Get.back();
-              if (Get.isRegistered<AuthController>()) {
-                Get.find<AuthController>().signOut();
-              }
-            },
-            child: Text(
-              'Sign Out',
-              style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold),
-            ),
+            content: isSigningOut
+                ? Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.h),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 20.w,
+                          height: 20.w,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.accentError),
+                          ),
+                        ),
+                        SizedBox(width: 14.w),
+                        Expanded(
+                          child: Text(
+                            'Please wait while your session is securely closed...',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13.sp,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Text(
+                    'Are you sure you want to sign out of CraftAI Studio?',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13.sp,
+                    ),
+                  ),
+            actions: isSigningOut
+                ? null
+                : [
+                    TextButton(
+                      onPressed: () => Get.back(),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 13.sp),
+                      ),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentError,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                      ),
+                      onPressed: () {
+                        authController.signOut();
+                      },
+                      child: Text(
+                        'Sign Out',
+                        style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
           ),
-        ],
-      ),
+        );
+      }),
+      barrierDismissible: false,
     );
   }
 }

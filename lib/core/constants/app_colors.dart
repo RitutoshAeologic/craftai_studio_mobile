@@ -53,7 +53,7 @@ class AppColors {
   static Color _border = const Color(0xFFE2E8F0);
   static Color _borderSubtle = const Color(0xFFEEF2F6);
 
-  static Color _glassSurface = const Color(0xCCFFFFFF);
+  static Color _glassSurface = const Color(0xBAFFFFFF);
   static Color _glassSurfaceElevated = const Color(0xE6FFFFFF);
   static Color _glassDarkSurface = const Color(0xD9FFFFFF);
   static Color _glassBorder = const Color(0x336366F1);
@@ -136,7 +136,7 @@ class AppColors {
         _card = const Color(0xFFFFFFFF);
         _border = const Color(0xFFE2E8F0);
         _borderSubtle = const Color(0xFFEEF2F6);
-        _glassSurface = const Color(0xCCFFFFFF);
+        _glassSurface = const Color(0xBAFFFFFF);
         _glassSurfaceElevated = const Color(0xE6FFFFFF);
         _glassDarkSurface = const Color(0xD9FFFFFF);
         _glassBorder = const Color(0x336366F1);
@@ -155,7 +155,7 @@ class AppColors {
         _card = const Color(0xFFFFFDFB);
         _border = const Color(0xFFE7E5E4);
         _borderSubtle = const Color(0xFFF0EFEB);
-        _glassSurface = const Color(0xD9FFFDFB);
+        _glassSurface = const Color(0xBAFFFDFB);
         _glassSurfaceElevated = const Color(0xF2FFFDFB);
         _glassDarkSurface = const Color(0xEBFAF9F6);
         _glassBorder = const Color(0x266366F1);
@@ -174,7 +174,7 @@ class AppColors {
         _card = const Color(0xFFFFFFFF);
         _border = const Color(0xFFCBD5E1);
         _borderSubtle = const Color(0xFFE2E8F0);
-        _glassSurface = const Color(0xD9FFFFFF);
+        _glassSurface = const Color(0xBAFFFFFF);
         _glassSurfaceElevated = const Color(0xF2FFFFFF);
         _glassDarkSurface = const Color(0xEBF1F5F9);
         _glassBorder = const Color(0x336366F1);
@@ -193,7 +193,7 @@ class AppColors {
         _card = const Color(0xFF161B26);
         _border = const Color(0xFF283245);
         _borderSubtle = const Color(0xFF1C2230);
-        _glassSurface = const Color(0x1AFFFFFF);
+        _glassSurface = const Color(0xCC161B26);
         _glassSurfaceElevated = const Color(0x26FFFFFF);
         _glassDarkSurface = const Color(0xB30B0D14);
         _glassBorder = const Color(0x2EFFFFFF);
