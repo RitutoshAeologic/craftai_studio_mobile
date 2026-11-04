@@ -4,6 +4,7 @@ import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
+import 'collection_controller.dart';
 import '../domain/repositories/i_library_repository.dart';
 import '../data/datasources/library_remote_datasource.dart';
 import '../data/repositories/library_repository_impl.dart';
@@ -93,22 +94,14 @@ class LibraryController extends GetxController {
       isLoading.value = false;
       isLoadingMore.value = false;
     }
+  }
 
-    // Default seed creations if no cloud jobs yet and feed empty
-    if (myCreations.isEmpty) {
-      myCreations.assignAll([
-        JobModel(
-          jobId: 'job_001',
-          type: 'IMAGE_GEN',
-          status: 'completed',
-          prompt: 'Cyberpunk ronin samurai in dark kimono, wet asphalt Neo-Tokyo',
-          previewUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop',
-          creditsDeducted: 4.0,
-          isDownloadUnlocked: false,
-          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-        ),
-      ]);
-    }
+  /// Clears in-memory creations and resets pagination state on user sign-out
+  void clearLocalData() {
+    myCreations.clear();
+    currentPage.value = 0;
+    hasMoreCreations.value = true;
+    libraryError.value = null;
   }
 
   /// Triggers next page load when scrolling near bottom of library
@@ -202,6 +195,14 @@ class LibraryController extends GetxController {
           j.jobId == job.jobId ||
           (j.previewUrl.isNotEmpty && j.previewUrl == job.previewUrl));
       AppLogger.i('Removed job ${job.jobId} from local UI list', tag: 'LIBRARY');
+
+      // 1b. Proactively notify CollectionController to clean up any collection referencing this artwork
+      if (Get.isRegistered<CollectionController>()) {
+        Get.find<CollectionController>().onItemDeletedGlobally(
+          itemId: job.jobId,
+          imageUrl: job.previewUrl,
+        );
+      }
 
       // 2. Delegate remote purge to repository
       final success = await _repository.deleteCreation(job);

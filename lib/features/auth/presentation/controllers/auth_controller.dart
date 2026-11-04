@@ -11,6 +11,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/network_service.dart';
 import '../../../../core/services/supabase_service.dart';
 import '../../../../core/utils/app_logger.dart';
+import '../../../library/controllers/library_controller.dart';
+import '../../../library/controllers/collection_controller.dart';
+import '../../../studio/presentation/controllers/studio_controller.dart';
 
 /// Permanent GetX controller — registered in [main.dart] via
 /// `Get.put(AuthController(), permanent: true)`.
@@ -377,6 +380,18 @@ class AuthController extends GetxController {
 
       await _repo.signOut();
       currentUser.value = null;
+
+      // Clear in-memory state across active controllers to prevent cross-account session leakage
+      if (Get.isRegistered<LibraryController>()) {
+        Get.find<LibraryController>().clearLocalData();
+      }
+      if (Get.isRegistered<CollectionController>()) {
+        Get.find<CollectionController>().clearLocalData();
+      }
+      if (Get.isRegistered<StudioController>()) {
+        Get.find<StudioController>().clearSession();
+      }
+
       AppLogger.s('User signed out -> Navigating to Login', tag: 'AUTH_UI');
       Get.offAllNamed(AppRoutes.login);
     } catch (e, st) {

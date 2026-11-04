@@ -12,6 +12,7 @@ import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/explore/controllers/explore_controller.dart';
 import 'package:craftai_studio_mobile/features/explore/widgets/explore_card_widget.dart';
 import 'package:craftai_studio_mobile/features/explore/views/explore_category_view.dart';
+import 'package:craftai_studio_mobile/features/library/controllers/collection_controller.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/save_to_collection_sheet.dart';
 
 /// [ExploreImageDetailView] is the dedicated full-page screen for exploring
@@ -158,19 +159,28 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.bookmark_border, color: AppColors.textPrimary),
-            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            tooltip: 'Save to Collection',
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              SaveToCollectionSheet.show(
-                context,
-                itemId: widget.card.id,
-                imageUrl: widget.card.previewUrl,
-              );
-            },
-          ),
+          Obx(() {
+            final colCtrl = Get.isRegistered<CollectionController>()
+                ? Get.find<CollectionController>()
+                : Get.put(CollectionController());
+            final isSaved = colCtrl.isItemSavedAnywhere(widget.card.id);
+            return IconButton(
+              icon: Icon(
+                isSaved ? Icons.bookmark : Icons.bookmark_border,
+                color: isSaved ? AppColors.primary : AppColors.textPrimary,
+              ),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              tooltip: isSaved ? 'Saved in Collections' : 'Save to Collection',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                SaveToCollectionSheet.show(
+                  context,
+                  itemId: widget.card.id,
+                  imageUrl: widget.card.previewUrl,
+                );
+              },
+            );
+          }),
           IconButton(
             icon: Icon(Icons.share_outlined, color: AppColors.textPrimary),
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -770,18 +780,24 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildSecondaryActionButton(
-                  icon: Icons.bookmark_add_outlined,
-                  label: 'Save',
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    SaveToCollectionSheet.show(
-                      context,
-                      itemId: widget.card.id,
-                      imageUrl: widget.card.previewUrl,
-                    );
-                  },
-                ),
+                Obx(() {
+                  final colCtrl = Get.isRegistered<CollectionController>()
+                      ? Get.find<CollectionController>()
+                      : Get.put(CollectionController());
+                  final isSaved = colCtrl.isItemSavedAnywhere(widget.card.id);
+                  return _buildSecondaryActionButton(
+                    icon: isSaved ? Icons.bookmark_added_rounded : Icons.bookmark_add_outlined,
+                    label: isSaved ? 'Saved' : 'Save',
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      SaveToCollectionSheet.show(
+                        context,
+                        itemId: widget.card.id,
+                        imageUrl: widget.card.previewUrl,
+                      );
+                    },
+                  );
+                }),
                 _buildSecondaryActionButton(
                   icon: Icons.image_outlined,
                   label: 'Use Ref',

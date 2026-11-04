@@ -21,6 +21,7 @@ class PublishCreationSheet extends StatefulWidget {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      useSafeArea: false,
       builder: (_) => PublishCreationSheet(job: job),
     );
   }
@@ -172,19 +173,24 @@ class _PublishCreationSheetState extends State<PublishCreationSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final viewInsetsBottom = MediaQuery.of(context).viewInsets.bottom;
+    final paddingBottom = MediaQuery.of(context).padding.bottom;
+    final effectiveBottom = viewInsetsBottom > 0
+        ? viewInsetsBottom + 12.h
+        : (paddingBottom > 0 ? paddingBottom + 12.h : 20.h);
+
     return Container(
+      constraints: BoxConstraints(maxHeight: 0.85.sh),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
       ),
-      padding: EdgeInsets.fromLTRB(20.w, 14.h, 20.w, MediaQuery.of(context).viewInsets.bottom + 24.h),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      padding: EdgeInsets.fromLTRB(20.w, 14.h, 20.w, effectiveBottom),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               // Pill Handle
               Center(
                 child: Container(
@@ -296,15 +302,16 @@ class _PublishCreationSheetState extends State<PublishCreationSheet> {
                 child: ElevatedButton(
                   onPressed: _isPublishing ? null : _handlePublish,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: Colors.black,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                    disabledBackgroundColor: Colors.black38,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
                   ),
                   child: _isPublishing
                       ? SizedBox(
                           width: 20.w,
                           height: 20.w,
-                          child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                         )
                       : Text(
                           'Confirm & Publish (Free)',
@@ -315,7 +322,6 @@ class _PublishCreationSheetState extends State<PublishCreationSheet> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

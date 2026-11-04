@@ -126,5 +126,45 @@ void main() {
       expect(updatedCol.itemCount, equals(0));
       expect(updatedCol.coverImageUrl, isNull);
     });
+
+    test('onItemDeletedGlobally cleans up collection references and clears cover when artwork is deleted', () async {
+      final col = await controller.createCollection(
+        name: 'Anime Favorites',
+        coverImageUrl: 'https://example.com/artwork1.png',
+      );
+
+      await controller.toggleSaveItem(
+        collectionId: col.id,
+        itemId: 'job-123',
+        imageUrl: 'https://example.com/artwork1.png',
+      );
+
+      expect(controller.isItemSavedAnywhere('job-123'), isTrue);
+      expect(controller.getCollectionItems(col.id).length, equals(1));
+
+      // Simulate global deletion from LibraryController
+      await controller.onItemDeletedGlobally(
+        itemId: 'job-123',
+        imageUrl: 'https://example.com/artwork1.png',
+      );
+
+      expect(controller.isItemSavedAnywhere('job-123'), isFalse);
+      expect(controller.getCollectionItems(col.id), isEmpty);
+
+      final updatedCol = controller.collections.firstWhere((c) => c.id == col.id);
+      expect(updatedCol.itemCount, equals(0));
+      expect(updatedCol.coverImageUrl, isNull);
+    });
+
+    test('clearLocalData resets in-memory collections and maps on logout', () async {
+      await controller.createCollection(name: 'Temporary');
+      expect(controller.collections, isNotEmpty);
+
+      controller.clearLocalData();
+      expect(controller.collections, isEmpty);
+      expect(controller.collectionItemsCache, isEmpty);
+      expect(controller.itemCollectionMap, isEmpty);
+    });
   });
 }
+

@@ -150,6 +150,14 @@ class LibraryRemoteDataSource {
         } catch (_) {}
       }
 
+      // 3c. Clean up any collection_items rows referencing this deleted job or image
+      try {
+        await _supabase
+            .from('collection_items')
+            .delete()
+            .or('job_id.eq.${job.jobId},item_id.eq.${job.jobId},image_url.eq.${job.previewUrl}');
+      } catch (_) {}
+
       AppLogger.s('Deleted job ${job.jobId} from Supabase jobs table', tag: 'LIBRARY_DS');
     } catch (dbErr) {
       AppLogger.d('Direct Supabase delete skipped or pending migration: $dbErr', tag: 'LIBRARY_DS');

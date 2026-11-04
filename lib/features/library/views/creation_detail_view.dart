@@ -159,7 +159,26 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                                           : Get.put(LibraryController());
                                       
                                       // Perform deletion without premature snackbar
-                                      await libCtrl.deleteCreation(widget.job, showSnackbar: false);
+                                      final success = await libCtrl.deleteCreation(widget.job, showSnackbar: false);
+                                      if (!success) {
+                                        setDialogState(() {
+                                          isDeleting = false;
+                                        });
+                                        if (Get.overlayContext != null && !Get.testMode) {
+                                          Get.snackbar(
+                                            'Delete Failed',
+                                            'Could not delete image. Please check your network and try again.',
+                                            snackPosition: SnackPosition.BOTTOM,
+                                            backgroundColor: AppColors.surface,
+                                            colorText: AppColors.accentWarning,
+                                            icon: Icon(Icons.error_outline_rounded, color: AppColors.accentWarning),
+                                            margin: EdgeInsets.all(16.w),
+                                            borderRadius: 12.r,
+                                            duration: const Duration(seconds: 3),
+                                          );
+                                        }
+                                        return;
+                                      }
                                       
                                       // Close confirmation dialog
                                       if (dialogContext.mounted) {

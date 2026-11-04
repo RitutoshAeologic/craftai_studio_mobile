@@ -1240,8 +1240,27 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
                                       setDialogState(() {
                                         isDeleting = true;
                                       });
-                                      await controller.deleteCreation(job,
+                                      final success = await controller.deleteCreation(job,
                                           showSnackbar: false);
+                                      if (!success) {
+                                        setDialogState(() {
+                                          isDeleting = false;
+                                        });
+                                        if (Get.overlayContext != null && !Get.testMode) {
+                                          Get.snackbar(
+                                            'Delete Failed',
+                                            'Could not delete image. Please check your network and try again.',
+                                            snackPosition: SnackPosition.BOTTOM,
+                                            backgroundColor: AppColors.surface,
+                                            colorText: AppColors.accentWarning,
+                                            icon: Icon(Icons.error_outline_rounded, color: AppColors.accentWarning),
+                                            margin: const EdgeInsets.all(16),
+                                            borderRadius: 12,
+                                            duration: const Duration(seconds: 3),
+                                          );
+                                        }
+                                        return;
+                                      }
                                       if (dialogContext.mounted) {
                                         Navigator.of(dialogContext).pop();
                                       }

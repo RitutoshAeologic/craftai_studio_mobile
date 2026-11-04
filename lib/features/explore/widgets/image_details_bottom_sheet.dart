@@ -8,6 +8,7 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/explore/controllers/explore_controller.dart';
+import 'package:craftai_studio_mobile/features/library/controllers/collection_controller.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/save_to_collection_sheet.dart';
 import '../views/explore_image_detail_view.dart';
 import '../views/explore_category_view.dart';
@@ -586,17 +587,23 @@ class _ImageDetailsBottomSheetState extends State<ImageDetailsBottomSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildSecondaryActionButton(
-                icon: Icons.bookmark_add_outlined,
-                label: 'Save',
-                onTap: () {
-                  SaveToCollectionSheet.show(
-                    context,
-                    itemId: widget.card.id,
-                    imageUrl: widget.card.previewUrl,
-                  );
-                },
-              ),
+              Obx(() {
+                final colCtrl = Get.isRegistered<CollectionController>()
+                    ? Get.find<CollectionController>()
+                    : Get.put(CollectionController());
+                final isSaved = colCtrl.isItemSavedAnywhere(widget.card.id);
+                return _buildSecondaryActionButton(
+                  icon: isSaved ? Icons.bookmark_added_rounded : Icons.bookmark_add_outlined,
+                  label: isSaved ? 'Saved' : 'Save',
+                  onTap: () {
+                    SaveToCollectionSheet.show(
+                      context,
+                      itemId: widget.card.id,
+                      imageUrl: widget.card.previewUrl,
+                    );
+                  },
+                );
+              }),
               _buildSecondaryActionButton(
                 icon: Icons.image_outlined,
                 label: 'Use Ref',

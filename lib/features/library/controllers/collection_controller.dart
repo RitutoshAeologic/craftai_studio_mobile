@@ -340,6 +340,90 @@ class CollectionController extends GetxController {
     return itemCollectionMap[itemId]?.contains(collectionId) ?? false;
   }
 
+  /// Checks if an item is bookmarked in any user collection
+  bool isItemSavedAnywhere(String itemId) {
+    return itemCollectionMap[itemId]?.isNotEmpty ?? false;
+  }
+
+  /// Cleans up in-memory collections and cache on user sign-out
+  void clearLocalData() {
+    collections.clear();
+    collectionItemsCache.clear();
+    itemCollectionMap.clear();
+  }
+
+  /// Cleans up any references across collections when an artwork is permanently deleted
+  Future<void> onItemDeletedGlobally({
+    required String itemId,
+    String? imageUrl,
+  }) async {
+    // 1. Identify all collection IDs containing this item
+    final affectedCollectionIds = Set<String>.from(itemCollectionMap[itemId] ?? <String>{});
+    itemCollectionMap.remove(itemId);
+
+    // Also scan all collection caches in case it was stored under another alias
+    for (final entry in collectionItemsCache.entries) {
+      if (entry.value.any((item) =>
+          item['id'] == itemId ||
+          item['item_id'] == itemId ||
+          (imageUrl != null && imageUrl.isNotEmpty && item['image_url'] == imageUrl))) {
+        affectedCollectionIds.add(entry.key);
+      }
+    }
+
+    // 2. Optimistically remove from affected collection caches and update counts/covers
+    for (final colId in affectedCollectionIds) {
+      final items = List<Map<String, dynamic>>.from(collectionItemsCache[colId] ?? []);
+      items.removeWhere((item) =>
+          item['id'] == itemId ||
+          item['item_id'] == itemId ||
+          (imageUrl != null && imageUrl.isNotEmpty && item['image_url'] == imageUrl));
+      collectionItemsCache[colId] = items;
+
+      final nextCoverUrl = items.isNotEmpty ? (items.first['image_url'] as String?) : null;
+
+      final idx = collections.indexWhere((c) => c.id == colId);
+      if (idx != -1) {
+        final col = collections[idx];
+        final newCount = col.itemCount > 0 ? col.itemCount - 1 : 0;
+        collections[idx] = col.copyWith(
+          itemCount: newCount,
+          coverImageUrl: nextCoverUrl,
+          clearCoverImageUrl: newCount == 0 || nextCoverUrl == null,
+        );
+      }
+    }
+
+    // 3. Supabase cleanup: remove from collection_items and sync cover_image_url
+    try {
+      final client = SupabaseService.client;
+      final userId = client.auth.currentUser?.id;
+      if (userId != null) {
+        var query = client.from('collection_items').delete().eq('user_id', userId);
+        final isUuid = _uuidRegex.hasMatch(itemId);
+        if (isUuid) {
+          query = query.or('job_id.eq.$itemId,explore_prompt_id.eq.$itemId,item_id.eq.$itemId');
+        } else {
+          query = query.eq('item_id', itemId);
+        }
+        await query;
+
+        // Sync cover_image_url for affected collections in database
+        for (final colId in affectedCollectionIds) {
+          final remaining = collectionItemsCache[colId] ?? [];
+          final nextCover = remaining.isNotEmpty ? remaining.first['image_url'] : null;
+          await client.from('collections').update({
+            'cover_image_url': nextCover,
+            'updated_at': DateTime.now().toIso8601String(),
+          }).eq('id', colId);
+        }
+        AppLogger.s('Cleaned up deleted item $itemId from Supabase collections', tag: 'COLLECTIONS');
+      }
+    } catch (e) {
+      AppLogger.w('Supabase global item deletion cleanup notice: $e', tag: 'COLLECTIONS');
+    }
+  }
+
   /// Toggles saving an item into a collection
   Future<void> toggleSaveItem({
     required String collectionId,

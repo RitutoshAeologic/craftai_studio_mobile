@@ -1422,6 +1422,21 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     );
   }
 
+  /// Clears active creative canvas state and reference images on sign-out
+  void clearSession() {
+    promptController.clear();
+    referenceImages.clear();
+    lastGeneratedImageUrl.value = '';
+    showResultHero.value = false;
+    userTypedPrompt.value = '';
+    geminiRefinedPrompt.value = '';
+    geminiNegativePrompt.value = '';
+    lastDispatchedPrompt.value = '';
+    remixedFromPromptId.value = null;
+    selectedCharacter.value = null;
+    isGenerating.value = false;
+  }
+
   @override
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
