@@ -21,6 +21,7 @@ class AppTextField extends StatelessWidget {
     this.enabled = true,
     this.autofocus = false,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
+    this.formFieldKey,
   });
 
   final TextEditingController controller;
@@ -37,6 +38,7 @@ class AppTextField extends StatelessWidget {
   final bool enabled;
   final bool autofocus;
   final AutovalidateMode? autovalidateMode;
+  final Key? formFieldKey;
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +58,7 @@ class AppTextField extends StatelessWidget {
           SizedBox(height: 8.h),
         ],
         TextFormField(
+          key: formFieldKey,
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,

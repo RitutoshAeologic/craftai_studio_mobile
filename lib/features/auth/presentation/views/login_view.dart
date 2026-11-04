@@ -30,13 +30,14 @@ class LoginView extends StatelessWidget {
                   SizedBox(height: 44.h),
                   Form(
                     key: ctrl.loginFormKey,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    autovalidateMode: AutovalidateMode.disabled,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // ── Email ──────────────────────────────────────────
                         Obx(
                           () => AppTextField(
+                            formFieldKey: ctrl.emailFieldKey,
                             controller: ctrl.emailCtrl,
                             label: 'Email',
                             hintText: 'you@example.com',
@@ -59,6 +60,7 @@ class LoginView extends StatelessWidget {
                         // ── Password ───────────────────────────────────────
                         Obx(
                           () => AppTextField(
+                            formFieldKey: ctrl.passwordFieldKey,
                             controller: ctrl.passwordCtrl,
                             label: 'Password',
                             hintText: '••••••••',

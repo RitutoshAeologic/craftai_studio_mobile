@@ -51,6 +51,10 @@ class AuthController extends GetxController {
   final signupFormKey = GlobalKey<FormState>();
   final forgotFormKey = GlobalKey<FormState>();
 
+  // ── Independent field-level validation keys ───────────────────────────────
+  final emailFieldKey = GlobalKey<FormFieldState<String>>();
+  final passwordFieldKey = GlobalKey<FormFieldState<String>>();
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   @override
@@ -61,35 +65,67 @@ class AuthController extends GetxController {
     // Subscription is auto-cancelled via GetX onClose() stream management.
     _repo.authStateChanges.listen(_onAuthStateChange);
 
-    // Attach real-time input change listeners for instant validation
-    emailCtrl.addListener(_onFieldChanged);
-    passwordCtrl.addListener(_onFieldChanged);
-    confirmPasswordCtrl.addListener(_onFieldChanged);
-    displayNameCtrl.addListener(_onFieldChanged);
+    // Attach independent real-time input change listeners
+    emailCtrl.addListener(_onEmailChanged);
+    passwordCtrl.addListener(_onPasswordChanged);
+    confirmPasswordCtrl.addListener(_onConfirmPasswordChanged);
+    displayNameCtrl.addListener(_onDisplayNameChanged);
   }
 
-  void _onFieldChanged() {
-    // 1. Immediately clear any stale server error banner on typing
-    if (errorMessage.value.isNotEmpty) {
-      errorMessage.value = '';
-    }
-
-    // 2. Real-time field evaluation
+  void _onEmailChanged() {
+    if (errorMessage.value.isNotEmpty) errorMessage.value = '';
     final email = emailCtrl.text.trim();
-    final password = passwordCtrl.text;
-    final confirm = confirmPasswordCtrl.text;
-
-    hasPasswordText.value = password.isNotEmpty;
-    hasConfirmText.value = confirm.isNotEmpty;
     isEmailValid.value = isValidEmail(email);
-    isPasswordValid.value = isValidPassword(password);
-    isConfirmPasswordValid.value = isValidConfirm(confirm, password);
-
-    // 3. Real-time form validities
     isLoginFormValid.value = isEmailValid.value && isPasswordValid.value;
     isSignupFormValid.value =
         isEmailValid.value && isPasswordValid.value && isConfirmPasswordValid.value;
     isForgotFormValid.value = isEmailValid.value;
+  }
+
+  void _onPasswordChanged() {
+    if (errorMessage.value.isNotEmpty) errorMessage.value = '';
+    final password = passwordCtrl.text;
+    hasPasswordText.value = password.isNotEmpty;
+    isPasswordValid.value = isValidPassword(password);
+    isConfirmPasswordValid.value = isValidConfirm(confirmPasswordCtrl.text, password);
+    isLoginFormValid.value = isEmailValid.value && isPasswordValid.value;
+    isSignupFormValid.value =
+        isEmailValid.value && isPasswordValid.value && isConfirmPasswordValid.value;
+  }
+
+  void _onConfirmPasswordChanged() {
+    if (errorMessage.value.isNotEmpty) errorMessage.value = '';
+    final confirm = confirmPasswordCtrl.text;
+    hasConfirmText.value = confirm.isNotEmpty;
+    isConfirmPasswordValid.value = isValidConfirm(confirm, passwordCtrl.text);
+    isSignupFormValid.value =
+        isEmailValid.value && isPasswordValid.value && isConfirmPasswordValid.value;
+  }
+
+  void _onDisplayNameChanged() {
+    if (errorMessage.value.isNotEmpty) errorMessage.value = '';
+  }
+
+  void _onFieldChanged() {
+    _onEmailChanged();
+    _onPasswordChanged();
+  }
+
+  /// Validates the Email field independently.
+  bool validateEmailField() {
+    return emailFieldKey.currentState?.validate() ?? isValidEmail(emailCtrl.text.trim());
+  }
+
+  /// Validates the Password field independently.
+  bool validatePasswordField() {
+    return passwordFieldKey.currentState?.validate() ?? isValidPassword(passwordCtrl.text);
+  }
+
+  /// Resets independent login form validation states.
+  void resetLoginForm() {
+    emailFieldKey.currentState?.reset();
+    passwordFieldKey.currentState?.reset();
+    loginFormKey.currentState?.reset();
   }
 
   void _onAuthStateChange(AuthState state) {
@@ -149,10 +185,18 @@ class AuthController extends GetxController {
   // ── Sign In ───────────────────────────────────────────────────────────────
 
   Future<void> signIn() async {
-    final formValid = loginFormKey.currentState?.validate() ??
-        (isLoginFormValid.value &&
-            isValidEmail(emailCtrl.text) &&
-            isValidPassword(passwordCtrl.text));
+    // 1. Validate both fields independently so both display their respective errors if invalid
+    final isEmailValidNow = emailFieldKey.currentState?.validate() ??
+        isValidEmail(emailCtrl.text);
+    final isPasswordValidNow = passwordFieldKey.currentState?.validate() ??
+        isValidPassword(passwordCtrl.text);
+
+    final formValid = (emailFieldKey.currentState != null || passwordFieldKey.currentState != null)
+        ? (isEmailValidNow && isPasswordValidNow)
+        : (loginFormKey.currentState?.validate() ??
+            (isLoginFormValid.value &&
+                isValidEmail(emailCtrl.text) &&
+                isValidPassword(passwordCtrl.text)));
 
     if (!formValid) {
       AppLogger.w(
@@ -357,6 +401,8 @@ class AuthController extends GetxController {
     isLoginFormValid.value = false;
     isSignupFormValid.value = false;
     isForgotFormValid.value = false;
+    emailFieldKey.currentState?.reset();
+    passwordFieldKey.currentState?.reset();
   }
 
   void _snackbar({
