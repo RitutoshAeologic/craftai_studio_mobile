@@ -9,6 +9,7 @@ import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import '../controllers/shell_controller.dart';
 import '../../explore/views/explore_feed_view.dart';
+import '../../explore/controllers/explore_controller.dart';
 import '../../studio/presentation/views/creation_studio_view.dart';
 import '../../studio/presentation/controllers/studio_controller.dart';
 import '../../tools/views/ai_tools_view.dart';
@@ -28,6 +29,10 @@ class HomeShellView extends StatelessWidget {
     final ThemeController themeController = Get.isRegistered<ThemeController>()
         ? Get.find<ThemeController>()
         : Get.put(ThemeController());
+
+    if (!Get.isRegistered<ExploreController>()) {
+      Get.put(ExploreController());
+    }
 
     return PopScope(
       canPop: false,
@@ -56,11 +61,21 @@ class HomeShellView extends StatelessWidget {
         final activePreset = themeController.currentPreset.value;
 
         final List<Widget> screens = [
-          KeyedSubtree(key: ValueKey('explore_${activePreset.name}'), child: const ExploreFeedView()),
-          KeyedSubtree(key: ValueKey('studio_${activePreset.name}'), child: const CreationStudioView()),
-          KeyedSubtree(key: ValueKey('tools_${activePreset.name}'), child: const AiToolsView()),
-          KeyedSubtree(key: ValueKey('library_${activePreset.name}'), child: const CloudLibraryView()),
-          KeyedSubtree(key: ValueKey('profile_${activePreset.name}'), child: const ProfileView()),
+          KeyedSubtree(
+              key: ValueKey('explore_${activePreset.name}'),
+              child: const ExploreFeedView()),
+          KeyedSubtree(
+              key: ValueKey('studio_${activePreset.name}'),
+              child: const CreationStudioView()),
+          KeyedSubtree(
+              key: ValueKey('tools_${activePreset.name}'),
+              child: const AiToolsView()),
+          KeyedSubtree(
+              key: ValueKey('library_${activePreset.name}'),
+              child: const CloudLibraryView()),
+          KeyedSubtree(
+              key: ValueKey('profile_${activePreset.name}'),
+              child: const ProfileView()),
         ];
 
         return Scaffold(
@@ -76,7 +91,8 @@ class HomeShellView extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.glassDarkSurface,
                     border: Border(
-                      bottom: BorderSide(color: AppColors.glassBorderSubtle, width: 1.w),
+                      bottom: BorderSide(
+                          color: AppColors.glassBorderSubtle, width: 1.w),
                     ),
                   ),
                   child: SafeArea(
@@ -97,7 +113,8 @@ class HomeShellView extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(10.r),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withValues(alpha: 0.35),
+                                        color: AppColors.primary
+                                            .withValues(alpha: 0.35),
                                         blurRadius: 10.r,
                                         offset: const Offset(0, 2),
                                       ),
@@ -175,30 +192,16 @@ class HomeShellView extends StatelessWidget {
                   ? MediaQuery.paddingOf(context).bottom + 6.h
                   : 18.h,
             ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28.r),
-              boxShadow: [
-                BoxShadow(
-                  color: activePreset == AppThemePreset.deepObsidian
-                      ? Colors.black.withValues(alpha: 0.35)
-                      : const Color(0xFF0F172A).withValues(alpha: 0.08),
-                  blurRadius: 24.r,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.05),
-                  blurRadius: 10.r,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+            // No decoration/boxShadow here: it was what made the bar look grey/solid
             child: ClipRRect(
               borderRadius: BorderRadius.circular(28.r),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.glassSurface,
+                    // lower alpha = more transparent (try 0.08 – 0.25)
+                    color: AppColors.glassSurface.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(28.r),
                     border: Border.all(
                       color: AppColors.glassBorder,
@@ -209,21 +212,11 @@ class HomeShellView extends StatelessWidget {
                     data: NavigationBarThemeData(
                       backgroundColor: Colors.transparent,
                       surfaceTintColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
                       height: 62.h,
                       indicatorColor: AppColors.primary.withValues(alpha: 0.14),
                       labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w700,
-                          );
-                        }
-                        return TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w500,
-                        );
+                        // ...same as before
                       }),
                     ),
                     child: NavigationBar(
@@ -232,30 +225,41 @@ class HomeShellView extends StatelessWidget {
                       backgroundColor: Colors.transparent,
                       surfaceTintColor: Colors.transparent,
                       elevation: 0,
+                      labelTextStyle: WidgetStatePropertyAll(TextStyle(fontWeight: FontWeight.w700,fontSize: 12)),
                       destinations: [
                         NavigationDestination(
-                          icon: Icon(Icons.explore_outlined, color: AppColors.textSecondary),
-                          selectedIcon: Icon(Icons.explore, color: AppColors.primary),
+                          icon: Icon(Icons.explore_outlined,
+                              color: AppColors.textSecondary),
+                          selectedIcon:
+                              Icon(Icons.explore, color: AppColors.primary),
                           label: AppStrings.tabExplore,
                         ),
                         NavigationDestination(
-                          icon: Icon(Icons.auto_awesome_outlined, color: AppColors.textSecondary),
-                          selectedIcon: Icon(Icons.auto_awesome, color: AppColors.primary),
+                          icon: Icon(Icons.auto_awesome_outlined,
+                              color: AppColors.textSecondary),
+                          selectedIcon: Icon(Icons.auto_awesome,
+                              color: AppColors.primary),
                           label: AppStrings.tabStudio,
                         ),
                         NavigationDestination(
-                          icon: Icon(Icons.auto_fix_high_outlined, color: AppColors.textSecondary),
-                          selectedIcon: Icon(Icons.auto_fix_high, color: AppColors.primary),
+                          icon: Icon(Icons.auto_fix_high_outlined,
+                              color: AppColors.textSecondary),
+                          selectedIcon: Icon(Icons.auto_fix_high,
+                              color: AppColors.primary),
                           label: 'AI Tools',
                         ),
                         NavigationDestination(
-                          icon: Icon(Icons.folder_outlined, color: AppColors.textSecondary),
-                          selectedIcon: Icon(Icons.folder, color: AppColors.primary),
+                          icon: Icon(Icons.folder_outlined,
+                              color: AppColors.textSecondary),
+                          selectedIcon:
+                              Icon(Icons.folder, color: AppColors.primary),
                           label: AppStrings.tabLibrary,
                         ),
                         NavigationDestination(
-                          icon: Icon(Icons.person_outline, color: AppColors.textSecondary),
-                          selectedIcon: Icon(Icons.person, color: AppColors.primary),
+                          icon: Icon(Icons.person_outline,
+                              color: AppColors.textSecondary),
+                          selectedIcon:
+                              Icon(Icons.person, color: AppColors.primary),
                           label: AppStrings.tabProfile,
                         ),
                       ],

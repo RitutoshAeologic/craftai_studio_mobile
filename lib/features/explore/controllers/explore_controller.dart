@@ -24,7 +24,19 @@ class ExploreController extends GetxController {
   final RxString selectedModel = 'All Models'.obs;
 
   /// Currently active Aspect Ratio filter set (default: {'All'}).
-  final RxSet<String> selectedAspectRatios = <String>{'All'}.obs;
+  final RxSet<String> selectedAspectRatios = _initAspectRatios();
+
+  /// Helper to safely initialize non-empty RxSet without triggering
+  /// RxInterface.proxy or premature Obx rebuilds during widget construction.
+  static RxSet<String> _initAspectRatios() {
+    final prevProxy = RxInterface.proxy;
+    RxInterface.proxy = null;
+    try {
+      return <String>{'All'}.obs;
+    } finally {
+      RxInterface.proxy = prevProxy;
+    }
+  }
 
   /// Realtime search query for exploring community creations
   final RxString searchQuery = ''.obs;

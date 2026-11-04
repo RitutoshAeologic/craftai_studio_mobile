@@ -56,4 +56,27 @@ void main() {
       expect(card.category, 'Anime');
     }
   });
+
+  testWidgets('ExploreFeedView builds inside Obx without setState() during build exception', (WidgetTester tester) async {
+    final activePreset = 'luminousAurora'.obs;
+
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        builder: (_, __) => GetMaterialApp(
+          home: Obx(
+            () => Scaffold(
+              body: KeyedSubtree(
+                key: ValueKey('explore_${activePreset.value}'),
+                child: const ExploreFeedView(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(ExploreFeedView), findsOneWidget);
+  });
 }

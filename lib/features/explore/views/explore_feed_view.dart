@@ -26,7 +26,9 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
   @override
   void initState() {
     super.initState();
-    _controller = Get.put(ExploreController());
+    _controller = Get.isRegistered<ExploreController>()
+        ? Get.find<ExploreController>()
+        : Get.put(ExploreController());
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
   }
@@ -57,7 +59,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
@@ -116,6 +118,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
       ),
       body: SafeArea(
         top: false,
+        bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -285,7 +288,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
                         ),
                       ),
                       SliverToBoxAdapter(
-                        child: _buildPaginationFooter(),
+                        child: _buildPaginationFooter(context),
                       ),
                     ],
                   ),
@@ -387,8 +390,14 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
   }
 
   /// Bottom pagination footer rendering loaders, retry pill, or end-of-feed chip
-  Widget _buildPaginationFooter() {
-    return Obx(() {
+  Widget _buildPaginationFooter(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final navBarPadding = bottomInset > 0 ? bottomInset + 88.h : 96.h;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: navBarPadding),
+      child: Obx(() {
+
       // 1. Actively loading next page
       if (_controller.isLoadingMore.value) {
         return Container(
@@ -498,7 +507,8 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
       }
 
       return SizedBox(height: 24.h);
-    });
+    }),
+    );
   }
 
   /// Reusable Dropdown Filter Component with dynamic active styling
