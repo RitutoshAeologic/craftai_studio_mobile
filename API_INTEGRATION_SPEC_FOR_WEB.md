@@ -8,7 +8,12 @@
 > **Mobile Parity:** Flutter Mobile App (iOS / Android)  
 > **Local Base URL (Recommended):** `http://127.0.0.1:8000/api/v1` *(or root `http://127.0.0.1:8000`)*  
 > **LAN Wi-Fi Base URL (Same Office/Network):** `http://192.168.29.26:8000/api/v1`  
-> **Public HTTPS Tunnel (Remote Testing):** `https://craftai-backend.loca.lt/api/v1` *(Password/IP: `115.245.193.3` | Header: `Bypass-Tunnel-Reminder: true`)*  
+> **Live Backend Base URL:** `http://200.141.14.171:8085`  
+> **Live API Base URL:** `http://200.141.14.171:8085/api/v1`  
+> **Interactive Swagger UI:** `http://200.141.14.171:8085/docs`  
+> **ReDoc Alternative Docs:** `http://200.141.14.171:8085/redoc`  
+> **Backend Health Check:** `http://200.141.14.171:8085/health`  
+> **Public HTTPS Tunnel (Legacy Fallback):** `https://craftai-backend.loca.lt/api/v1` *(Password/IP: `115.245.193.3` | Header: `Bypass-Tunnel-Reminder: true`)*  
 > **Swagger UI (Interactive Playground):** `http://127.0.0.1:8000/docs`  
 > **ReDoc Documentation:** `http://127.0.0.1:8000/redoc`  
 > **OpenAPI JSON Schema:** `http://127.0.0.1:8000/openapi.json`  
@@ -1270,21 +1275,21 @@ export async function colorizePhoto(
 
 #### For Web (Next.js / Vite / React) in `.env.local`:
 ```env
-# LAN Wi-Fi (Recommended for testing on same network):
-NEXT_PUBLIC_BACKEND_URL=http://192.168.29.26:8000/api/v1
+# Live Production / Staging Server:
+NEXT_PUBLIC_BACKEND_URL=http://200.141.14.171:8085/api/v1
 
-# Remote Public Tunnel (For remote developers):
-# NEXT_PUBLIC_BACKEND_URL=https://craftai-backend.loca.lt/api/v1
+# LAN Wi-Fi (Optional for local testing):
+# NEXT_PUBLIC_BACKEND_URL=http://192.168.29.26:8000/api/v1
 ```
 
 #### For Mobile (Flutter) in `.env`:
 ```env
-# LAN Wi-Fi:
-BACKEND_URL=http://192.168.29.26:8000/api/v1
-API_BASE_URL=http://192.168.29.26:8000/api/v1
+# Live Production / Staging Server:
+BACKEND_URL=http://200.141.14.171:8085/api/v1
+API_BASE_URL=http://200.141.14.171:8085/api/v1
 
-# Remote Public Tunnel:
-# BACKEND_URL=https://craftai-backend.loca.lt/api/v1
-# API_BASE_URL=https://craftai-backend.loca.lt/api/v1
+# Optional LAN Wi-Fi:
+# BACKEND_URL=http://192.168.29.26:8000/api/v1
+# API_BASE_URL=http://192.168.29.26:8000/api/v1
 ```
 
