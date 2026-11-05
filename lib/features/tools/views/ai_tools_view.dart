@@ -553,12 +553,12 @@ class AiToolsView extends StatelessWidget {
           borderRadius: BorderRadius.circular(18.r),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 16.r,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: accentColor.withValues(alpha: 0.04),
+              color: accentColor.withValues(alpha: 0.06),
               blurRadius: 8.r,
               offset: const Offset(0, 2),
             ),
@@ -571,10 +571,10 @@ class AiToolsView extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.82),
+                color: AppColors.glassSurface,
                 borderRadius: BorderRadius.circular(18.r),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.90),
+                  color: AppColors.glassBorder,
                   width: 1.2.w,
                 ),
               ),

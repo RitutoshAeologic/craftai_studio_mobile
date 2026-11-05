@@ -29,21 +29,6 @@ class _TestMockAuthRepository extends AuthRepository {
   @override
   Future<void> signOut() async {}
 
-  @override
-  Future<dynamic> signInWithPassword(String email, String password) async {}
-
-  @override
-  Future<dynamic> signUpWithPassword(String email, String password, {String? name}) async {}
-
-  @override
-  Future<dynamic> signInWithGoogle() async {}
-
-  @override
-  Future<dynamic> signInWithApple() async {}
-
-  @override
-  Future<dynamic> resetPassword(String email) async {}
-
   void dispose() {
     _authStateController.close();
   }
