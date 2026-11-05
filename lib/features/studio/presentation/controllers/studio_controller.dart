@@ -174,6 +174,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
       'iconName': 'camera',
       'gradientStart': 0xFF1E2022,
       'gradientEnd': 0xFF3B3E42,
+      'prompt': 'A majestic royal lion wearing an ornate golden crown, dramatic studio lighting, 8k resolution',
       'promptSuffix': ', professional 8k photography, 85mm portrait lens, ultra-detailed textures, realistic lighting',
       'aspectRatio': '1:1',
     },
@@ -184,6 +185,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
       'iconName': '3d',
       'gradientStart': 0xFF9A3412,
       'gradientEnd': 0xFFEA580C,
+      'prompt': 'Adorably cute 3D Pixar style anime chef cooking magical glowing pancakes in cozy kitchen',
       'promptSuffix': ', cute 3D animation style, Pixar inspired, soft clay render, ambient occlusion, bright vibrant colors',
       'aspectRatio': '1:1',
     },
@@ -194,6 +196,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
       'iconName': 'anime',
       'gradientStart': 0xFF4C1D95,
       'gradientEnd': 0xFF7C3AED,
+      'prompt': 'Enchanted fairytale castle surrounded by glowing cherry blossoms and waterfalls, fantasy art',
       'promptSuffix': ', Makoto Shinkai anime aesthetic, cel shaded, expressive eyes, vibrant detailed background',
       'aspectRatio': '9:16',
     },
@@ -204,6 +207,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
       'iconName': 'neon',
       'gradientStart': 0xFF0E7490,
       'gradientEnd': 0xFF0284C7,
+      'prompt': 'A cute cyber kitten with glowing neon goggles sitting on a Tokyo rooftop in rain',
       'promptSuffix': ', cyberpunk aesthetic, glowing neon lights, rain reflections, futuristic tech, dramatic volumetric fog',
       'aspectRatio': '9:16',
     },
@@ -214,6 +218,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
       'iconName': 'film',
       'gradientStart': 0xFF78350F,
       'gradientEnd': 0xFFB45309,
+      'prompt': 'Sleek luxury flying sports car gliding through futuristic sky clouds at golden sunset',
       'promptSuffix': ', cinematic movie still, anamorphic widescreen, atmospheric lighting, Hollywood blockbuster composition',
       'aspectRatio': '16:9',
     },
@@ -224,6 +229,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
       'iconName': 'paint',
       'gradientStart': 0xFF312E81,
       'gradientEnd': 0xFF4338CA,
+      'prompt': 'Classical Renaissance oil painting portrait of an ethereal noblewoman, visible brush strokes, textured canvas, dramatic chiaroscuro',
       'promptSuffix': ', classical Renaissance oil painting, rich visible brush strokes, textured canvas, dramatic chiaroscuro',
       'aspectRatio': '4:5',
     },
@@ -271,6 +277,13 @@ class StudioController extends GetxController with WidgetsBindingObserver {
       'icon': '🍰',
       'prompt': 'Delicious luxury Belgian chocolate lava cake with fresh raspberries and powdered sugar, food photography',
       'style': 'Realistic Photo',
+      'ratio': '4:5',
+    },
+    {
+      'title': 'Renaissance Noble Portrait',
+      'icon': '🎨',
+      'prompt': 'Classical Renaissance oil painting portrait of an ethereal noblewoman, visible brush strokes, textured canvas, dramatic chiaroscuro',
+      'style': 'Oil Painting',
       'ratio': '4:5',
     },
   ];
@@ -392,6 +405,34 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     selectedModel.value = modelId;
   }
 
+  /// Unified method to apply a creative prompt, style preset, and aspect ratio.
+  /// Keeps promptController, selectedStylePreset, selectedAspectRatio,
+  /// selectedStarterTemplate, and UI in sync.
+  void applyCreativePrompt({
+    required String prompt,
+    required String style,
+    String? ratio,
+    String? title,
+    bool showSnackbar = false,
+  }) {
+    promptController.text = prompt;
+    selectedStylePreset.value = style;
+    if (ratio != null && ratio.isNotEmpty) {
+      setAspectRatio(ratio);
+    }
+    selectedStarterTemplate.value = title;
+    if (showSnackbar && !Platform.environment.containsKey('FLUTTER_TEST')) {
+      Get.snackbar(
+        'Idea Loaded! 💡',
+        'Selected "${title ?? style}". Tap "Create Image" to generate!',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.primary,
+        duration: const Duration(seconds: 2),
+      );
+    }
+  }
+
   /// Triggers a surprise creative idea for simple / non-typing users.
   void triggerSurpriseMe() {
     if (isBusy) {
@@ -401,29 +442,39 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     HapticFeedback.mediumImpact();
     final item = surprisePrompts[_surpriseIndex % surprisePrompts.length];
     _surpriseIndex++;
-    promptController.text = item['prompt']!;
-    selectedStylePreset.value = item['style']!;
-    setAspectRatio(item['ratio']!);
-    selectedStarterTemplate.value = item['title'];
-    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
-      Get.snackbar(
-        'Idea Loaded! 💡',
-        'Selected "${item['title']}". Tap "Create Image" to generate!',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.surface,
-        colorText: AppColors.primary,
-        duration: const Duration(seconds: 2),
-      );
-    }
+    applyCreativePrompt(
+      prompt: item['prompt']!,
+      style: item['style']!,
+      ratio: item['ratio'],
+      title: item['title'],
+      showSnackbar: true,
+    );
   }
 
   /// Sets the active visual style preset (e.g. Realistic Photo, 3D Cartoon)
-  void selectVisualStyle(Map<String, dynamic> style) {
-    HapticFeedback.selectionClick();
-    selectedStylePreset.value = style['name'] as String;
-    if (style['aspectRatio'] != null) {
-      setAspectRatio(style['aspectRatio'] as String);
+  /// and updates the prompt text field with the corresponding creative prompt.
+  void selectVisualStyle(Map<String, dynamic> style, {String? customPrompt, bool showSnackbar = false}) {
+    if (isBusy) {
+      AppLogger.w('Style selection blocked: Studio is currently busy', tag: 'STUDIO_GEN');
+      return;
     }
+    HapticFeedback.selectionClick();
+    final styleName = style['name'] as String? ?? 'Realistic Photo';
+    final resolvedPrompt = (customPrompt != null && customPrompt.isNotEmpty)
+        ? customPrompt
+        : (style['prompt'] as String? ??
+            surprisePrompts.firstWhereOrNull((p) => p['style'] == styleName)?['prompt'] ??
+            '');
+    final ratio = style['aspectRatio'] as String?;
+    final title = style['title'] as String? ?? style['subtitle'] as String? ?? styleName;
+
+    applyCreativePrompt(
+      prompt: resolvedPrompt,
+      style: styleName,
+      ratio: ratio,
+      title: title,
+      showSnackbar: showSnackbar,
+    );
   }
 
   /// Closes the in-studio result hero card

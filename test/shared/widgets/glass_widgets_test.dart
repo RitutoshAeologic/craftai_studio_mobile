@@ -130,7 +130,7 @@ void main() {
       expect(pressed, isTrue);
     });
 
-    testWidgets('ModernAiButton renders loading message when isLoading is true', (tester) async {
+    testWidgets('ModernAiButton renders loading message when isLoading is true with high contrast loader', (tester) async {
       await tester.pumpWidget(
         wrapWithScreenUtil(
           ModernAiButton(
@@ -145,6 +145,55 @@ void main() {
 
       expect(find.text('Diffusing scene...'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      final indicator = tester.widget<CircularProgressIndicator>(find.byType(CircularProgressIndicator));
+      expect(indicator.valueColor, isA<AlwaysStoppedAnimation<Color>>());
+      expect((indicator.valueColor as AlwaysStoppedAnimation<Color>).value, Colors.white);
+      expect(indicator.strokeWidth, 2.5);
+      expect(indicator.backgroundColor, isNotNull);
+    });
+
+    testWidgets('ModernAiButton blocks clicks while loading to prevent duplicate requests', (tester) async {
+      int pressCount = 0;
+
+      await tester.pumpWidget(
+        wrapWithScreenUtil(
+          ModernAiButton(
+            label: 'Generate Artwork',
+            isLoading: true,
+            loadingMessage: 'Processing request...',
+            onPressed: () {
+              pressCount++;
+            },
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Processing request...'), findsOneWidget);
+      await tester.tap(find.byType(ModernAiButton), warnIfMissed: false);
+      await tester.pump();
+
+      expect(pressCount, 0, reason: 'Button must ignore taps while loading to prevent duplicate requests');
+    });
+
+    testWidgets('ModernAiButton provides contrasting loader in outlined mode', (tester) async {
+      await tester.pumpWidget(
+        wrapWithScreenUtil(
+          ModernAiButton(
+            label: 'Secondary Action',
+            isOutlined: true,
+            isLoading: true,
+            loadingMessage: 'Validating...',
+            onPressed: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final indicator = tester.widget<CircularProgressIndicator>(find.byType(CircularProgressIndicator));
+      expect((indicator.valueColor as AlwaysStoppedAnimation<Color>).value, AppColors.primary);
+      expect(indicator.backgroundColor, isNotNull);
     });
 
     test('AppIcons registry defines non-null IconData for all tools and nav', () {
@@ -162,4 +211,3 @@ void main() {
     });
   });
 }
-

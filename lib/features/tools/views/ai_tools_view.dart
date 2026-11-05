@@ -20,14 +20,15 @@ import 'package:craftai_studio_mobile/features/studio/presentation/controllers/s
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
 import '../controllers/tools_controller.dart';
 import '../../remix/views/remix_chat_view.dart';
-import '../widgets/ai_backgrounds_sheet.dart';
-import '../widgets/ai_expand_sheet.dart';
-// import '../widgets/marketing_poster_sheet.dart';
-// import '../widgets/product_detail_sheet.dart';
-import '../widgets/upscale_sheet.dart';
+import 'background_remover_view.dart';
+import 'ai_backgrounds_view.dart';
+import 'ai_expand_view.dart';
+import 'upscale_view.dart';
+import 'product_detail_view.dart';
+import 'marketing_poster_view.dart';
 import 'magic_object_eraser_view.dart';
 import 'photo_colorizer_view.dart';
-// import 'magic_grab_view.dart';
+import 'magic_grab_view.dart';
 
 class AiToolsView extends StatelessWidget {
   const AiToolsView({super.key});
@@ -297,7 +298,7 @@ class AiToolsView extends StatelessWidget {
 
   Widget _buildUploadPromptCard(BuildContext context, ToolsController controller) {
     return GestureDetector(
-      onTap: () => _showImageSourceSheet(context, controller),
+      onTap: () => Get.to(() => const BackgroundRemoverView()),
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 12.w),
         width: double.infinity,
@@ -506,43 +507,41 @@ class AiToolsView extends StatelessWidget {
     void handleTap() {
       controller.clearActiveSession();
       switch (toolId) {
+        case 'bg_remover':
+          Get.to(() => const BackgroundRemoverView());
+          break;
         case 'magic_eraser':
           Get.to(() => const MagicObjectEraserView());
           break;
-        // [TEMPORARILY COMMENTED FOR PHASE 1]
-        // case 'magic_grab':
-        //   Get.to(() => const MagicGrabView());
-        //   break;
         case 'photo_colorizer':
           Get.to(() => const PhotoColorizerView());
           break;
-        case 'bg_remover':
-          _showImageSourceSheet(context, controller);
-          break;
         case 'ai_background':
-          AiBackgroundsSheet.show(context);
+          Get.to(() => const AiBackgroundsView());
           break;
         case 'ai_expand':
-          AiExpandSheet.show(context);
+          Get.to(() => const AiExpandView());
           break;
         case 'upscaler':
-          UpscaleSheet.show(context);
+          Get.to(() => const UpscaleView());
           break;
-        // [TEMPORARILY COMMENTED FOR PHASE 1: Product Detail, 4-Pack & Marketing Poster]
-        // case 'product_detail':
-        //   ProductDetailSheet.show(context);
-        //   break;
-        // case 'product_pack':
-        //   ProductDetailSheet.show(context, isPackMode: true);
-        //   break;
-        // case 'marketing_poster':
-        //   MarketingPosterSheet.show(context);
-        //   break;
+        case 'magic_grab':
+          Get.to(() => const MagicGrabView());
+          break;
+        case 'product_detail':
+          Get.to(() => const ProductDetailView());
+          break;
+        case 'product_pack':
+          Get.to(() => const ProductDetailView(isPackMode: true));
+          break;
+        case 'marketing_poster':
+          Get.to(() => const MarketingPosterView());
+          break;
         case 'remix_lab':
           _showRemixImageSourceSheet(context);
           break;
         default:
-          _showImageSourceSheet(context, controller);
+          Get.to(() => const BackgroundRemoverView());
       }
     }
 
@@ -867,42 +866,4 @@ class AiToolsView extends StatelessWidget {
     );
   }
 
-  void _showImageSourceSheet(BuildContext context, ToolsController controller) {
-    controller.clearActiveSession();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusLg)),
-      ),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppDimens.spacingLg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Choose Photo Source', style: AppTextStyles.h3),
-              SizedBox(height: AppDimens.vSpacingMd),
-              ListTile(
-                leading: Icon(Icons.photo_library, color: AppColors.primary, size: 22.sp),
-                title: Text('Gallery', style: AppTextStyles.bodyMediumBold),
-                onTap: () {
-                  Get.back();
-                  controller.pickImage(ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.camera_alt, color: AppColors.primary, size: 22.sp),
-                title: Text('Camera', style: AppTextStyles.bodyMediumBold),
-                onTap: () {
-                  Get.back();
-                  controller.pickImage(ImageSource.camera);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

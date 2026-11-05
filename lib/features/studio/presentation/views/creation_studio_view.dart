@@ -17,7 +17,6 @@ import '../widgets/studio_model_sheet.dart';
 import '../widgets/studio_advanced_settings_sheet.dart';
 import '../widgets/studio_prompt_engine_sheet.dart';
 import '../../../../shared/widgets/app_button.dart';
-import 'package:craftai_studio_mobile/shared/widgets/interactions/bouncy_tap.dart';
 
 class CreationStudioView extends StatelessWidget {
   const CreationStudioView({super.key});
@@ -53,7 +52,8 @@ class CreationStudioView extends StatelessWidget {
                           AppStrings.studioTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.h1.copyWith(fontWeight: FontWeight.w900),
+                          style: AppTextStyles.h1
+                              .copyWith(fontWeight: FontWeight.w900),
                         ),
                         SizedBox(height: 2.h),
                         Row(
@@ -72,7 +72,8 @@ class CreationStudioView extends StatelessWidget {
                                 'Next-Gen Creation Studio',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.captionXs.copyWith(color: AppColors.textSecondary),
+                                style: AppTextStyles.captionXs
+                                    .copyWith(color: AppColors.textSecondary),
                               ),
                             ),
                           ],
@@ -81,45 +82,53 @@ class CreationStudioView extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 8.w),
-                  Obx(() => BouncyTap(
-                    onTap: controller.isBusy
-                        ? null
-                        : () {
-                            HapticFeedback.lightImpact();
-                            controller.triggerSurpriseMe();
-                          },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                      decoration: BoxDecoration(
-                        color: controller.isBusy
-                            ? AppColors.surfaceLight.withValues(alpha: 0.3)
-                            : AppColors.surfaceLight.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                        border: Border.all(color: AppColors.glassBorderSubtle),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
+                  Obx(() => GestureDetector(
+                        onTap: controller.isBusy
+                            ? null
+                            : () {
+                                HapticFeedback.lightImpact();
+                                controller.triggerSurpriseMe();
+                              },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 10.w, vertical: 6.h),
+                          decoration: BoxDecoration(
+                            color: controller.isBusy
+                                ? AppColors.surface.withValues(alpha: 0.5)
+                                : AppColors.surface,
+                            borderRadius:
+                                BorderRadius.circular(AppDimens.radiusRound),
+                            border: Border.all(color: AppColors.border),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.black.withValues(alpha: 0.04),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.casino_outlined, size: 14.sp, color: controller.isBusy ? AppColors.textMuted : AppColors.primary),
-                          SizedBox(width: 4.w),
-                          Text(
-                            'Surprise Me',
-                            style: AppTextStyles.captionBold.copyWith(
-                              color: controller.isBusy ? AppColors.textMuted : AppColors.primary,
-                              fontSize: 11.sp,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.casino_outlined,
+                                  size: 14.sp,
+                                  color: controller.isBusy
+                                      ? AppColors.textMuted
+                                      : AppColors.primary),
+                              SizedBox(width: 4.w),
+                              Text(
+                                'Surprise Me',
+                                style: AppTextStyles.captionBold.copyWith(
+                                  color: controller.isBusy
+                                      ? AppColors.textMuted
+                                      : AppColors.primary,
+                                  fontSize: 11.sp,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                  )),
+                        ),
+                      )),
                 ],
               ),
               SizedBox(height: AppDimens.vSpacingMd),
@@ -133,119 +142,141 @@ class CreationStudioView extends StatelessWidget {
               // SECTIONS 2 - 5: INTERACTIVE CREATIVE CONFIGURATION (LOCKED DURING GENERATION)
               // =========================================================================
               Obx(() => AbsorbPointer(
-                absorbing: controller.isBusy,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 200),
-                  opacity: controller.isBusy ? 0.55 : 1.0,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // =========================================================================
-                      // SECTION 2: VISUAL STYLE CAROUSEL (PINTEREST / PROMPTHERO TIER)
-                      // =========================================================================
-                      _buildVisualStyleCarousel(controller),
-                      SizedBox(height: AppDimens.vSpacingMd),
+                    absorbing: controller.isBusy,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: controller.isBusy ? 0.55 : 1.0,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // =========================================================================
+                          // SECTION 2: VISUAL STYLE CAROUSEL (PINTEREST / PROMPTHERO TIER)
+                          // =========================================================================
+                          _buildVisualStyleCarousel(controller),
+                          SizedBox(height: AppDimens.vSpacingMd),
 
-                      // =========================================================================
-                      // SECTION 3: HERO PROMPT CANVAS & VOICE ACTION
-                      // =========================================================================
-                      _buildPromptCanvas(context, controller),
+                          // =========================================================================
+                          // SECTION 3: HERO PROMPT CANVAS & VOICE ACTION
+                          // =========================================================================
+                          _buildPromptCanvas(context, controller),
 
-                      // =========================================================================
-                      // SECTION 3.5: AI ENHANCED STATUS BADGE
-                      // =========================================================================
-                      Obx(() {
-                        if (!controller.isPromptEnhanced) return const SizedBox.shrink();
-                        return Container(
-                          margin: EdgeInsets.only(top: AppDimens.vSpacingSm),
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.auto_awesome, color: AppColors.primary, size: 14.sp),
-                              SizedBox(width: 6.w),
-                              Expanded(
-                                child: Text(
-                                  'AI Master Formula Armed • Ready for FLUX generation',
-                                  style: AppTextStyles.captionBold.copyWith(
-                                    color: AppColors.primary,
-                                    fontSize: 11.sp,
+                          // =========================================================================
+                          // SECTION 3.5: AI ENHANCED STATUS BADGE
+                          // =========================================================================
+                          Obx(() {
+                            if (!controller.isPromptEnhanced)
+                              return const SizedBox.shrink();
+                            return Container(
+                              margin:
+                                  EdgeInsets.only(top: AppDimens.vSpacingSm),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 10.w, vertical: 6.h),
+                              decoration: BoxDecoration(
+                                color:
+                                    AppColors.primary.withValues(alpha: 0.08),
+                                borderRadius:
+                                    BorderRadius.circular(AppDimens.radiusSm),
+                                border: Border.all(
+                                    color: AppColors.primary
+                                        .withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.auto_awesome,
+                                      color: AppColors.primary, size: 14.sp),
+                                  SizedBox(width: 6.w),
+                                  Expanded(
+                                    child: Text(
+                                      'AI Master Formula Armed • Ready for FLUX generation',
+                                      style: AppTextStyles.captionBold.copyWith(
+                                        color: AppColors.primary,
+                                        fontSize: 11.sp,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: controller.clearEnhancement,
-                                child: Container(
-                                  padding: EdgeInsets.all(2.w),
-                                  child: Icon(Icons.close_rounded, color: AppColors.textMuted, size: 14.sp),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-
-                      // Image Edit Mode Status Pill
-                      Obx(() {
-                        if (!controller.isImageEditMode.value) return const SizedBox.shrink();
-                        final freeAttempts = controller.freeEditAttemptsRemaining.value;
-                        return Container(
-                          margin: EdgeInsets.only(top: AppDimens.vSpacingSm),
-                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                            border: Border.all(color: const Color(0xFFBFDBFE)),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit_note_rounded, color: const Color(0xFF2563EB), size: 14.sp),
-                              SizedBox(width: 6.w),
-                              Expanded(
-                                child: Text(
-                                  freeAttempts > 0
-                                      ? 'Image Edit Mode • 5 Free Attempts ($freeAttempts remaining • 0 Cr)'
-                                      : 'Image Edit Mode • Conditioning on image1',
-                                  style: AppTextStyles.captionBold.copyWith(
-                                    color: const Color(0xFF1D4ED8),
-                                    fontSize: 11.sp,
+                                  GestureDetector(
+                                    onTap: controller.clearEnhancement,
+                                    child: Container(
+                                      padding: EdgeInsets.all(2.w),
+                                      child: Icon(Icons.close_rounded,
+                                          color: AppColors.textMuted,
+                                          size: 14.sp),
+                                    ),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                                ],
                               ),
-                              GestureDetector(
-                                onTap: () => controller.isImageEditMode.value = false,
-                                child: Icon(Icons.close_rounded, color: AppColors.textMuted, size: 14.sp),
+                            );
+                          }),
+
+                          // Image Edit Mode Status Pill
+                          Obx(() {
+                            if (!controller.isImageEditMode.value)
+                              return const SizedBox.shrink();
+                            final freeAttempts =
+                                controller.freeEditAttemptsRemaining.value;
+                            return Container(
+                              margin:
+                                  EdgeInsets.only(top: AppDimens.vSpacingSm),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 10.w, vertical: 6.h),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEFF6FF),
+                                borderRadius:
+                                    BorderRadius.circular(AppDimens.radiusSm),
+                                border:
+                                    Border.all(color: const Color(0xFFBFDBFE)),
                               ),
-                            ],
-                          ),
-                        );
-                      }),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit_note_rounded,
+                                      color: const Color(0xFF2563EB),
+                                      size: 14.sp),
+                                  SizedBox(width: 6.w),
+                                  Expanded(
+                                    child: Text(
+                                      freeAttempts > 0
+                                          ? 'Image Edit Mode • 5 Free Attempts ($freeAttempts remaining • 0 Cr)'
+                                          : 'Image Edit Mode • Conditioning on image1',
+                                      style: AppTextStyles.captionBold.copyWith(
+                                        color: const Color(0xFF1D4ED8),
+                                        fontSize: 11.sp,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => controller
+                                        .isImageEditMode.value = false,
+                                    child: Icon(Icons.close_rounded,
+                                        color: AppColors.textMuted,
+                                        size: 14.sp),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
 
-                      SizedBox(height: AppDimens.vSpacingMd),
+                          SizedBox(height: AppDimens.vSpacingMd),
 
-                      // =========================================================================
-                      // SECTION 5: MODEL & ADVANCED PARAMETERS BAR
-                      // =========================================================================
-                      _buildQuickParametersBar(context, controller),
-                    ],
-                  ),
-                ),
-              )),
+                          // =========================================================================
+                          // SECTION 5: MODEL & ADVANCED PARAMETERS BAR
+                          // =========================================================================
+                          _buildQuickParametersBar(context, controller),
+                        ],
+                      ),
+                    ),
+                  )),
               SizedBox(height: AppDimens.vSpacingLg),
 
               // =========================================================================
               // SECTION 6: REAL-TIME GENERATION PROGRESS CARD (WS / POLLING)
               // =========================================================================
               Obx(() {
-                if (!controller.isGenerating.value) return const SizedBox.shrink();
+                if (!controller.isGenerating.value)
+                  return const SizedBox.shrink();
                 final progress = controller.generationProgress.value;
                 final isDone = progress >= 100;
                 return Container(
@@ -255,7 +286,8 @@ class CreationStudioView extends StatelessWidget {
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(AppDimens.radiusLg),
                     border: Border.all(
-                      color: isDone ? AppColors.accentSuccess : AppColors.primary,
+                      color:
+                          isDone ? AppColors.accentSuccess : AppColors.primary,
                       width: 1.5,
                     ),
                     boxShadow: [
@@ -279,10 +311,14 @@ class CreationStudioView extends StatelessWidget {
                                   width: 16.sp,
                                   height: 16.sp,
                                   child: isDone
-                                      ? Icon(Icons.check_circle, color: AppColors.accentSuccess, size: 16)
-                                      : CircularProgressIndicator(
+                                      ? const Icon(Icons.check_circle,
+                                          color: AppColors.accentSuccess,
+                                          size: 16)
+                                      : const CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  AppColors.primary),
                                         ),
                                 ),
                                 SizedBox(width: 8.w),
@@ -292,7 +328,9 @@ class CreationStudioView extends StatelessWidget {
                                         ? controller.generationPhase.value
                                         : AppStrings.generatingOnGpu,
                                     style: AppTextStyles.captionBold.copyWith(
-                                      color: isDone ? AppColors.accentSuccess : AppColors.primary,
+                                      color: isDone
+                                          ? AppColors.accentSuccess
+                                          : AppColors.primary,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -305,19 +343,24 @@ class CreationStudioView extends StatelessWidget {
                           Text(
                             '$progress%',
                             style: AppTextStyles.captionBold.copyWith(
-                              color: isDone ? AppColors.accentSuccess : AppColors.textPrimary,
+                              color: isDone
+                                  ? AppColors.accentSuccess
+                                  : AppColors.textPrimary,
                             ),
                           ),
                         ],
                       ),
                       SizedBox(height: AppDimens.vSpacingSm),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                        borderRadius:
+                            BorderRadius.circular(AppDimens.radiusRound),
                         child: LinearProgressIndicator(
                           value: progress / 100.0,
                           backgroundColor: AppColors.white10,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            isDone ? AppColors.accentSuccess : AppColors.primary,
+                            isDone
+                                ? AppColors.accentSuccess
+                                : AppColors.primary,
                           ),
                           minHeight: 6.h,
                         ),
@@ -325,12 +368,14 @@ class CreationStudioView extends StatelessWidget {
                       SizedBox(height: 6.h),
                       Row(
                         children: [
-                          Icon(Icons.lock_clock_outlined, size: 11.sp, color: AppColors.textMuted),
+                          Icon(Icons.lock_clock_outlined,
+                              size: 11.sp, color: AppColors.textMuted),
                           SizedBox(width: 4.w),
                           Expanded(
                             child: Text(
                               'Studio locked • Diffusion process in progress',
-                              style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
+                              style: AppTextStyles.captionXs
+                                  .copyWith(color: AppColors.textMuted),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -360,7 +405,8 @@ class CreationStudioView extends StatelessWidget {
                   label: label,
                   onPressed: isBusy ? null : controller.generateVisual,
                   isLoading: isGen,
-                  icon: const Icon(Icons.auto_awesome, color: Colors.white),
+                  icon:
+                      Icon(Icons.auto_awesome, color: AppColors.surface),
                 );
               }),
               SizedBox(height: AppDimens.vSpacingMd),
@@ -405,7 +451,8 @@ class CreationStudioView extends StatelessWidget {
             Expanded(
               child: Row(
                 children: [
-                  Icon(Icons.style_outlined, size: 15.sp, color: AppColors.primary),
+                  Icon(Icons.style_outlined,
+                      size: 15.sp, color: AppColors.primary),
                   SizedBox(width: 6.w),
                   Flexible(
                     child: Text(
@@ -425,21 +472,23 @@ class CreationStudioView extends StatelessWidget {
             SizedBox(width: 6.w),
             Flexible(
               child: Obx(() => Container(
-                padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                ),
-                child: Text(
-                  controller.selectedStylePreset.value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.captionXs.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              )),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius:
+                          BorderRadius.circular(AppDimens.radiusRound),
+                    ),
+                    child: Text(
+                      controller.selectedStylePreset.value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.captionXs.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )),
             ),
           ],
         ),
@@ -453,9 +502,12 @@ class CreationStudioView extends StatelessWidget {
             itemBuilder: (context, index) {
               final style = controller.visualStyles[index];
               return Obx(() {
-                final isSelected = controller.selectedStylePreset.value == style['name'];
-                final startColor = Color(style['gradientStart'] as int? ?? 0xFF1E2022);
-                final endColor = Color(style['gradientEnd'] as int? ?? 0xFF3B3E42);
+                final isSelected =
+                    controller.selectedStylePreset.value == style['name'];
+                final startColor =
+                    Color(style['gradientStart'] as int? ?? 0xFF1E2022);
+                final endColor =
+                    Color(style['gradientEnd'] as int? ?? 0xFF3B3E42);
 
                 return GestureDetector(
                   onTap: () {
@@ -465,7 +517,8 @@ class CreationStudioView extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     width: 112.w,
-                    padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 5.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 7.w, vertical: 5.h),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
@@ -474,7 +527,9 @@ class CreationStudioView extends StatelessWidget {
                       ),
                       borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                       border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.white.withValues(alpha: 0.15),
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.white.withValues(alpha: 0.15),
                         width: isSelected ? 2.2 : 1.0,
                       ),
                       boxShadow: isSelected
@@ -506,11 +561,14 @@ class CreationStudioView extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: AppColors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.white.withValues(alpha: 0.25)),
+                                border: Border.all(
+                                    color: AppColors.white
+                                        .withValues(alpha: 0.25)),
                               ),
                               child: Center(
                                 child: Icon(
-                                  _resolveStyleIcon(style['iconName'] as String?),
+                                  _resolveStyleIcon(
+                                      style['iconName'] as String?),
                                   color: AppColors.white,
                                   size: 11.sp,
                                 ),
@@ -520,15 +578,19 @@ class CreationStudioView extends StatelessWidget {
                             Flexible(
                               child: isSelected
                                   ? Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 5.w, vertical: 2.h),
                                       decoration: BoxDecoration(
                                         color: AppColors.white,
-                                        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                                        borderRadius: BorderRadius.circular(
+                                            AppDimens.radiusRound),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Icon(Icons.check, size: 9.sp, color: AppColors.primary),
+                                          Icon(Icons.check,
+                                              size: 9.sp,
+                                              color: AppColors.primary),
                                           SizedBox(width: 2.w),
                                           Flexible(
                                             child: Text(
@@ -546,10 +608,13 @@ class CreationStudioView extends StatelessWidget {
                                       ),
                                     )
                                   : Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 5.w, vertical: 2.h),
                                       decoration: BoxDecoration(
-                                        color: AppColors.black.withValues(alpha: 0.3),
-                                        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                                        color: AppColors.black
+                                            .withValues(alpha: 0.3),
+                                        borderRadius: BorderRadius.circular(
+                                            AppDimens.radiusRound),
                                       ),
                                       child: Text(
                                         style['category'] as String? ?? 'Style',
@@ -628,7 +693,8 @@ class CreationStudioView extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.edit_note_rounded, size: 16.sp, color: AppColors.primary),
+                  Icon(Icons.edit_note_rounded,
+                      size: 16.sp, color: AppColors.primary),
                   SizedBox(width: 6.w),
                   Text(
                     'Prompt Canvas',
@@ -641,32 +707,37 @@ class CreationStudioView extends StatelessWidget {
                 ],
               ),
               Obx(() => Text(
-                '${controller.promptLength.value} / 1000',
-                style: AppTextStyles.captionXs.copyWith(
-                  color: controller.promptLength.value > 900
-                      ? AppColors.accentWarning
-                      : AppColors.textMuted,
-                  fontWeight: FontWeight.w600,
-                ),
-              )),
+                    '${controller.promptLength.value} / 1000',
+                    style: AppTextStyles.captionXs.copyWith(
+                      color: controller.promptLength.value > 900
+                          ? AppColors.accentWarning
+                          : AppColors.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )),
             ],
           ),
           SizedBox(height: 8.h),
           Obx(() => TextField(
-            controller: controller.promptController,
-            enabled: !controller.isBusy,
-            maxLines: 3,
-            maxLength: 1000,
-            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
-            style: AppTextStyles.bodyMedium,
-            decoration: InputDecoration(
-              hintText: 'Describe anything you want to create...',
-              hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-          )),
+                controller: controller.promptController,
+                enabled: !controller.isBusy,
+                maxLines: 3,
+                maxLength: 1000,
+                buildCounter: (_,
+                        {required currentLength,
+                        required isFocused,
+                        maxLength}) =>
+                    null,
+                style: AppTextStyles.bodyMedium,
+                decoration: InputDecoration(
+                  hintText: 'Describe anything you want to create...',
+                  hintStyle: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.textMuted),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              )),
           Divider(color: AppColors.border.withValues(alpha: 0.5), height: 16.h),
           Wrap(
             alignment: WrapAlignment.spaceBetween,
@@ -676,8 +747,7 @@ class CreationStudioView extends StatelessWidget {
             children: [
               // Left: Polish Button + Aspect Ratio Dropdown adjacent to it
               Row(
-                // mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Obx(() {
                     final isEnhancing = controller.isEnhancing.value;
@@ -686,12 +756,18 @@ class CreationStudioView extends StatelessWidget {
                       onTap: isEnhancing ? null : controller.enhancePrompt,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 10.w, vertical: 6.h),
                         decoration: BoxDecoration(
-                          color: hasPrompt ? AppColors.primary : AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                          color: hasPrompt
+                              ? AppColors.primary
+                              : AppColors.surfaceLight,
+                          borderRadius:
+                              BorderRadius.circular(AppDimens.radiusRound),
                           border: Border.all(
-                            color: hasPrompt ? AppColors.primary : AppColors.border,
+                            color: hasPrompt
+                                ? AppColors.primary
+                                : AppColors.border,
                           ),
                         ),
                         child: Row(
@@ -701,19 +777,24 @@ class CreationStudioView extends StatelessWidget {
                               SizedBox(
                                 width: 12.sp,
                                 height: 12.sp,
-                                child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.surface),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 1.5, color: AppColors.surface),
                               )
                             else
                               Icon(
                                 Icons.auto_awesome_rounded,
-                                color: hasPrompt ? AppColors.surface : AppColors.textMuted,
+                                color: hasPrompt
+                                    ? AppColors.surface
+                                    : AppColors.textMuted,
                                 size: 13.sp,
                               ),
                             SizedBox(width: 4.w),
                             Text(
                               isEnhancing ? 'Polishing...' : 'Polish ✨',
                               style: AppTextStyles.captionBold.copyWith(
-                                color: hasPrompt ? AppColors.surface : AppColors.textMuted,
+                                color: hasPrompt
+                                    ? AppColors.surface
+                                    : AppColors.textMuted,
                                 fontSize: 11.sp,
                               ),
                             ),
@@ -723,38 +804,7 @@ class CreationStudioView extends StatelessWidget {
                     );
                   }),
                   SizedBox(width: 6.w),
-                  GestureDetector(
-                    onTap: () => _showReferencePickerSheet(context, controller),
-                    child: Obx(() {
-                      final hasRef = controller.referenceImages.isNotEmpty;
-                      return Container(
-                        padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 6.h),
-                        decoration: BoxDecoration(
-                          color: hasRef ? AppColors.accentSuccess.withValues(alpha: 0.12) : AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                          border: Border.all(color: hasRef ? AppColors.accentSuccess : AppColors.border),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              hasRef ? Icons.check_circle_rounded : Icons.add_photo_alternate_outlined,
-                              color: hasRef ? AppColors.accentSuccess : AppColors.textSecondary,
-                              size: 14.sp,
-                            ),
-                            SizedBox(width: 4.w),
-                            Text(
-                              hasRef ? 'Photo (${controller.referenceImages.length})' : '+ Photo',
-                              style: AppTextStyles.captionBold.copyWith(
-                                color: hasRef ? AppColors.accentSuccess : AppColors.textSecondary,
-                                fontSize: 11.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ),
+                  _buildAspectRatioDropdown(controller),
                 ],
               ),
 
@@ -765,26 +815,32 @@ class CreationStudioView extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Obx(() {
-                      if (controller.promptLength.value == 0) return const SizedBox.shrink();
+                      if (controller.promptLength.value == 0)
+                        return const SizedBox.shrink();
                       return GestureDetector(
                         onTap: () => controller.promptController.clear(),
                         child: Padding(
                           padding: EdgeInsets.only(right: 6.w),
-                          child: Icon(Icons.cancel_rounded, color: AppColors.textMuted, size: 16.sp),
+                          child: Icon(Icons.cancel_rounded,
+                              color: AppColors.textMuted, size: 16.sp),
                         ),
                       );
                     }),
                     IconButton(
                       constraints: const BoxConstraints(),
-                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
-                      icon: Icon(Icons.chat_bubble_outline_rounded, color: AppColors.copilotAccent, size: 16.sp),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                      icon: Icon(Icons.chat_bubble_outline_rounded,
+                          color: AppColors.copilotAccent, size: 16.sp),
                       tooltip: AppStrings.btnCopilot,
                       onPressed: controller.openPromptChatCopilot,
                     ),
                     IconButton(
                       constraints: const BoxConstraints(),
-                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
-                      icon: Icon(Icons.document_scanner_outlined, color: AppColors.primary, size: 16.sp),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                      icon: Icon(Icons.document_scanner_outlined,
+                          color: AppColors.primary, size: 16.sp),
                       tooltip: 'Scan Photo to Prompt (Vision)',
                       onPressed: () => _handleVisionScan(context, controller),
                     ),
@@ -792,24 +848,28 @@ class CreationStudioView extends StatelessWidget {
                     // AI Engine Selector Chip (Gemini, Groq, Claude, GPT)
                     Obx(() {
                       final currentId = controller.selectedPromptEngine.value;
-                      final engine = controller.availablePromptEngines.firstWhere(
+                      final engine =
+                          controller.availablePromptEngines.firstWhere(
                         (e) => e['id'] == currentId,
                         orElse: () => controller.availablePromptEngines.first,
                       );
                       return GestureDetector(
                         onTap: () => StudioPromptEngineSheet.show(context),
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 5.h),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 7.w, vertical: 5.h),
                           margin: EdgeInsets.only(right: 6.w),
                           decoration: BoxDecoration(
                             color: AppColors.surfaceLight,
-                            borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                            borderRadius:
+                                BorderRadius.circular(AppDimens.radiusRound),
                             border: Border.all(color: AppColors.border),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(engine['icon'] ?? '♊', style: TextStyle(fontSize: 11.sp)),
+                              Text(engine['icon'] ?? '♊',
+                                  style: TextStyle(fontSize: 11.sp)),
                               SizedBox(width: 3.w),
                               Text(
                                 engine['id'] == 'gemini'
@@ -824,14 +884,63 @@ class CreationStudioView extends StatelessWidget {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              Icon(Icons.arrow_drop_down_rounded, size: 14.sp, color: AppColors.textMuted),
+                              Icon(Icons.arrow_drop_down_rounded,
+                                  size: 14.sp, color: AppColors.textMuted),
                             ],
                           ),
                         ),
                       );
                     }),
                     // Photo capsule moved to extreme right of the same row
-                    _buildAspectRatioDropdown(controller),
+                    GestureDetector(
+                      onTap: () =>
+                          _showReferencePickerSheet(context, controller),
+                      child: Obx(() {
+                        final hasRef = controller.referenceImages.isNotEmpty;
+                        return Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 9.w, vertical: 6.h),
+                          decoration: BoxDecoration(
+                            color: hasRef
+                                ? AppColors.accentSuccess
+                                    .withValues(alpha: 0.12)
+                                : AppColors.surfaceLight,
+                            borderRadius:
+                                BorderRadius.circular(AppDimens.radiusRound),
+                            border: Border.all(
+                                color: hasRef
+                                    ? AppColors.accentSuccess
+                                    : AppColors.border),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                hasRef
+                                    ? Icons.check_circle_rounded
+                                    : Icons.add_photo_alternate_outlined,
+                                color: hasRef
+                                    ? AppColors.accentSuccess
+                                    : AppColors.textSecondary,
+                                size: 14.sp,
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                hasRef
+                                    ? 'Photo (${controller.referenceImages.length})'
+                                    : '+ Photo',
+                                style: AppTextStyles.captionBold.copyWith(
+                                  color: hasRef
+                                      ? AppColors.accentSuccess
+                                      : AppColors.textSecondary,
+                                  fontSize: 11.sp,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ),
                   ],
                 ),
               ),
@@ -863,17 +972,21 @@ class CreationStudioView extends StatelessWidget {
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
-            value: ratios.any((r) => r['id'] == currentRatio) ? currentRatio : '1:1',
+            value: ratios.any((r) => r['id'] == currentRatio)
+                ? currentRatio
+                : '1:1',
             dropdownColor: AppColors.surface,
             borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-            icon: Icon(Icons.arrow_drop_down_rounded, size: 16.sp, color: AppColors.textMuted),
+            icon: Icon(Icons.arrow_drop_down_rounded,
+                size: 16.sp, color: AppColors.textMuted),
             isDense: true,
             selectedItemBuilder: (context) {
               return ratios.map((r) {
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.crop_outlined, size: 12.sp, color: AppColors.primary),
+                    Icon(Icons.crop_outlined,
+                        size: 12.sp, color: AppColors.primary),
                     SizedBox(width: 4.w),
                     Text(
                       r['id']!,
@@ -893,7 +1006,8 @@ class CreationStudioView extends StatelessWidget {
                 child: Text(
                   '${r['name']} (${r['id']})',
                   style: AppTextStyles.captionBold.copyWith(
-                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                    color:
+                        isSelected ? AppColors.primary : AppColors.textPrimary,
                     fontSize: 12.sp,
                   ),
                 ),
@@ -914,7 +1028,8 @@ class CreationStudioView extends StatelessWidget {
   }
 
   /// Model and Advanced Parameter Bar
-  Widget _buildQuickParametersBar(BuildContext context, StudioController controller) {
+  Widget _buildQuickParametersBar(
+      BuildContext context, StudioController controller) {
     return SizedBox(
       height: 38.h,
       child: ListView(
@@ -939,13 +1054,16 @@ class CreationStudioView extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.memory_rounded, size: 14.sp, color: AppColors.primary),
+                    Icon(Icons.memory_rounded,
+                        size: 14.sp, color: AppColors.primary),
                     SizedBox(width: 5.w),
                     Text(
                       m['name']!,
-                      style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                      style: AppTextStyles.captionBold
+                          .copyWith(color: AppColors.textPrimary),
                     ),
-                    Icon(Icons.keyboard_arrow_down, color: AppColors.textMuted, size: 14.sp),
+                    Icon(Icons.keyboard_arrow_down,
+                        color: AppColors.textMuted, size: 14.sp),
                   ],
                 ),
               );
@@ -961,25 +1079,28 @@ class CreationStudioView extends StatelessWidget {
               controller.setResolution(next);
             },
             child: Obx(() => Container(
-              margin: EdgeInsets.only(right: AppDimens.spacingSm),
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.high_quality_rounded, color: AppColors.textSecondary, size: 14.sp),
-                  SizedBox(width: 4.w),
-                  Text(
-                    controller.selectedResolution.value,
-                    style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                  margin: EdgeInsets.only(right: AppDimens.spacingSm),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                    border: Border.all(color: AppColors.border),
                   ),
-                ],
-              ),
-            )),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.high_quality_rounded,
+                          color: AppColors.textSecondary, size: 14.sp),
+                      SizedBox(width: 4.w),
+                      Text(
+                        controller.selectedResolution.value,
+                        style: AppTextStyles.captionBold
+                            .copyWith(color: AppColors.textPrimary),
+                      ),
+                    ],
+                  ),
+                )),
           ),
 
           // Advanced Settings Pill
@@ -995,11 +1116,13 @@ class CreationStudioView extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.tune_rounded, color: AppColors.textSecondary, size: 14.sp),
+                  Icon(Icons.tune_rounded,
+                      color: AppColors.textSecondary, size: 14.sp),
                   SizedBox(width: 4.w),
                   Text(
                     'More Settings',
-                    style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                    style: AppTextStyles.captionBold
+                        .copyWith(color: AppColors.textPrimary),
                   ),
                 ],
               ),
@@ -1011,9 +1134,11 @@ class CreationStudioView extends StatelessWidget {
   }
 
   /// In-Studio Hero Result Reveal Card (Celebratory result shown without tab jump)
-  Widget _buildResultHeroCard(BuildContext context, StudioController controller) {
+  Widget _buildResultHeroCard(
+      BuildContext context, StudioController controller) {
     return Obx(() {
-      if (!controller.showResultHero.value || controller.lastGeneratedImageUrl.value == null) {
+      if (!controller.showResultHero.value ||
+          controller.lastGeneratedImageUrl.value == null) {
         return const SizedBox.shrink();
       }
       final imageUrl = controller.lastGeneratedImageUrl.value!;
@@ -1024,7 +1149,9 @@ class CreationStudioView extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-          border: Border.all(color: AppColors.accentSuccess.withValues(alpha: 0.5), width: 1.5),
+          border: Border.all(
+              color: AppColors.accentSuccess.withValues(alpha: 0.5),
+              width: 1.5),
           boxShadow: [
             BoxShadow(
               color: AppColors.accentSuccess.withValues(alpha: 0.12),
@@ -1041,7 +1168,8 @@ class CreationStudioView extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.check_circle_rounded, color: AppColors.accentSuccess, size: 18.sp),
+                    Icon(Icons.check_circle_rounded,
+                        color: AppColors.accentSuccess, size: 18.sp),
                     SizedBox(width: 6.w),
                     Text(
                       'Creation Complete! ✨',
@@ -1061,7 +1189,8 @@ class CreationStudioView extends StatelessWidget {
                       color: AppColors.surfaceLight,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.close, color: AppColors.textMuted, size: 14.sp),
+                    child: Icon(Icons.close,
+                        color: AppColors.textMuted, size: 14.sp),
                   ),
                 ),
               ],
@@ -1079,13 +1208,15 @@ class CreationStudioView extends StatelessWidget {
                   placeholder: (_, __) => Container(
                     color: AppColors.surfaceLight,
                     child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: AppColors.primary),
                     ),
                   ),
                   errorWidget: (_, __, ___) => Container(
                     color: AppColors.surfaceLight,
                     child: Center(
-                      child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted, size: 40),
+                      child: Icon(Icons.broken_image_rounded,
+                          color: AppColors.textMuted, size: 40),
                     ),
                   ),
                 ),
@@ -1105,12 +1236,16 @@ class CreationStudioView extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       padding: EdgeInsets.symmetric(vertical: 10.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSm)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppDimens.radiusSm)),
                     ),
-                    icon: Icon(Icons.photo_library_outlined, size: 16.sp, color: AppColors.surface),
+                    icon: Icon(Icons.photo_library_outlined,
+                        size: 16.sp, color: AppColors.surface),
                     label: Text(
                       'View in Library',
-                      style: AppTextStyles.captionBold.copyWith(color: AppColors.surface),
+                      style: AppTextStyles.captionBold
+                          .copyWith(color: AppColors.surface),
                     ),
                   ),
                 ),
@@ -1120,9 +1255,12 @@ class CreationStudioView extends StatelessWidget {
                   tooltip: 'Create Another',
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.surfaceLight,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSm)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppDimens.radiusSm)),
                   ),
-                  icon: Icon(Icons.refresh_rounded, color: AppColors.primary, size: 18.sp),
+                  icon: Icon(Icons.refresh_rounded,
+                      color: AppColors.primary, size: 18.sp),
                 ),
               ],
             ),
@@ -1356,7 +1494,7 @@ class CreationStudioView extends StatelessWidget {
           (s) => s['name'] == style,
           orElse: () => controller.visualStyles.first,
         );
-        controller.selectVisualStyle(targetStyle);
+        controller.selectVisualStyle(targetStyle, customPrompt: prompt);
         Get.back();
       },
       child: Container(
@@ -1406,13 +1544,15 @@ class CreationStudioView extends StatelessWidget {
   // REFERENCE PHOTO PICKER SHEET
   // =========================================================================
 
-  void _showReferencePickerSheet(BuildContext context, StudioController controller) {
+  void _showReferencePickerSheet(
+      BuildContext context, StudioController controller) {
     Get.bottomSheet(
       Container(
         padding: EdgeInsets.all(AppDimens.spacingLg),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusXl)),
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(AppDimens.radiusXl)),
           border: Border.all(color: AppColors.border),
         ),
         child: SafeArea(
@@ -1424,9 +1564,10 @@ class CreationStudioView extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(AppStrings.selectSampleReference, style: AppTextStyles.h3),
+                  Text(AppStrings.selectSampleReference,
+                      style: AppTextStyles.h3),
                   IconButton(
-                    icon: Icon(Icons.close, color: AppColors.white70),
+                    icon: const Icon(Icons.close, color: AppColors.white70),
                     onPressed: () => Get.back(),
                   ),
                 ],
@@ -1434,17 +1575,20 @@ class CreationStudioView extends StatelessWidget {
               SizedBox(height: AppDimens.vSpacingSm),
               Text(
                 'Lock facial bone structure and consistency across batches (Max 3).',
-                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.caption
+                    .copyWith(color: AppColors.textSecondary),
               ),
               SizedBox(height: 6.h),
               Row(
                 children: [
-                  Icon(Icons.shield_outlined, color: AppColors.accentSuccess, size: 12.sp),
+                  Icon(Icons.shield_outlined,
+                      color: AppColors.accentSuccess, size: 12.sp),
                   SizedBox(width: 5.w),
                   Expanded(
                     child: Text(
                       'Zero-Retention Privacy: Uploaded photos are auto-purged from cloud immediately post-generation.',
-                      style: AppTextStyles.captionXs.copyWith(color: AppColors.accentSuccess, fontSize: 9.5.sp),
+                      style: AppTextStyles.captionXs.copyWith(
+                          color: AppColors.accentSuccess, fontSize: 9.5.sp),
                     ),
                   ),
                 ],
@@ -1453,7 +1597,8 @@ class CreationStudioView extends StatelessWidget {
 
               // Active Reference Photos (view and remove active references)
               Obx(() {
-                if (controller.referenceImages.isEmpty) return const SizedBox.shrink();
+                if (controller.referenceImages.isEmpty)
+                  return const SizedBox.shrink();
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1462,11 +1607,13 @@ class CreationStudioView extends StatelessWidget {
                       children: [
                         Text(
                           'Active Reference Photos (${controller.referenceImages.length}/3)',
-                          style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                          style: AppTextStyles.captionBold
+                              .copyWith(color: AppColors.textPrimary),
                         ),
                         Text(
                           'Tap × to remove',
-                          style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
+                          style: AppTextStyles.captionXs
+                              .copyWith(color: AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -1476,7 +1623,8 @@ class CreationStudioView extends StatelessWidget {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: controller.referenceImages.length,
-                        separatorBuilder: (_, __) => SizedBox(width: AppDimens.spacingSm),
+                        separatorBuilder: (_, __) =>
+                            SizedBox(width: AppDimens.spacingSm),
                         itemBuilder: (context, index) {
                           final url = controller.referenceImages[index];
                           return Stack(
@@ -1485,27 +1633,36 @@ class CreationStudioView extends StatelessWidget {
                                 width: 56.h,
                                 height: 56.h,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                                  borderRadius:
+                                      BorderRadius.circular(AppDimens.radiusSm),
                                   border: Border.all(color: AppColors.border),
                                 ),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                                  borderRadius:
+                                      BorderRadius.circular(AppDimens.radiusSm),
                                   child: url.startsWith('http')
                                       ? CachedNetworkImage(
                                           imageUrl: url,
                                           fit: BoxFit.cover,
-                                          placeholder: (_, __) => Container(color: AppColors.surfaceLight),
-                                          errorWidget: (_, __, ___) => Container(
+                                          placeholder: (_, __) => Container(
+                                              color: AppColors.surfaceLight),
+                                          errorWidget: (_, __, ___) =>
+                                              Container(
                                             color: AppColors.surfaceLight,
-                                            child: Icon(Icons.person, color: AppColors.textMuted, size: AppDimens.iconSm),
+                                            child: Icon(Icons.person,
+                                                color: AppColors.textMuted,
+                                                size: AppDimens.iconSm),
                                           ),
                                         )
                                       : Image.file(
                                           File(url),
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Container(
+                                          errorBuilder: (_, __, ___) =>
+                                              Container(
                                             color: AppColors.surfaceLight,
-                                            child: Icon(Icons.person, color: AppColors.textMuted, size: AppDimens.iconSm),
+                                            child: Icon(Icons.person,
+                                                color: AppColors.textMuted,
+                                                size: AppDimens.iconSm),
                                           ),
                                         ),
                                 ),
@@ -1514,14 +1671,17 @@ class CreationStudioView extends StatelessWidget {
                                 top: 2.h,
                                 right: 2.w,
                                 child: GestureDetector(
-                                  onTap: () => controller.removeReferenceImage(index),
+                                  onTap: () =>
+                                      controller.removeReferenceImage(index),
                                   child: Container(
                                     padding: EdgeInsets.all(2.r),
                                     decoration: BoxDecoration(
                                       color: AppColors.surface,
                                       shape: BoxShape.circle,
                                     ),
-                                    child: Icon(Icons.close, color: AppColors.accentError, size: 12.sp),
+                                    child: Icon(Icons.close,
+                                        color: AppColors.accentError,
+                                        size: 12.sp),
                                   ),
                                 ),
                               ),
@@ -1531,7 +1691,9 @@ class CreationStudioView extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: AppDimens.vSpacingMd),
-                    Divider(color: AppColors.border.withValues(alpha: 0.6), height: 1),
+                    Divider(
+                        color: AppColors.border.withValues(alpha: 0.6),
+                        height: 1),
                     SizedBox(height: AppDimens.vSpacingMd),
                   ],
                 );
@@ -1541,19 +1703,22 @@ class CreationStudioView extends StatelessWidget {
                 children: [
                   _buildSampleSlot(
                     title: 'Front Angle',
-                    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop',
+                    url:
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop',
                     controller: controller,
                   ),
                   SizedBox(width: AppDimens.spacingSm),
                   _buildSampleSlot(
                     title: '45° Angle',
-                    url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&auto=format&fit=crop',
+                    url:
+                        'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&auto=format&fit=crop',
                     controller: controller,
                   ),
                   SizedBox(width: AppDimens.spacingSm),
                   _buildSampleSlot(
                     title: 'Profile Angle',
-                    url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500&auto=format&fit=crop',
+                    url:
+                        'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500&auto=format&fit=crop',
                     controller: controller,
                   ),
                 ],
@@ -1566,7 +1731,8 @@ class CreationStudioView extends StatelessWidget {
                       onPressed: () async {
                         Get.back();
                         final picker = ImagePicker();
-                        final picked = await picker.pickImage(source: ImageSource.camera);
+                        final picked =
+                            await picker.pickImage(source: ImageSource.camera);
                         if (picked != null) {
                           controller.addReferencePhotoFile(File(picked.path));
                         }
@@ -1574,12 +1740,16 @@ class CreationStudioView extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: AppColors.border),
                         padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppDimens.radiusMd)),
                       ),
-                      icon: Icon(Icons.camera_alt_outlined, color: AppColors.primary, size: AppDimens.iconSm),
+                      icon: Icon(Icons.camera_alt_outlined,
+                          color: AppColors.primary, size: AppDimens.iconSm),
                       label: Text(
                         'Camera',
-                        style: AppTextStyles.buttonSmall.copyWith(color: AppColors.primary),
+                        style: AppTextStyles.buttonSmall
+                            .copyWith(color: AppColors.primary),
                       ),
                     ),
                   ),
@@ -1589,7 +1759,8 @@ class CreationStudioView extends StatelessWidget {
                       onPressed: () async {
                         Get.back();
                         final picker = ImagePicker();
-                        final picked = await picker.pickImage(source: ImageSource.gallery);
+                        final picked =
+                            await picker.pickImage(source: ImageSource.gallery);
                         if (picked != null) {
                           controller.addReferencePhotoFile(File(picked.path));
                         }
@@ -1597,12 +1768,16 @@ class CreationStudioView extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: AppColors.border),
                         padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMd)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppDimens.radiusMd)),
                       ),
-                      icon: Icon(Icons.photo_library_outlined, color: AppColors.primary, size: AppDimens.iconSm),
+                      icon: Icon(Icons.photo_library_outlined,
+                          color: AppColors.primary, size: AppDimens.iconSm),
                       label: Text(
                         'Gallery',
-                        style: AppTextStyles.buttonSmall.copyWith(color: AppColors.primary),
+                        style: AppTextStyles.buttonSmall
+                            .copyWith(color: AppColors.primary),
                       ),
                     ),
                   ),
@@ -1617,9 +1792,14 @@ class CreationStudioView extends StatelessWidget {
     );
   }
 
-  Future<void> _handleVisionScan(BuildContext context, StudioController controller) async {
+  Future<void> _handleVisionScan(
+      BuildContext context, StudioController controller) async {
     final picker = ImagePicker();
-    final xfile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85, maxWidth: 1920, maxHeight: 1920);
+    final xfile = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1920);
     if (xfile != null) {
       Get.snackbar(
         'Analyzing Photo 🔍',
@@ -1629,7 +1809,8 @@ class CreationStudioView extends StatelessWidget {
         colorText: AppColors.primary,
         duration: const Duration(seconds: 2),
       );
-      final upRes = await ReferenceImageUploader.uploadReferenceImage(File(xfile.path));
+      final upRes =
+          await ReferenceImageUploader.uploadReferenceImage(File(xfile.path));
       if (upRes.url != null) {
         await controller.scanPhotoToPrompt(upRes.url!);
       }
@@ -1661,7 +1842,8 @@ class CreationStudioView extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: url,
                   fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => Container(color: AppColors.surfaceLight),
+                  errorWidget: (_, __, ___) =>
+                      Container(color: AppColors.surfaceLight),
                 ),
               ),
               Container(
@@ -1670,7 +1852,10 @@ class CreationStudioView extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, AppColors.black.withValues(alpha: 0.8)],
+                    colors: [
+                      Colors.transparent,
+                      AppColors.black.withValues(alpha: 0.8)
+                    ],
                   ),
                 ),
               ),
@@ -1681,7 +1866,8 @@ class CreationStudioView extends StatelessWidget {
                 child: Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.captionXs.copyWith(color: AppColors.white, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.captionXs.copyWith(
+                      color: AppColors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ],

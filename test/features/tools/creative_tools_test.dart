@@ -15,6 +15,13 @@ import 'package:craftai_studio_mobile/features/tools/widgets/marketing_poster_sh
 import 'package:craftai_studio_mobile/features/tools/widgets/tool_result_preview_sheet.dart';
 import 'package:craftai_studio_mobile/features/tools/widgets/product_pack_preview_sheet.dart';
 import 'package:craftai_studio_mobile/features/tools/views/magic_grab_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/background_remover_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/ai_backgrounds_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/ai_expand_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/upscale_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/product_detail_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/marketing_poster_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/ai_tools_view.dart';
 import 'package:craftai_studio_mobile/shared/widgets/before_after_slider.dart';
 import '../../mocks/fake_studio_repository.dart';
 
@@ -478,6 +485,107 @@ void main() {
       expect(find.text('ORIGINAL'), findsOneWidget);
       expect(find.text('AI RESULT'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Dedicated AI Tool Screens UI & Navigation', () {
+    testWidgets('BackgroundRemoverView renders with header, upload prompt, and action button', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const BackgroundRemoverView()));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Remove Background'), findsOneWidget);
+      expect(find.text('FREE'), findsOneWidget);
+      expect(find.text('Select Photo to Cut Out'), findsOneWidget);
+      expect(find.text('Remove Background (Free)'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+    });
+
+    testWidgets('AiBackgroundsView renders full-screen options, ratios, and replace button', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const AiBackgroundsView()));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('AI Backgrounds'), findsOneWidget);
+      expect(find.text('Choose a background'), findsOneWidget);
+      expect(find.text('Pure white'), findsOneWidget);
+      expect(find.text('Smart'), findsOneWidget);
+      expect(find.text('Replace background ✦ 10'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+    });
+
+    testWidgets('AiExpandView renders full-screen ratio selectors, placement, and expand button', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const AiExpandView()));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('AI Expand'), findsOneWidget);
+      expect(find.text('Target ratio'), findsOneWidget);
+      expect(find.text('Subject Placement'), findsOneWidget);
+      expect(find.text('Expand image ✦ 10'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+    });
+
+    testWidgets('UpscaleView renders multiplier options, neural info, and upscale button', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const UpscaleView()));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Upscale 4K'), findsOneWidget);
+      expect(find.text('2 Cr'), findsOneWidget);
+      expect(find.text('2X Super HD'), findsOneWidget);
+      expect(find.text('4X Master Ultra'), findsOneWidget);
+      expect(find.text('Upscale to 4K ✦ 2'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+    });
+
+    testWidgets('ProductDetailView renders 4-pack vs single mode options', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const ProductDetailView()));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Product Detail Images'), findsOneWidget);
+      expect(find.text('📦 4-Pack (Shopify & Amazon)'), findsOneWidget);
+      expect(find.text('🛍️ Single Staged Image'), findsOneWidget);
+      expect(find.text('Generate Listing Set ✦ 10'), findsOneWidget);
+    });
+
+    testWidgets('MarketingPosterView renders full-screen copy inputs and generate button', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const MarketingPosterView()));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Marketing Poster'), findsOneWidget);
+      expect(find.text('Poster Category'), findsOneWidget);
+      expect(find.text('Generate Poster ✦ 10'), findsOneWidget);
+    });
+
+    testWidgets('Dedicated AI Tool screens render high-contrast loader on action button while processing and restore after', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const AiBackgroundsView()));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final controller = Get.find<ToolsController>();
+      controller.isProcessing.value = true;
+      controller.processingMessage.value = 'Rendering backdrop...';
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Rendering backdrop...'), findsOneWidget);
+
+      final indicator = tester.widget<CircularProgressIndicator>(find.byType(CircularProgressIndicator));
+      expect(indicator.valueColor, isA<AlwaysStoppedAnimation<Color>>());
+      expect((indicator.valueColor as AlwaysStoppedAnimation<Color>).value, Colors.white);
+      expect(indicator.strokeWidth, 2.5);
+
+      // Restore state
+      controller.isProcessing.value = false;
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.textContaining('Replace background'), findsOneWidget);
+    });
+
+    testWidgets('AiToolsView renders all skills and navigates to dedicated view on tap', (tester) async {
+      await tester.pumpWidget(buildTestableWidget(const AiToolsView()));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Creative Toolbox'), findsOneWidget);
+      expect(find.text('Get designs done fast with Skills'), findsOneWidget);
+      expect(find.text('AI Background Remover'), findsOneWidget);
     });
   });
 }

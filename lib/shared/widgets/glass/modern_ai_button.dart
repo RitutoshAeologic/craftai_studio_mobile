@@ -7,7 +7,8 @@ import '../interactions/bouncy_tap.dart';
 
 /// [ModernAiButton] is a tier-1 generative action button.
 /// Features a cosmic AI gradient fill, top specular rim light,
-/// tactile spring-scale tap physics via [BouncyTap], and fluid loading state.
+/// tactile spring-scale tap physics via [BouncyTap], high-contrast visible loading state,
+/// and duplicate request suppression while loading.
 class ModernAiButton extends StatelessWidget {
   const ModernAiButton({
     super.key,
@@ -21,6 +22,7 @@ class ModernAiButton extends StatelessWidget {
     this.gradient,
     this.borderRadius,
     this.loadingMessage,
+    this.loaderColor,
   });
 
   final String label;
@@ -33,13 +35,25 @@ class ModernAiButton extends StatelessWidget {
   final Gradient? gradient;
   final BorderRadius? borderRadius;
   final String? loadingMessage;
+  final Color? loaderColor;
 
   @override
   Widget build(BuildContext context) {
     final effectiveHeight = height ?? 48.h;
     final effectiveRadius = borderRadius ?? BorderRadius.circular(AppDimens.radiusLg);
     final effectiveGradient = gradient ?? AppColors.aiCosmicGradient;
-    final isDisabled = onPressed == null || isLoading;
+
+    // Genuinely disabled only when not in loading state and onPressed is null
+    final isPureDisabled = onPressed == null && !isLoading;
+
+    // High contrast color determination:
+    // Solid gradient button uses crisp white spinner on cosmic gradient.
+    // Outlined button uses primary color spinner on transparent/tinted surface.
+    final effectiveLoaderColor = loaderColor ?? (isOutlined ? AppColors.primary : Colors.white);
+    final effectiveLoaderTrackColor = effectiveLoaderColor.withValues(alpha: 0.28);
+    final effectiveTextColor = isOutlined
+        ? AppColors.primary
+        : (isPureDisabled ? AppColors.textMuted : Colors.white);
 
     Widget buttonContent = Container(
       height: effectiveHeight,
@@ -48,22 +62,22 @@ class ModernAiButton extends StatelessWidget {
         borderRadius: effectiveRadius,
         gradient: isOutlined
             ? null
-            : (isDisabled ? null : effectiveGradient),
+            : (isPureDisabled ? null : effectiveGradient),
         color: isOutlined
-            ? Colors.transparent
-            : (isDisabled ? AppColors.surfaceLight : null),
+            ? (isLoading ? AppColors.primary.withValues(alpha: 0.08) : Colors.transparent)
+            : (isPureDisabled ? AppColors.surfaceLight : null),
         border: Border.all(
           color: isOutlined
               ? AppColors.primary
-              : Colors.white.withValues(alpha: 0.22),
+              : (isPureDisabled ? AppColors.border : Colors.white.withValues(alpha: 0.28)),
           width: 1.0.w,
         ),
-        boxShadow: isDisabled || isOutlined
+        boxShadow: isPureDisabled || isOutlined
             ? null
             : [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.35),
-                  blurRadius: 16.r,
+                  color: AppColors.primary.withValues(alpha: isLoading ? 0.45 : 0.35),
+                  blurRadius: isLoading ? 20.r : 16.r,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -77,17 +91,23 @@ class ModernAiButton extends StatelessWidget {
                   SizedBox(
                     width: 18.w,
                     height: 18.w,
-                    child: const CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.2,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(effectiveLoaderColor),
+                      backgroundColor: effectiveLoaderTrackColor,
+                      strokeWidth: 2.5,
                     ),
                   ),
                   SizedBox(width: 10.w),
-                  Text(
-                    loadingMessage ?? 'Processing with AI...',
-                    style: AppTextStyles.button.copyWith(
-                      color: Colors.white,
-                      fontSize: 13.sp,
+                  Flexible(
+                    child: Text(
+                      loadingMessage ?? 'Processing with AI...',
+                      style: AppTextStyles.button.copyWith(
+                        color: effectiveTextColor,
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -100,13 +120,17 @@ class ModernAiButton extends StatelessWidget {
                     icon!,
                     SizedBox(width: 8.w),
                   ],
-                  Text(
-                    label,
-                    style: AppTextStyles.button.copyWith(
-                      color: Colors.white,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.3,
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: AppTextStyles.button.copyWith(
+                        color: effectiveTextColor,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -114,8 +138,17 @@ class ModernAiButton extends StatelessWidget {
       ),
     );
 
-    if (isDisabled) {
-      return Opacity(opacity: 0.65, child: buttonContent);
+    if (isPureDisabled) {
+      return Opacity(opacity: 0.55, child: buttonContent);
+    }
+
+    if (isLoading) {
+      // While loading, block user interaction to prevent duplicate requests
+      // Keep solid 100% opacity for high-contrast visible spinner and text
+      return IgnorePointer(
+        ignoring: true,
+        child: buttonContent,
+      );
     }
 
     return BouncyTap(
@@ -124,4 +157,3 @@ class ModernAiButton extends StatelessWidget {
     );
   }
 }
-

@@ -21,7 +21,7 @@ void main() {
   });
 
   group('Studio Simplified User-Friendly Flow Tests', () {
-    test('1-tap visual style selection updates preset and matching aspect ratio', () {
+    test('1-tap visual style selection updates preset, aspect ratio, and prompt text', () {
       expect(controller.selectedStylePreset.value, 'Realistic Photo');
 
       // Select Anime / Manga (which defaults to 9:16 vertical for stories/wallpapers)
@@ -29,12 +29,43 @@ void main() {
       controller.selectVisualStyle(animeStyle);
       expect(controller.selectedStylePreset.value, 'Anime / Manga');
       expect(controller.selectedAspectRatio.value, '9:16');
+      expect(controller.promptController.text, animeStyle['prompt']);
+      expect(controller.promptLength.value, (animeStyle['prompt'] as String).length);
 
       // Select 3D Cartoon (which defaults to 1:1 post)
       final cartoonStyle = controller.visualStyles.firstWhere((s) => s['name'] == '3D Cartoon');
       controller.selectVisualStyle(cartoonStyle);
       expect(controller.selectedStylePreset.value, '3D Cartoon');
       expect(controller.selectedAspectRatio.value, '1:1');
+      expect(controller.promptController.text, cartoonStyle['prompt']);
+      expect(controller.promptLength.value, (cartoonStyle['prompt'] as String).length);
+    });
+
+    test('Selecting any artistic style updates prompt text field and UI state immediately', () {
+      for (final style in controller.visualStyles) {
+        controller.selectVisualStyle(style);
+        expect(controller.selectedStylePreset.value, style['name']);
+        expect(controller.promptController.text, style['prompt']);
+        expect(controller.promptLength.value, (style['prompt'] as String).length);
+        if (style['aspectRatio'] != null) {
+          expect(controller.selectedAspectRatio.value, style['aspectRatio']);
+        }
+      }
+    });
+
+    test('Surprise Me and Artistic Style selection use consistent prompt application mechanism', () {
+      controller.triggerSurpriseMe();
+      final surprisePrompt = controller.promptController.text;
+      final surpriseStyle = controller.selectedStylePreset.value;
+      expect(surprisePrompt.isNotEmpty, isTrue);
+      expect(surpriseStyle.isNotEmpty, isTrue);
+
+      // Now select a style
+      final cyberpunkStyle = controller.visualStyles.firstWhere((s) => s['name'] == 'Cyberpunk Neon');
+      controller.selectVisualStyle(cyberpunkStyle);
+      expect(controller.selectedStylePreset.value, 'Cyberpunk Neon');
+      expect(controller.promptController.text, cyberpunkStyle['prompt']);
+      expect(controller.promptLength.value, (cyberpunkStyle['prompt'] as String).length);
     });
 
     test('Surprise Me 🎲 populates prompt and style when text box is empty', () {
