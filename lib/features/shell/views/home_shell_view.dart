@@ -218,12 +218,12 @@ class HomeShellView extends StatelessWidget {
                         surfaceTintColor: Colors.transparent,
                         shadowColor: Colors.transparent,
                         height: 62.h,
-                        indicatorColor: const Color(0xFF3F3F3F).withValues(alpha: 0.80),
+                        indicatorColor: AppColors.primary.withValues(alpha: 0.82),
                         indicatorShape: const StadiumBorder(),
                         labelTextStyle: WidgetStateProperty.resolveWith((states) {
                           if (states.contains(WidgetState.selected)) {
                             return TextStyle(
-                              color: AppColors.textPrimary,
+                              color: AppColors.primary,
                               fontSize: 11.sp,
                               fontWeight: FontWeight.w700,
                             );

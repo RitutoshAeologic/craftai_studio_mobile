@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
 import 'package:craftai_studio_mobile/core/theme/theme_controller.dart';
 import 'package:craftai_studio_mobile/features/auth/data/auth_repository.dart';
@@ -100,7 +101,7 @@ void main() {
       expect(find.text(AppStrings.tabProfile), findsOneWidget);
     });
 
-    testWidgets('selected bottom tab destination has grey transparent indicator and white icon',
+    testWidgets('selected bottom tab destination has theme-matched translucent indicator and white icon',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -109,16 +110,12 @@ void main() {
       await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
       await tester.pump(const Duration(milliseconds: 300));
 
-      // 1. Verify NavigationBarTheme indicatorColor is grey transparent
+      // 1. Verify NavigationBarTheme indicatorColor is theme-matched translucent
       final navBarTheme = tester.widget<NavigationBarTheme>(find.byType(NavigationBarTheme));
       final indicatorColor = navBarTheme.data.indicatorColor;
       expect(indicatorColor, isNotNull);
-      // Grey type transparent: RGB values are grey (~0x3F) and opacity < 1.0
-      expect(indicatorColor!.a, lessThan(1.0));
-      expect(indicatorColor.a, greaterThanOrEqualTo(0.70));
-      expect(indicatorColor.r, closeTo(63 / 255.0, 0.05));
-      expect(indicatorColor.g, closeTo(63 / 255.0, 0.05));
-      expect(indicatorColor.b, closeTo(63 / 255.0, 0.05));
+      expect(indicatorColor, equals(AppColors.primary.withValues(alpha: 0.82)));
+      expect(indicatorColor!.a, closeTo(0.82, 0.01));
 
       // 2. Tab 0 (Explore) is selected by default -> verify selected icon in NavigationBar is white
       final exploreSelectedIcon = find.descendant(

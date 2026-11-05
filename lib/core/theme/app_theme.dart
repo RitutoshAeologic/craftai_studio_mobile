@@ -39,7 +39,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.14),
+        indicatorColor: AppColors.primary.withValues(alpha: 0.82),
       ),
       textTheme: isDark
           ? GoogleFonts.interTextTheme(ThemeData.dark().textTheme)
