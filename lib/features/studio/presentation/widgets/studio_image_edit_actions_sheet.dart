@@ -53,55 +53,55 @@ class StudioImageEditActionsSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Drag Pill Handle
-              Container(
-                width: 38.w,
-                height: 4.h,
-                margin: EdgeInsets.only(bottom: 16.h),
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                ),
-              ),
-
-              // Option 1: Describe edits
-              Obx(() => _buildActionItem(
-                icon: Icons.auto_awesome,
-                iconColor: AppColors.primary,
-                title: 'Describe edits',
-                subtitle: studioCtrl.freeEditAttemptsRemaining.value > 0
-                    ? 'Condition on image1 • ${studioCtrl.freeEditAttemptsRemaining.value} Free Attempts Remaining'
-                    : 'Condition on image1 with prompt deltas',
-                badge: studioCtrl.freeEditAttemptsRemaining.value > 0 ? 'Free' : null,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  studioCtrl.loadForImageEdit(imageUrl: job.previewUrl, initialPrompt: job.prompt);
-                  shellCtrl.switchTab(1);
-                },
-              )),
+              // Container(
+              //   width: 38.w,
+              //   height: 4.h,
+              //   margin: EdgeInsets.only(bottom: 16.h),
+              //   decoration: BoxDecoration(
+              //     color: AppColors.border,
+              //     borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+              //   ),
+              // ),
+              //
+              // // Option 1: Describe edits
+              // Obx(() => _buildActionItem(
+              //   icon: Icons.auto_awesome,
+              //   iconColor: AppColors.primary,
+              //   title: 'Describe edits',
+              //   subtitle: studioCtrl.freeEditAttemptsRemaining.value > 0
+              //       ? 'Condition on image1 • ${studioCtrl.freeEditAttemptsRemaining.value} Free Attempts Remaining'
+              //       : 'Condition on image1 with prompt deltas',
+              //   badge: studioCtrl.freeEditAttemptsRemaining.value > 0 ? 'Free' : null,
+              //   onTap: () {
+              //     Navigator.of(context).pop();
+              //     studioCtrl.loadForImageEdit(imageUrl: job.previewUrl, initialPrompt: job.prompt);
+              //     shellCtrl.switchTab(1);
+              //   },
+              // )),
 
               // Option 2: Remix in Lab (Conversational Chat)
-              _buildActionItem(
-                icon: Icons.shuffle_rounded,
-                iconColor: AppColors.purpleAccent,
-                title: 'Remix in Lab (Chat)',
-                subtitle: 'Conversational style & lighting tuning anchored to this creation',
-                badge: 'Remix Lab',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    Get.to(
-                      () => const RemixChatView(),
-                      arguments: {
-                        'anchorImageUrl': job.previewUrl,
-                        'sourceType': 'library',
-                        'initialPrompt': job.prompt,
-                        'authorName': 'Your Creation',
-                      },
-                      transition: Transition.rightToLeft,
-                    );
-                  });
-                },
-              ),
+              // _buildActionItem(
+              //   icon: Icons.shuffle_rounded,
+              //   iconColor: AppColors.purpleAccent,
+              //   title: 'Remix in Lab (Chat)',
+              //   subtitle: 'Conversational style & lighting tuning anchored to this creation',
+              //   badge: 'Remix Lab',
+              //   onTap: () {
+              //     Navigator.of(context).pop();
+              //     WidgetsBinding.instance.addPostFrameCallback((_) {
+              //       Get.to(
+              //         () => const RemixChatView(),
+              //         arguments: {
+              //           'anchorImageUrl': job.previewUrl,
+              //           'sourceType': 'library',
+              //           'initialPrompt': job.prompt,
+              //           'authorName': 'Your Creation',
+              //         },
+              //         transition: Transition.rightToLeft,
+              //       );
+              //     });
+              //   },
+              // ),
 
               // Option 3: Remove Background
               _buildActionItem(
@@ -165,37 +165,37 @@ class StudioImageEditActionsSheet extends StatelessWidget {
               ),
 
               // Option 5: Make Video
-              _buildActionItem(
-                icon: Icons.videocam_rounded,
-                iconColor: AppColors.purpleAccent,
-                title: 'Make Video',
-                subtitle: 'Animate creation into high-fps AI motion video',
-                badge: 'Motion',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Get.snackbar(
-                    'Make Video 🎬',
-                    'Motion Video diffusion is queued for the upcoming update! Stay tuned.',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: AppColors.surface,
-                    colorText: AppColors.primary,
-                    icon: Icon(Icons.movie_creation_outlined, color: AppColors.purpleAccent),
-                    duration: const Duration(seconds: 3),
-                  );
-                },
-              ),
+              // _buildActionItem(
+              //   icon: Icons.videocam_rounded,
+              //   iconColor: AppColors.purpleAccent,
+              //   title: 'Make Video',
+              //   subtitle: 'Animate creation into high-fps AI motion video',
+              //   badge: 'Motion',
+              //   onTap: () {
+              //     Navigator.of(context).pop();
+              //     Get.snackbar(
+              //       'Make Video 🎬',
+              //       'Motion Video diffusion is queued for the upcoming update! Stay tuned.',
+              //       snackPosition: SnackPosition.BOTTOM,
+              //       backgroundColor: AppColors.surface,
+              //       colorText: AppColors.primary,
+              //       icon: Icon(Icons.movie_creation_outlined, color: AppColors.purpleAccent),
+              //       duration: const Duration(seconds: 3),
+              //     );
+              //   },
+              // ),
 
               // Option 7: Delete from Library & Storage
-              _buildActionItem(
-                icon: Icons.delete_outline_rounded,
-                iconColor: AppColors.accentError,
-                title: 'Delete from Library & Storage',
-                subtitle: 'Permanently remove from cloud storage & records',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _confirmDeleteSheet(context);
-                },
-              ),
+              // _buildActionItem(
+              //   icon: Icons.delete_outline_rounded,
+              //   iconColor: AppColors.accentError,
+              //   title: 'Delete from Library & Storage',
+              //   subtitle: 'Permanently remove from cloud storage & records',
+              //   onTap: () {
+              //     Navigator.of(context).pop();
+              //     _confirmDeleteSheet(context);
+              //   },
+              // ),
 
               SizedBox(height: 12.h),
 

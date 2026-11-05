@@ -421,10 +421,10 @@ class _CreationDetailViewState extends State<CreationDetailView> {
                             ),
 
                             // More options
-                            IconButton(
-                              onPressed: () => StudioImageEditActionsSheet.show(context, widget.job),
-                              icon: Icon(Icons.more_vert_rounded, size: 22.sp, color: AppColors.textPrimary),
-                            ),
+                            // IconButton(
+                            //   onPressed: () => StudioImageEditActionsSheet.show(context, widget.job),
+                            //   icon: Icon(Icons.more_vert_rounded, size: 22.sp, color: AppColors.textPrimary),
+                            // ),
                           ],
                         ),
                       ],
