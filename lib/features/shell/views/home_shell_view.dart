@@ -218,11 +218,12 @@ class HomeShellView extends StatelessWidget {
                         surfaceTintColor: Colors.transparent,
                         shadowColor: Colors.transparent,
                         height: 62.h,
-                        indicatorColor: AppColors.primary.withValues(alpha: 0.14),
+                        indicatorColor: const Color(0xFF3F3F3F).withValues(alpha: 0.80),
+                        indicatorShape: const StadiumBorder(),
                         labelTextStyle: WidgetStateProperty.resolveWith((states) {
                           if (states.contains(WidgetState.selected)) {
                             return TextStyle(
-                              color: AppColors.primary,
+                              color: AppColors.textPrimary,
                               fontSize: 11.sp,
                               fontWeight: FontWeight.w700,
                             );
@@ -246,35 +247,35 @@ class HomeShellView extends StatelessWidget {
                             icon: Icon(Icons.explore_outlined,
                                 color: AppColors.textSecondary),
                             selectedIcon:
-                                Icon(Icons.explore, color: AppColors.primary),
+                                const Icon(Icons.explore, color: Colors.white),
                             label: AppStrings.tabExplore,
                           ),
                           NavigationDestination(
                             icon: Icon(Icons.auto_awesome_outlined,
                                 color: AppColors.textSecondary),
-                            selectedIcon: Icon(Icons.auto_awesome,
-                                color: AppColors.primary),
+                            selectedIcon: const Icon(Icons.auto_awesome,
+                                color: Colors.white),
                             label: AppStrings.tabStudio,
                           ),
                           NavigationDestination(
                             icon: Icon(Icons.auto_fix_high_outlined,
                                 color: AppColors.textSecondary),
-                            selectedIcon: Icon(Icons.auto_fix_high,
-                                color: AppColors.primary),
+                            selectedIcon: const Icon(Icons.auto_fix_high,
+                                color: Colors.white),
                             label: 'AI Tools',
                           ),
                           NavigationDestination(
                             icon: Icon(Icons.folder_outlined,
                                 color: AppColors.textSecondary),
                             selectedIcon:
-                                Icon(Icons.folder, color: AppColors.primary),
+                                const Icon(Icons.folder, color: Colors.white),
                             label: AppStrings.tabLibrary,
                           ),
                           NavigationDestination(
                             icon: Icon(Icons.person_outline,
                                 color: AppColors.textSecondary),
                             selectedIcon:
-                                Icon(Icons.person, color: AppColors.primary),
+                                const Icon(Icons.person, color: Colors.white),
                             label: AppStrings.tabProfile,
                           ),
                         ],

@@ -99,5 +99,48 @@ void main() {
       expect(find.text(AppStrings.tabLibrary), findsOneWidget);
       expect(find.text(AppStrings.tabProfile), findsOneWidget);
     });
+
+    testWidgets('selected bottom tab destination has grey transparent indicator and white icon',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // 1. Verify NavigationBarTheme indicatorColor is grey transparent
+      final navBarTheme = tester.widget<NavigationBarTheme>(find.byType(NavigationBarTheme));
+      final indicatorColor = navBarTheme.data.indicatorColor;
+      expect(indicatorColor, isNotNull);
+      // Grey type transparent: RGB values are grey (~0x3F) and opacity < 1.0
+      expect(indicatorColor!.a, lessThan(1.0));
+      expect(indicatorColor.a, greaterThanOrEqualTo(0.70));
+      expect(indicatorColor.r, closeTo(63 / 255.0, 0.05));
+      expect(indicatorColor.g, closeTo(63 / 255.0, 0.05));
+      expect(indicatorColor.b, closeTo(63 / 255.0, 0.05));
+
+      // 2. Tab 0 (Explore) is selected by default -> verify selected icon in NavigationBar is white
+      final exploreSelectedIcon = find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is Icon && widget.icon == Icons.explore && widget.color == Colors.white,
+        ),
+      );
+      expect(exploreSelectedIcon, findsOneWidget);
+
+      // 3. Switch to Studio (Tab 1)
+      final shellCtrl = Get.find<ShellController>();
+      shellCtrl.switchTab(1);
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final studioSelectedIcon = find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is Icon && widget.icon == Icons.auto_awesome && widget.color == Colors.white,
+        ),
+      );
+      expect(studioSelectedIcon, findsOneWidget);
+    });
   });
 }
