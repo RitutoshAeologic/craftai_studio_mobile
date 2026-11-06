@@ -6,6 +6,7 @@ import '../../../core/constants/app_dimens.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../shared/widgets/interactions/bouncy_tap.dart';
+import '../../shell/controllers/shell_controller.dart';
 import '../controllers/profile_controller.dart';
 
 /// [ProfileView] displays full creator account credentials, active session status,
@@ -30,6 +31,19 @@ class ProfileView extends StatelessWidget {
           backgroundColor: AppColors.background,
           elevation: 0,
           scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20.sp),
+            tooltip: 'Back',
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else if (Get.isRegistered<ShellController>()) {
+                Get.find<ShellController>().switchTab(0);
+              } else {
+                Get.back();
+              }
+            },
+          ),
           title: Text(
             'Profile',
             style: AppTextStyles.h1,

@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
 import 'package:craftai_studio_mobile/core/theme/theme_controller.dart';
 import 'package:craftai_studio_mobile/features/auth/data/auth_repository.dart';
@@ -30,12 +29,24 @@ class _TestMockAuthRepository extends AuthRepository {
   @override
   Future<void> signOut() async {}
 
+  Future<dynamic> signInWithPassword(String email, String password) async {}
+
+  Future<dynamic> signUpWithPassword(String email, String password,
+      {String? name}) async {}
+
+  Future<dynamic> signInWithGoogle() async {}
+
+  Future<dynamic> signInWithApple() async {}
+
+  Future<dynamic> resetPassword(String email) async {}
+
   void dispose() {
     _authStateController.close();
   }
 }
 
-Widget wrapWithScreenUtil(Widget child, {EdgeInsets padding = EdgeInsets.zero}) {
+Widget wrapWithScreenUtil(Widget child,
+    {EdgeInsets padding = EdgeInsets.zero}) {
   return ScreenUtilInit(
     designSize: const Size(390, 844),
     builder: (context, _) => MediaQuery(
@@ -60,7 +71,8 @@ void main() {
   setUp(() {
     Get.reset();
     mockRepo = _TestMockAuthRepository();
-    authController = Get.put(AuthController(repository: mockRepo), permanent: true);
+    authController =
+        Get.put(AuthController(repository: mockRepo), permanent: true);
     authController.currentUser.value = mockRepo.currentUser;
     Get.put(ShellController());
     Get.put(ThemeController());
@@ -72,7 +84,8 @@ void main() {
   });
 
   group('HomeShellView Bottom Navigation Bar Layout Tests', () {
-    testWidgets('pill height remains compact (<= 66px) and does not inherit top notch padding on iOS',
+    testWidgets(
+        'pill height remains compact (<= 66px) and does not inherit top notch padding on iOS',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -81,7 +94,8 @@ void main() {
       // Simulate iPhone 14/15/16 with 47px top notch and 34px bottom home indicator
       const iOSPadding = EdgeInsets.only(top: 47.0, bottom: 34.0);
 
-      await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView(), padding: iOSPadding));
+      await tester.pumpWidget(
+          wrapWithScreenUtil(const HomeShellView(), padding: iOSPadding));
       await tester.pump(const Duration(milliseconds: 300));
 
       // Find NavigationBar
@@ -92,16 +106,21 @@ void main() {
       // NavigationBar height should be strictly around 62.h, NOT expanded to 62 + 47 = 109px
       expect(navBarRenderBox.size.height, lessThanOrEqualTo(66.0));
       expect(navBarRenderBox.size.height, greaterThanOrEqualTo(58.0));
+      // NavigationBar width is reduced horizontally (compact floating capsule <= 270px)
+      expect(navBarRenderBox.size.width, lessThanOrEqualTo(270.0));
 
-      // Verify all 5 navigation destinations are present
+      // Verify only 2 navigation destinations are present in the bottom bar
       expect(find.text(AppStrings.tabExplore), findsOneWidget);
-      expect(find.text(AppStrings.tabStudio), findsOneWidget);
-      expect(find.text('AI Tools'), findsOneWidget);
       expect(find.text(AppStrings.tabLibrary), findsOneWidget);
-      expect(find.text(AppStrings.tabProfile), findsOneWidget);
+
+      // Verify removed destinations are NOT present in the bottom bar
+      expect(find.text(AppStrings.tabStudio), findsNothing);
+      expect(find.text('AI Tools'), findsNothing);
+      expect(find.text(AppStrings.tabProfile), findsNothing);
     });
 
-    testWidgets('selected bottom tab destination has theme-matched translucent indicator and white icon',
+    testWidgets(
+        'ExpandableNavigationFab is rendered, expands upwards on tap, and collapses on re-tap',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -110,34 +129,57 @@ void main() {
       await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
       await tester.pump(const Duration(milliseconds: 300));
 
-      // 1. Verify NavigationBarTheme indicatorColor is theme-matched translucent
-      final navBarTheme = tester.widget<NavigationBarTheme>(find.byType(NavigationBarTheme));
-      final indicatorColor = navBarTheme.data.indicatorColor;
-      expect(indicatorColor, isNotNull);
-      expect(indicatorColor, equals(AppColors.primary.withValues(alpha: 0.82)));
-      expect(indicatorColor!.a, closeTo(0.82, 0.01));
+      final triggerFinder =
+          find.byKey(const ValueKey('expandable_nav_fab_trigger'));
+      expect(triggerFinder, findsOneWidget);
 
-      // 2. Tab 0 (Explore) is selected by default -> verify selected icon in NavigationBar is white
-      final exploreSelectedIcon = find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.byWidgetPredicate(
-          (widget) => widget is Icon && widget.icon == Icons.explore && widget.color == Colors.white,
-        ),
-      );
-      expect(exploreSelectedIcon, findsOneWidget);
+      // Before tapping, menu items are not visible
+      expect(find.text('Creation Studio'), findsNothing);
+      expect(find.text('AI Tools Hub'), findsNothing);
 
-      // 3. Switch to Studio (Tab 1)
-      final shellCtrl = Get.find<ShellController>();
-      shellCtrl.switchTab(1);
+      // Tap trigger to expand
+      await tester.tap(triggerFinder);
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      final studioSelectedIcon = find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.byWidgetPredicate(
-          (widget) => widget is Icon && widget.icon == Icons.auto_awesome && widget.color == Colors.white,
-        ),
-      );
-      expect(studioSelectedIcon, findsOneWidget);
+      // After expand, items are visible
+      expect(find.text('Creation Studio'), findsOneWidget);
+      expect(find.text('AI Tools Hub'), findsOneWidget);
+      expect(find.text('Background Remover'), findsOneWidget);
+      expect(find.text('AI Expand'), findsOneWidget);
+      expect(find.text('Upscale 4K'), findsOneWidget);
+      expect(find.text('AI Backgrounds'), findsOneWidget);
+
+      // Tap trigger again to collapse
+      await tester.tap(triggerFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // After collapse, menu is hidden
+      expect(find.text('Creation Studio'), findsNothing);
+    });
+
+    testWidgets('Tapping Library and Explore navigates between tabs correctly',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final shellCtrl = Get.find<ShellController>();
+      expect(shellCtrl.currentIndex.value, 0);
+
+      // Tap Library in bottom bar
+      await tester.tap(find.text(AppStrings.tabLibrary));
+      await tester.pump();
+      expect(shellCtrl.currentIndex.value, 3);
+
+      // Tap Explore in bottom bar
+      await tester.tap(find.text(AppStrings.tabExplore));
+      await tester.pump();
+      expect(shellCtrl.currentIndex.value, 0);
     });
   });
 }
