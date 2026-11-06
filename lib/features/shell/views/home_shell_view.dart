@@ -8,11 +8,18 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import '../controllers/shell_controller.dart';
+import '../widgets/expandable_navigation_fab.dart';
 import '../../explore/views/explore_feed_view.dart';
 import '../../explore/controllers/explore_controller.dart';
 import '../../studio/presentation/views/creation_studio_view.dart';
 import '../../studio/presentation/controllers/studio_controller.dart';
 import '../../tools/views/ai_tools_view.dart';
+import '../../tools/views/background_remover_view.dart';
+import '../../tools/views/ai_expand_view.dart';
+import '../../tools/views/upscale_view.dart';
+import '../../tools/views/ai_backgrounds_view.dart';
+import '../../tools/views/magic_object_eraser_view.dart';
+import '../../tools/views/photo_colorizer_view.dart';
 import '../../library/views/cloud_library_view.dart';
 import '../../profile/views/profile_view.dart';
 import '../../wallet/views/wallet_view.dart';
@@ -20,8 +27,21 @@ import '../../../core/theme/theme_controller.dart';
 import '../../../shared/widgets/credit_cost_chip.dart';
 import '../../../shared/widgets/glass/luminous_mesh_canvas.dart';
 
-class HomeShellView extends StatelessWidget {
+class HomeShellView extends StatefulWidget {
   const HomeShellView({super.key});
+
+  @override
+  State<HomeShellView> createState() => _HomeShellViewState();
+}
+
+class _HomeShellViewState extends State<HomeShellView> {
+  late GlobalKey<ExpandableNavigationFabState> _fabKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _fabKey = GlobalKey<ExpandableNavigationFabState>();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +58,12 @@ class HomeShellView extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (didPop) return;
+
+        // 0. Collapse Expandable FAB if open
+        if (_fabKey.currentState?.isExpanded == true) {
+          _fabKey.currentState?.collapse();
+          return;
+        }
 
         // 1. Back Navigation During Image Generation Check
         if (Get.isRegistered<StudioController>()) {
@@ -176,109 +202,169 @@ class HomeShellView extends StatelessWidget {
               ),
             ),
           ),
-          body: LuminousMeshCanvas(
-            showOrbs: AppColors.showAuroraOrbs,
-            child: IndexedStack(
-              key: ValueKey('stack_$activePreset'),
-              index: controller.currentIndex.value,
-              children: screens,
-            ),
-          ),
-          bottomNavigationBar: Container(
-            margin: EdgeInsets.only(
-              left: 18.w,
-              right: 18.w,
-              bottom: MediaQuery.paddingOf(context).bottom > 0
-                  ? 12.h
-                  : 14.h,
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28.r),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                child: Container(
-                  height: 62.h,
-                  padding: EdgeInsets.symmetric(horizontal: 10.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.glassSurface.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(28.r),
-                    border: Border.all(
-                      color: AppColors.glassBorder,
-                      width: 1.2.w,
-                    ),
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              LuminousMeshCanvas(
+                showOrbs: AppColors.showAuroraOrbs,
+                child: IndexedStack(
+                  key: ValueKey('stack_$activePreset'),
+                  index: controller.currentIndex.value,
+                  children: screens,
+                ),
+              ),
+              ExpandableNavigationFab(
+                key: _fabKey,
+                bottomOffset:
+                    (MediaQuery.paddingOf(context).bottom > 0 ? 12.h : 14.h) +
+                        70.h,
+                items: [
+                  FabMenuItem(
+                    title: 'Creation Studio',
+                    subtitle: 'Generate AI art with prompts & styles',
+                    icon: Icons.auto_awesome_rounded,
+                    accentColor: AppColors.primary,
+                    onTap: () => Get.to(() => const CreationStudioView()),
                   ),
-                  child: MediaQuery(
-                    data: MediaQuery.of(context).copyWith(
-                      padding: EdgeInsets.zero,
-                      viewPadding: EdgeInsets.zero,
-                    ),
-                    child: NavigationBarTheme(
-                      data: NavigationBarThemeData(
-                        backgroundColor: Colors.transparent,
-                        surfaceTintColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        height: 62.h,
-                        indicatorColor: AppColors.primary.withValues(alpha: 0.82),
-                        indicatorShape: const StadiumBorder(),
-                        labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                          if (states.contains(WidgetState.selected)) {
-                            return TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w700,
-                            );
-                          }
-                          return TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w500,
-                          );
-                        }),
+                  // FabMenuItem(
+                  //   title: 'AI Tools Hub',
+                  //   subtitle: 'Explore all specialized editing tools',
+                  //   icon: Icons.handyman_rounded,
+                  //   accentColor: AppColors.secondary,
+                  //   onTap: () => controller.switchTab(2),
+                  // ),
+                  FabMenuItem(
+                    title: 'Background Remover',
+                    subtitle: 'Isolate subjects with 1-click cutout',
+                    icon: Icons.layers_clear_rounded,
+                    accentColor: const Color(0xFF06B6D4),
+                    onTap: () => Get.to(() => const BackgroundRemoverView()),
+                  ),
+                  FabMenuItem(
+                    title: 'Magic Object Eraser',
+                    subtitle: 'Erase unwanted objects & text',
+                    icon: Icons.auto_fix_high_rounded,
+                    accentColor: const Color(0xFFA855F7),
+                    onTap: () => Get.to(() => const MagicObjectEraserView()),
+                  ),
+                  FabMenuItem(
+                    title: 'Vintage Photo Colorizer',
+                    subtitle: 'Restore B&W photos to vivid color',
+                    icon: Icons.palette_rounded,
+                    accentColor: const Color(0xFF10B981),
+                    onTap: () => Get.to(() => const PhotoColorizerView()),
+                  ),
+                  FabMenuItem(
+                    title: 'AI Expand',
+                    subtitle: 'Outpaint and extend canvas dimensions',
+                    icon: Icons.aspect_ratio_rounded,
+                    accentColor: const Color(0xFF8B5CF6),
+                    onTap: () => Get.to(() => const AiExpandView()),
+                  ),
+                  FabMenuItem(
+                    title: 'Upscale 4K',
+                    subtitle: 'Enhance details and resolution',
+                    icon: Icons.hd_rounded,
+                    accentColor: const Color(0xFF3B82F6),
+                    onTap: () => Get.to(() => const UpscaleView()),
+                  ),
+                  FabMenuItem(
+                    title: 'AI Backgrounds',
+                    subtitle: 'Generate studio product scenery',
+                    icon: Icons.image_aspect_ratio_rounded,
+                    accentColor: const Color(0xFFF59E0B),
+                    onTap: () => Get.to(() => const AiBackgroundsView()),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          bottomNavigationBar: Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              constraints: BoxConstraints(maxWidth: 260.w),
+              margin: EdgeInsets.only(
+                left: 48.w,
+                right: 48.w,
+                bottom: MediaQuery.paddingOf(context).bottom > 0 ? 12.h : 14.h,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28.r),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                  child: Container(
+                    height: 62.h,
+                    padding: EdgeInsets.symmetric(horizontal: 10.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.glassSurface.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(28.r),
+                      border: Border.all(
+                        color: AppColors.glassBorder,
+                        width: 1.2.w,
                       ),
-                      child: NavigationBar(
-                        height: 62.h,
-                        selectedIndex: controller.currentIndex.value,
-                        onDestinationSelected: controller.switchTab,
-                        backgroundColor: Colors.transparent,
-                        surfaceTintColor: Colors.transparent,
-                        elevation: 0,
-                        destinations: [
-                          NavigationDestination(
-                            icon: Icon(Icons.explore_outlined,
-                                color: AppColors.textSecondary),
-                            selectedIcon:
-                                const Icon(Icons.explore, color: Colors.white),
-                            label: AppStrings.tabExplore,
-                          ),
-                          NavigationDestination(
-                            icon: Icon(Icons.auto_awesome_outlined,
-                                color: AppColors.textSecondary),
-                            selectedIcon: const Icon(Icons.auto_awesome,
-                                color: Colors.white),
-                            label: AppStrings.tabStudio,
-                          ),
-                          NavigationDestination(
-                            icon: Icon(Icons.auto_fix_high_outlined,
-                                color: AppColors.textSecondary),
-                            selectedIcon: const Icon(Icons.auto_fix_high,
-                                color: Colors.white),
-                            label: 'AI Tools',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(Icons.folder_outlined,
-                                color: AppColors.textSecondary),
-                            selectedIcon:
-                                const Icon(Icons.folder, color: Colors.white),
-                            label: AppStrings.tabLibrary,
-                          ),
-                          NavigationDestination(
-                            icon: Icon(Icons.person_outline,
-                                color: AppColors.textSecondary),
-                            selectedIcon:
-                                const Icon(Icons.person, color: Colors.white),
-                            label: AppStrings.tabProfile,
-                          ),
-                        ],
+                    ),
+                    child: MediaQuery(
+                      data: MediaQuery.of(context).copyWith(
+                        padding: EdgeInsets.zero,
+                        viewPadding: EdgeInsets.zero,
+                      ),
+                      child: NavigationBarTheme(
+                        data: NavigationBarThemeData(
+                          backgroundColor: Colors.transparent,
+                          surfaceTintColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          height: 62.h,
+                          indicatorColor: (controller.currentIndex.value == 0 ||
+                                  controller.currentIndex.value == 3)
+                              ? AppColors.primary.withValues(alpha: 0.82)
+                              : Colors.transparent,
+                          indicatorShape: const StadiumBorder(),
+                          labelTextStyle:
+                              WidgetStateProperty.resolveWith((states) {
+                            final isActualSelected =
+                                (controller.currentIndex.value == 0 ||
+                                    controller.currentIndex.value == 3);
+                            if (states.contains(WidgetState.selected) &&
+                                isActualSelected) {
+                              return TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w700,
+                              );
+                            }
+                            return TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w500,
+                            );
+                          }),
+                        ),
+                        child: NavigationBar(
+                          height: 62.h,
+                          selectedIndex:
+                              controller.currentIndex.value == 3 ? 1 : 0,
+                          onDestinationSelected: (idx) =>
+                              controller.switchTab(idx == 0 ? 0 : 3),
+                          backgroundColor: Colors.transparent,
+                          surfaceTintColor: Colors.transparent,
+                          elevation: 0,
+                          destinations: [
+                            NavigationDestination(
+                              icon: Icon(Icons.explore_outlined,
+                                  color: AppColors.textSecondary),
+                              selectedIcon: const Icon(Icons.explore,
+                                  color: Colors.white),
+                              label: AppStrings.tabExplore,
+                            ),
+                            NavigationDestination(
+                              icon: Icon(Icons.folder_outlined,
+                                  color: AppColors.textSecondary),
+                              selectedIcon:
+                                  const Icon(Icons.folder, color: Colors.white),
+                              label: AppStrings.tabLibrary,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

@@ -164,8 +164,9 @@ class CreationStudioView extends StatelessWidget {
                           // SECTION 3.5: AI ENHANCED STATUS BADGE
                           // =========================================================================
                           Obx(() {
-                            if (!controller.isPromptEnhanced)
+                            if (!controller.isPromptEnhanced) {
                               return const SizedBox.shrink();
+                            }
                             return Container(
                               margin:
                                   EdgeInsets.only(top: AppDimens.vSpacingSm),
@@ -212,8 +213,9 @@ class CreationStudioView extends StatelessWidget {
 
                           // Image Edit Mode Status Pill
                           Obx(() {
-                            if (!controller.isImageEditMode.value)
+                            if (!controller.isImageEditMode.value) {
                               return const SizedBox.shrink();
+                            }
                             final freeAttempts =
                                 controller.freeEditAttemptsRemaining.value;
                             return Container(
@@ -275,8 +277,9 @@ class CreationStudioView extends StatelessWidget {
               // SECTION 6: REAL-TIME GENERATION PROGRESS CARD (WS / POLLING)
               // =========================================================================
               Obx(() {
-                if (!controller.isGenerating.value)
+                if (!controller.isGenerating.value) {
                   return const SizedBox.shrink();
+                }
                 final progress = controller.generationProgress.value;
                 final isDone = progress >= 100;
                 return Container(
@@ -409,7 +412,7 @@ class CreationStudioView extends StatelessWidget {
                       Icon(Icons.auto_awesome, color: AppColors.surface),
                 );
               }),
-              SizedBox(height: AppDimens.vSpacingMd),
+              SizedBox(height: 100.h),
             ],
           ),
         ),
@@ -815,8 +818,9 @@ class CreationStudioView extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Obx(() {
-                      if (controller.promptLength.value == 0)
+                      if (controller.promptLength.value == 0) {
                         return const SizedBox.shrink();
+                      }
                       return GestureDetector(
                         onTap: () => controller.promptController.clear(),
                         child: Padding(
@@ -1231,6 +1235,7 @@ class CreationStudioView extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       final shellCtrl = Get.find<ShellController>();
+                      Get.back();
                       shellCtrl.switchTab(3); // View in Library
                     },
                     style: ElevatedButton.styleFrom(
@@ -1597,8 +1602,9 @@ class CreationStudioView extends StatelessWidget {
 
               // Active Reference Photos (view and remove active references)
               Obx(() {
-                if (controller.referenceImages.isEmpty)
+                if (controller.referenceImages.isEmpty) {
                   return const SizedBox.shrink();
+                }
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

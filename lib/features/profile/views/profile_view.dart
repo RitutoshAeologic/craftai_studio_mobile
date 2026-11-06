@@ -6,6 +6,7 @@ import '../../../core/constants/app_dimens.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../shared/widgets/interactions/bouncy_tap.dart';
+import '../../shell/controllers/shell_controller.dart';
 import '../controllers/profile_controller.dart';
 
 /// [ProfileView] displays full creator account credentials, active session status,
@@ -30,6 +31,19 @@ class ProfileView extends StatelessWidget {
           backgroundColor: AppColors.background,
           elevation: 0,
           scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20.sp),
+            tooltip: 'Back',
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else if (Get.isRegistered<ShellController>()) {
+                Get.find<ShellController>().switchTab(0);
+              } else {
+                Get.back();
+              }
+            },
+          ),
           title: Text(
             'Profile',
             style: AppTextStyles.h1,
@@ -550,31 +564,31 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  /// App info card
-  Widget _buildAppInfoCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusXl),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          _buildInfoRow(
-            icon: Icons.info_outline_rounded,
-            title: 'Version',
-            value: '1.0.0 (Production Build)',
-          ),
-          Divider(color: AppColors.border, height: 1.h),
-          _buildInfoRow(
-            icon: Icons.cloud_done_outlined,
-            title: 'AI Processing Engine',
-            value: 'FastAPI GPU Cloud Services',
-          ),
-        ],
-      ),
-    );
-  }
+  // /// App info card
+  // Widget _buildAppInfoCard() {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       color: AppColors.surface,
+  //       borderRadius: BorderRadius.circular(AppDimens.radiusXl),
+  //       border: Border.all(color: AppColors.border),
+  //     ),
+  //     child: Column(
+  //       children: [
+  //         _buildInfoRow(
+  //           icon: Icons.info_outline_rounded,
+  //           title: 'Version',
+  //           value: '1.0.0 (Production Build)',
+  //         ),
+  //         Divider(color: AppColors.border, height: 1.h),
+  //         _buildInfoRow(
+  //           icon: Icons.cloud_done_outlined,
+  //           title: 'AI Processing Engine',
+  //           value: 'FastAPI GPU Cloud Services',
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   /// Sign out ListTile matching the exact functionality and text from the bottom sheet
   Widget _buildSignOutTile(ProfileController controller) {

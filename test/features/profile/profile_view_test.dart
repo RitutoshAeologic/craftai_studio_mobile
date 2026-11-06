@@ -111,8 +111,7 @@ void main() {
       // Check Account & Session info
       expect(find.text('Account & Session'), findsOneWidget);
       expect(find.text('Email Address'), findsOneWidget);
-      expect(find.text('Account ID'), findsOneWidget);
-      expect(find.text('Session Status'), findsOneWidget);
+      expect(find.text('Member Since'), findsOneWidget);
 
       // Check Sign Out tile
       expect(find.text('Sign Out'), findsOneWidget);
@@ -121,7 +120,7 @@ void main() {
   });
 
   group('HomeShellView Navigation Integration Tests', () {
-    testWidgets('bottom bar displays Profile destination and top bar omits profile button',
+    testWidgets('bottom bar omits Profile destination and top bar displays profile button',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -130,9 +129,15 @@ void main() {
       await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Bottom bar includes Profile destination
-      expect(find.text(AppStrings.tabProfile), findsOneWidget);
-      expect(find.byIcon(Icons.person_outline), findsWidgets);
+      // Bottom bar only includes Explore and Library destinations
+      expect(find.text(AppStrings.tabExplore), findsOneWidget);
+      expect(find.text(AppStrings.tabLibrary), findsOneWidget);
+
+      // Bottom bar omits Profile destination
+      expect(find.text(AppStrings.tabProfile), findsNothing);
+
+      // Top app bar displays Profile button on Explore feed
+      expect(find.byTooltip('Profile'), findsOneWidget);
 
       // Bottom bar does NOT have Wallet destination
       expect(find.text(AppStrings.tabWallet), findsNothing);

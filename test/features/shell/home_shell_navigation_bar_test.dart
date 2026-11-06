@@ -10,6 +10,7 @@ import 'package:craftai_studio_mobile/core/theme/theme_controller.dart';
 import 'package:craftai_studio_mobile/features/auth/data/auth_repository.dart';
 import 'package:craftai_studio_mobile/features/auth/domain/auth_user_model.dart';
 import 'package:craftai_studio_mobile/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:craftai_studio_mobile/features/studio/presentation/views/creation_studio_view.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/shell/views/home_shell_view.dart';
 
@@ -92,13 +93,17 @@ void main() {
       // NavigationBar height should be strictly around 62.h, NOT expanded to 62 + 47 = 109px
       expect(navBarRenderBox.size.height, lessThanOrEqualTo(66.0));
       expect(navBarRenderBox.size.height, greaterThanOrEqualTo(58.0));
+      // NavigationBar width is reduced horizontally (compact floating capsule <= 270px)
+      expect(navBarRenderBox.size.width, lessThanOrEqualTo(270.0));
 
-      // Verify all 5 navigation destinations are present
+      // Verify only 2 navigation destinations are present in the bottom bar
       expect(find.text(AppStrings.tabExplore), findsOneWidget);
-      expect(find.text(AppStrings.tabStudio), findsOneWidget);
-      expect(find.text('AI Tools'), findsOneWidget);
       expect(find.text(AppStrings.tabLibrary), findsOneWidget);
-      expect(find.text(AppStrings.tabProfile), findsOneWidget);
+
+      // Verify removed destinations are NOT present in the bottom bar
+      expect(find.text(AppStrings.tabStudio), findsNothing);
+      expect(find.text('AI Tools'), findsNothing);
+      expect(find.text(AppStrings.tabProfile), findsNothing);
     });
 
     testWidgets('selected bottom tab destination has theme-matched translucent indicator and white icon',
@@ -126,18 +131,111 @@ void main() {
       );
       expect(exploreSelectedIcon, findsOneWidget);
 
-      // 3. Switch to Studio (Tab 1)
+      // 3. Switch to Library (Tab 3)
       final shellCtrl = Get.find<ShellController>();
-      shellCtrl.switchTab(1);
+      shellCtrl.switchTab(3);
       await tester.pump(const Duration(milliseconds: 300));
 
-      final studioSelectedIcon = find.descendant(
+      final librarySelectedIcon = find.descendant(
         of: find.byType(NavigationBar),
         matching: find.byWidgetPredicate(
-          (widget) => widget is Icon && widget.icon == Icons.auto_awesome && widget.color == Colors.white,
+          (widget) => widget is Icon && widget.icon == Icons.folder && widget.color == Colors.white,
         ),
       );
-      expect(studioSelectedIcon, findsOneWidget);
+      expect(librarySelectedIcon, findsOneWidget);
+    });
+
+    testWidgets('ExpandableNavigationFab is rendered, expands upwards on tap, and collapses on re-tap',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final triggerFinder = find.byKey(const ValueKey('expandable_nav_fab_trigger'));
+      expect(triggerFinder, findsOneWidget);
+
+      // Before tapping, menu items are not visible
+      expect(find.text('Creation Studio'), findsNothing);
+      expect(find.text('AI Tools Hub'), findsNothing);
+
+      // Tap trigger to expand
+      await tester.tap(triggerFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // After expand, items are visible
+      expect(find.text('Creation Studio'), findsOneWidget);
+      expect(find.text('AI Tools Hub'), findsOneWidget);
+      expect(find.text('Background Remover'), findsOneWidget);
+      expect(find.text('AI Expand'), findsOneWidget);
+      expect(find.text('Upscale 4K'), findsOneWidget);
+      expect(find.text('AI Backgrounds'), findsOneWidget);
+
+      // Tap trigger again to collapse
+      await tester.tap(triggerFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // After collapse, menu is hidden
+      expect(find.text('Creation Studio'), findsNothing);
+    });
+
+    testWidgets('Tapping Library and Explore navigates between tabs correctly',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final shellCtrl = Get.find<ShellController>();
+      expect(shellCtrl.currentIndex.value, 0);
+
+      // Tap Library in bottom bar
+      await tester.tap(find.text(AppStrings.tabLibrary));
+      await tester.pump();
+      expect(shellCtrl.currentIndex.value, 3);
+
+      // Tap Explore in bottom bar
+      await tester.tap(find.text(AppStrings.tabExplore));
+      await tester.pump();
+      expect(shellCtrl.currentIndex.value, 0);
+    });
+
+    testWidgets('Tapping Creation Studio in FAB menu navigates to CreationStudioView cleanly',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final shellCtrl = Get.find<ShellController>();
+      expect(shellCtrl.currentIndex.value, 0);
+
+      // Open Expandable FAB
+      final triggerFinder = find.byKey(const ValueKey('expandable_nav_fab_trigger'));
+      await tester.tap(triggerFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Tap Creation Studio in expanded menu
+      await tester.tap(find.text('Creation Studio'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Verify currentIndex switched to 1 (Studio)
+      expect(shellCtrl.currentIndex.value, 1);
+
+      // Verify CreationStudioView elements are rendered cleanly
+      expect(find.byType(CreationStudioView), findsOneWidget);
+      expect(find.text(AppStrings.studioTitle), findsOneWidget);
+      expect(find.text('Surprise Me'), findsOneWidget);
     });
   });
 }
