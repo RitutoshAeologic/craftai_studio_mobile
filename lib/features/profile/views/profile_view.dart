@@ -104,13 +104,13 @@ class ProfileView extends StatelessWidget {
               // =========================================================================
               // 5. APP & SYSTEM INFO
               // =========================================================================
-              Text(
-                'About CraftAI Studio',
-                style: AppTextStyles.h2,
-              ),
-              SizedBox(height: AppDimens.vSpacingMd),
-              _buildAppInfoCard(),
-              SizedBox(height: AppDimens.vSpacingXl),
+              // Text(
+              //   'About CraftAI Studio',
+              //   style: AppTextStyles.h2,
+              // ),
+              // SizedBox(height: AppDimens.vSpacingMd),
+              // _buildAppInfoCard(),
+              // SizedBox(height: AppDimens.vSpacingXl),
 
               // =========================================================================
               // 6. SIGN OUT ACTION (FROM BOTTOM SHEET)
@@ -533,25 +533,25 @@ class ProfileView extends StatelessWidget {
           Divider(color: AppColors.border, height: 1.h),
 
           // User ID item
-          _buildInfoRow(
-            icon: Icons.fingerprint_rounded,
-            title: 'Account ID',
-            value: controller.maskedUserId,
-            trailingWidget: GestureDetector(
-              onTap: () => controller.copyToClipboard(controller.userId, 'User ID'),
-              child: Icon(Icons.copy_rounded, size: 16.sp, color: AppColors.textMuted),
-            ),
-          ),
-          Divider(color: AppColors.border, height: 1.h),
+          // _buildInfoRow(
+          //   icon: Icons.fingerprint_rounded,
+          //   title: 'Account ID',
+          //   value: controller.maskedUserId,
+          //   trailingWidget: GestureDetector(
+          //     onTap: () => controller.copyToClipboard(controller.userId, 'User ID'),
+          //     child: Icon(Icons.copy_rounded, size: 16.sp, color: AppColors.textMuted),
+          //   ),
+          // ),
+          // Divider(color: AppColors.border, height: 1.h),
 
           // Session Status item
-          _buildInfoRow(
-            icon: Icons.lock_outline_rounded,
-            title: 'Session Status',
-            value: 'Authenticated & Encrypted',
-            trailingWidget: Icon(Icons.verified_user_outlined, size: 16.sp, color: AppColors.accentSuccess),
-          ),
-          Divider(color: AppColors.border, height: 1.h),
+          // _buildInfoRow(
+          //   icon: Icons.lock_outline_rounded,
+          //   title: 'Session Status',
+          //   value: 'Authenticated & Encrypted',
+          //   trailingWidget: Icon(Icons.verified_user_outlined, size: 16.sp, color: AppColors.accentSuccess),
+          // ),
+          // Divider(color: AppColors.border, height: 1.h),
 
           // Member Since item
           _buildInfoRow(
