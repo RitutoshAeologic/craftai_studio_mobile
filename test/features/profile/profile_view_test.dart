@@ -52,8 +52,7 @@ void main() {
   setUp(() {
     Get.reset();
     mockRepo = MockAuthRepository();
-    authController =
-        Get.put(AuthController(repository: mockRepo), permanent: true);
+    authController = Get.put(AuthController(repository: mockRepo), permanent: true);
     authController.currentUser.value = mockRepo.currentUser;
     Get.put(ShellController());
   });
@@ -69,18 +68,14 @@ void main() {
       builder: (context, _) => GetMaterialApp(
         home: child,
         getPages: [
-          GetPage(
-              name: AppRoutes.login,
-              page: () => const Scaffold(body: Text('Login Screen'))),
+          GetPage(name: AppRoutes.login, page: () => const Scaffold(body: Text('Login Screen'))),
         ],
       ),
     );
   }
 
   group('ProfileController Unit Tests', () {
-    test(
-        'resolves user credentials, display name, and masked user ID correctly',
-        () {
+    test('resolves user credentials, display name, and masked user ID correctly', () {
       final controller = Get.put(ProfileController());
 
       expect(controller.email, 'creator@craftai.studio');
@@ -91,8 +86,7 @@ void main() {
   });
 
   group('ProfileView Widget Tests', () {
-    testWidgets(
-        'renders account details, session status, wallet shortcut, and sign-out tile',
+    testWidgets('renders account details, session status, wallet shortcut, and sign-out tile',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -122,14 +116,12 @@ void main() {
 
       // Check Sign Out tile
       expect(find.text('Sign Out'), findsOneWidget);
-      expect(
-          find.text('End your current session on this device'), findsOneWidget);
+      expect(find.text('End your current session on this device'), findsOneWidget);
     });
   });
 
   group('HomeShellView Navigation Integration Tests', () {
-    testWidgets(
-        'bottom bar displays only Explore and Library, and profile is displayed next to search bar in top section',
+    testWidgets('bottom bar displays Profile destination and top bar omits profile button',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -138,16 +130,12 @@ void main() {
       await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Bottom bar includes ONLY Explore and Library
-      expect(find.text(AppStrings.tabExplore), findsOneWidget);
-      expect(find.text(AppStrings.tabLibrary), findsOneWidget);
+      // Bottom bar includes Profile destination
+      expect(find.text(AppStrings.tabProfile), findsOneWidget);
+      expect(find.byIcon(Icons.person_outline), findsWidgets);
 
-      // Bottom bar does NOT have Profile or Wallet
-      expect(find.text(AppStrings.tabProfile), findsNothing);
+      // Bottom bar does NOT have Wallet destination
       expect(find.text(AppStrings.tabWallet), findsNothing);
-
-      // Profile avatar is displayed alongside search bar in the top section
-      expect(find.byTooltip('Profile'), findsOneWidget);
 
       // Top app bar has HomeShellView mounted cleanly
       expect(find.byType(HomeShellView), findsOneWidget);
@@ -182,8 +170,7 @@ void main() {
       expect(AppColors.background, const Color(0xFFF8FAFC));
     });
 
-    testWidgets(
-        'ProfileView renders Theme & Visual Style card and switches presets',
+    testWidgets('ProfileView renders Theme & Visual Style card and switches presets',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -198,10 +185,7 @@ void main() {
       expect(find.text('Studio Appearance & Theme'), findsOneWidget);
       expect(find.text('Theme & Visual Style'), findsOneWidget);
       expect(find.text('TL Review'), findsNothing);
-      expect(
-          find.text(
-              'Choose your preferred visual style across CraftAI Studio.'),
-          findsOneWidget);
+      expect(find.text('Choose your preferred visual style across CraftAI Studio.'), findsOneWidget);
 
       // Check 4 presets listed
       expect(find.text('Luminous Aurora'), findsOneWidget);
@@ -224,8 +208,7 @@ void main() {
   });
 
   group('Sign Out Button Spacing Tests', () {
-    testWidgets(
-        'ProfileView SingleChildScrollView applies generous bottom spacing ensuring no overlap with bottom app bar',
+    testWidgets('ProfileView SingleChildScrollView applies generous bottom spacing ensuring no overlap with bottom app bar',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -247,8 +230,7 @@ void main() {
   });
 
   group('Logout Loader & Duplicate Sign Out Prevention Tests', () {
-    testWidgets(
-        'tapping Sign Out opens confirmation dialog, shows loader upon confirm, and prevents duplicate requests',
+    testWidgets('tapping Sign Out opens confirmation dialog, shows loader upon confirm, and prevents duplicate requests',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -258,8 +240,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Scroll down to reveal Sign Out tile
-      await tester.drag(
-          find.byType(SingleChildScrollView), const Offset(0, -600));
+      await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -600));
       await tester.pumpAndSettle();
 
       // Tap Sign Out tile to open confirmation dialog
@@ -269,8 +250,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify dialog is open
-      expect(find.text('Are you sure you want to sign out of CraftAI Studio?'),
-          findsOneWidget);
+      expect(find.text('Are you sure you want to sign out of CraftAI Studio?'), findsOneWidget);
       final confirmBtnFinder = find.widgetWithText(ElevatedButton, 'Sign Out');
       expect(confirmBtnFinder, findsOneWidget);
 
@@ -301,8 +281,7 @@ void main() {
   });
 
   group('Bottom App Bar Translucency & Styling Tests', () {
-    testWidgets(
-        'HomeShellView bottom navigation bar has translucent frosted glass styling with BackdropFilter',
+    testWidgets('HomeShellView bottom navigation bar has translucent frosted glass styling with BackdropFilter',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;

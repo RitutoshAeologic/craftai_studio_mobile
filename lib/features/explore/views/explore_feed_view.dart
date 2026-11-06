@@ -8,9 +8,6 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import '../controllers/explore_controller.dart';
 import '../widgets/explore_card_widget.dart';
-import '../../profile/views/profile_view.dart';
-import '../../auth/presentation/controllers/auth_controller.dart';
-import '../../../shared/widgets/interactions/bouncy_tap.dart';
 
 /// [ExploreFeedView] displays community artwork in an organic Scattered Masonry grid
 /// with 3 primary dropdown filters at the top: Categories, Models, and Aspect Ratio.
@@ -24,7 +21,6 @@ class ExploreFeedView extends StatefulWidget {
 
 class _ExploreFeedViewState extends State<ExploreFeedView> {
   late final ScrollController _scrollController;
-  late TextEditingController _searchController;
   late final ExploreController _controller;
 
   @override
@@ -33,7 +29,6 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
     _controller = Get.isRegistered<ExploreController>()
         ? Get.find<ExploreController>()
         : Get.put(ExploreController());
-    _searchController = TextEditingController(text: _controller.searchQuery.value);
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
   }
@@ -42,7 +37,6 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -69,72 +63,53 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        titleSpacing: 14.w,
-        title: Container(
-          height: 40.h,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight.withValues(alpha: 0.75),
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(
-              color: AppColors.border.withValues(alpha: 0.8),
-              width: 1.w,
+        title: Obx(() {
+          if (_controller.isSearching.value) {
+            return TextField(
+              autofocus: true,
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Search prompts, artists, styles...',
+                hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: _controller.setSearchQuery,
+            );
+          }
+          return Text(
+            'Explore Feed',
+            style: AppTextStyles.titleMedium.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
             ),
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 10.w),
-          child: Row(
-            children: [
-              Icon(
-                Icons.search_rounded,
-                size: 19.sp,
-                color: AppColors.textSecondary,
-              ),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
-                  decoration: InputDecoration(
-                    hintText: 'Search prompts, artists, styles...',
-                    hintStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textMuted,
-                      fontSize: 13.sp,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: (val) {
-                    _controller.isSearching.value = val.trim().isNotEmpty;
-                    _controller.setSearchQuery(val);
-                  },
-                ),
-              ),
-              Obx(() {
-                if (_controller.searchQuery.value.isNotEmpty) {
-                  return GestureDetector(
-                    onTap: () {
-                      _searchController.clear();
-                      _controller.clearSearch();
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 18.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
-            ],
-          ),
-        ),
+          );
+        }),
         actions: [
-          _buildProfileAvatarButton(),
-          SizedBox(width: 14.w),
+          Obx(() {
+            if (_controller.isSearching.value) {
+              return IconButton(
+                icon: Icon(Icons.close, color: AppColors.textPrimary),
+                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                tooltip: 'Clear search',
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _controller.clearSearch();
+                },
+              );
+            }
+            return IconButton(
+              icon: Icon(Icons.search, color: AppColors.textPrimary),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              tooltip: 'Search creations',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                _controller.isSearching.value = true;
+              },
+            );
+          }),
+          SizedBox(width: 4.w),
         ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(1.h),
@@ -152,27 +127,17 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
             // =================================================================
             Container(
               color: AppColors.surface,
-              padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 8.h),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
               child: Obx(() {
                 final selectedCategory = _controller.selectedCategory.value;
                 final selectedModel = _controller.selectedModel.value;
-                final selectedRatio =
-                    _controller.selectedAspectRatios.contains('All')
-                        ? 'All'
-                        : _controller.selectedAspectRatios.first;
+                final selectedRatio = _controller.selectedAspectRatios.contains('All')
+                    ? 'All'
+                    : _controller.selectedAspectRatios.first;
 
                 return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Explore Feed',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 8.h),
                     Row(
                       children: [
                         // Dropdown 1: Categories
@@ -233,12 +198,10 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
                       Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 8.w, vertical: 2.h),
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withValues(alpha: 0.08),
-                              borderRadius:
-                                  BorderRadius.circular(AppDimens.radiusRound),
+                              borderRadius: BorderRadius.circular(AppDimens.radiusRound),
                             ),
                             child: Text(
                               '${_controller.activeFilterCount} Active Filter${_controller.activeFilterCount > 1 ? 's' : ''}',
@@ -256,14 +219,11 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
                               _controller.resetFilters();
                             },
                             child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 2.h, horizontal: 4.w),
+                              padding: EdgeInsets.symmetric(vertical: 2.h, horizontal: 4.w),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.close_rounded,
-                                      size: 13.sp,
-                                      color: AppColors.textSecondary),
+                                  Icon(Icons.close_rounded, size: 13.sp, color: AppColors.textSecondary),
                                   SizedBox(width: 4.w),
                                   Text(
                                     'Reset All',
@@ -292,8 +252,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
             Expanded(
               child: Obx(() {
                 // Initial Loading Shimmer State
-                if (_controller.isInitialLoading.value &&
-                    _controller.cards.isEmpty) {
+                if (_controller.isInitialLoading.value && _controller.cards.isEmpty) {
                   return _buildInitialSkeleton();
                 }
 
@@ -311,8 +270,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
                   onRefresh: _controller.refreshCards,
                   child: CustomScrollView(
                     controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(
-                        parent: BouncingScrollPhysics()),
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                     slivers: [
                       SliverPadding(
                         padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
@@ -360,8 +318,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
           SizedBox(height: 16.h),
           Text(
             'Curating community masterpieces...',
-            style: AppTextStyles.bodyMedium
-                .copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -390,8 +347,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.border),
               ),
-              child: Icon(Icons.image_search,
-                  size: 28.sp, color: AppColors.textMuted),
+              child: Icon(Icons.image_search, size: 28.sp, color: AppColors.textMuted),
             ),
             SizedBox(height: 16.h),
             Text(
@@ -402,8 +358,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
             SizedBox(height: 6.h),
             Text(
               subtitle,
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 18.h),
@@ -411,7 +366,6 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
               onPressed: () {
                 HapticFeedback.lightImpact();
                 if (hasSearch) {
-                  _searchController.clear();
                   _controller.clearSearch();
                 } else {
                   _controller.resetFilters();
@@ -443,108 +397,70 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
     return Padding(
       padding: EdgeInsets.only(bottom: navBarPadding),
       child: Obx(() {
-        // 1. Actively loading next page
-        if (_controller.isLoadingMore.value) {
-          return Container(
-            padding: EdgeInsets.symmetric(vertical: 20.h),
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 16.w,
-                  height: 16.w,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.0,
-                    color: AppColors.primary,
-                  ),
-                ),
-                SizedBox(width: 10.w),
-                Text(
-                  'Discovering more creations...',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
 
-        // 2. Pagination network or server error with 1-tap retry button
-        if (_controller.paginationError.value != null) {
-          return Container(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
-            alignment: Alignment.center,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                HapticFeedback.lightImpact();
-                _controller.loadMoreCards();
-              },
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                  border: Border.all(
-                      color: AppColors.accentWarning.withValues(alpha: 0.5)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.black.withValues(alpha: 0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.refresh_rounded,
-                        size: 15.sp, color: AppColors.accentWarning),
-                    SizedBox(width: 6.w),
-                    Flexible(
-                      child: Text(
-                        'Couldn\'t reach feed • Tap to retry',
-                        style: AppTextStyles.captionBold
-                            .copyWith(color: AppColors.textPrimary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+      // 1. Actively loading next page
+      if (_controller.isLoadingMore.value) {
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 20.h),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 16.w,
+                height: 16.w,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.0,
+                  color: AppColors.primary,
                 ),
               ),
-            ),
-          );
-        }
+              SizedBox(width: 10.w),
+              Text(
+                'Discovering more creations...',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
 
-        // 3. Reached end of available creations
-        if (!_controller.hasMoreCards.value && _controller.cards.isNotEmpty) {
-          return Container(
-            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
-            alignment: Alignment.center,
+      // 2. Pagination network or server error with 1-tap retry button
+      if (_controller.paginationError.value != null) {
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
+          alignment: Alignment.center,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _controller.loadMoreCards();
+            },
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
               decoration: BoxDecoration(
-                color: AppColors.surfaceLight,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: AppColors.accentWarning.withValues(alpha: 0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.black.withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.auto_awesome_rounded,
-                      size: 13.sp, color: AppColors.textMuted),
+                  Icon(Icons.refresh_rounded, size: 15.sp, color: AppColors.accentWarning),
                   SizedBox(width: 6.w),
                   Flexible(
                     child: Text(
-                      'You\'re all caught up • All creations loaded ✨',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 11.sp,
-                      ),
+                      'Couldn\'t reach feed • Tap to retry',
+                      style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -552,11 +468,46 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
                 ],
               ),
             ),
-          );
-        }
+          ),
+        );
+      }
 
-        return SizedBox(height: 24.h);
-      }),
+      // 3. Reached end of available creations
+      if (!_controller.hasMoreCards.value && _controller.cards.isNotEmpty) {
+        return Container(
+          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
+          alignment: Alignment.center,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.auto_awesome_rounded, size: 13.sp, color: AppColors.textMuted),
+                SizedBox(width: 6.w),
+                Flexible(
+                  child: Text(
+                    'You\'re all caught up • All creations loaded ✨',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 11.sp,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      return SizedBox(height: 24.h);
+    }),
     );
   }
 
@@ -602,8 +553,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
                 child: Text(
                   displayText,
                   style: AppTextStyles.captionBold.copyWith(
-                    color:
-                        !isDefault ? AppColors.primary : AppColors.textPrimary,
+                    color: !isDefault ? AppColors.primary : AppColors.textPrimary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -622,11 +572,8 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
                     child: Text(
                       isItemDefault ? '$title ($item)' : item,
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.textPrimary,
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w400,
+                        color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -642,70 +589,6 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
             );
           }).toList(),
           onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileAvatarButton() {
-    return Tooltip(
-      message: 'Profile',
-      child: BouncyTap(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          Get.to(() => const ProfileView());
-        },
-        child: Container(
-          width: 36.w,
-          height: 36.w,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: AppColors.aiCosmicGradient,
-            border: Border.all(
-              color: AppColors.glassBorderSubtle,
-              width: 1.5.w,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.25),
-                blurRadius: 8.r,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Get.isRegistered<AuthController>()
-              ? Obx(() {
-                  final user = Get.find<AuthController>().currentUser.value;
-                  final name = user?.displayName?.trim() ?? '';
-                  final initial = name.isNotEmpty ? name[0].toUpperCase() : '';
-
-                  if (initial.isNotEmpty) {
-                    return Center(
-                      child: Text(
-                        initial,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15.sp,
-                        ),
-                      ),
-                    );
-                  }
-                  return Center(
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: Colors.white,
-                      size: 20.sp,
-                    ),
-                  );
-                })
-              : Center(
-                  child: Icon(
-                    Icons.person_rounded,
-                    color: Colors.white,
-                    size: 20.sp,
-                  ),
-                ),
         ),
       ),
     );
