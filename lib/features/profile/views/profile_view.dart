@@ -102,18 +102,7 @@ class ProfileView extends StatelessWidget {
               SizedBox(height: AppDimens.vSpacingXl),
 
               // =========================================================================
-              // 5. APP & SYSTEM INFO
-              // =========================================================================
-              // Text(
-              //   'About CraftAI Studio',
-              //   style: AppTextStyles.h2,
-              // ),
-              // SizedBox(height: AppDimens.vSpacingMd),
-              // _buildAppInfoCard(),
-              // SizedBox(height: AppDimens.vSpacingXl),
-
-              // =========================================================================
-              // 6. SIGN OUT ACTION (FROM BOTTOM SHEET)
+              // 5. SIGN OUT ACTION (FROM BOTTOM SHEET)
               // =========================================================================
               _buildSignOutTile(controller),
               SizedBox(height: AppDimens.vSpacingXxl),
@@ -532,27 +521,6 @@ class ProfileView extends StatelessWidget {
           ),
           Divider(color: AppColors.border, height: 1.h),
 
-          // User ID item
-          // _buildInfoRow(
-          //   icon: Icons.fingerprint_rounded,
-          //   title: 'Account ID',
-          //   value: controller.maskedUserId,
-          //   trailingWidget: GestureDetector(
-          //     onTap: () => controller.copyToClipboard(controller.userId, 'User ID'),
-          //     child: Icon(Icons.copy_rounded, size: 16.sp, color: AppColors.textMuted),
-          //   ),
-          // ),
-          // Divider(color: AppColors.border, height: 1.h),
-
-          // Session Status item
-          // _buildInfoRow(
-          //   icon: Icons.lock_outline_rounded,
-          //   title: 'Session Status',
-          //   value: 'Authenticated & Encrypted',
-          //   trailingWidget: Icon(Icons.verified_user_outlined, size: 16.sp, color: AppColors.accentSuccess),
-          // ),
-          // Divider(color: AppColors.border, height: 1.h),
-
           // Member Since item
           _buildInfoRow(
             icon: Icons.calendar_today_outlined,
@@ -563,32 +531,6 @@ class ProfileView extends StatelessWidget {
       ),
     );
   }
-
-  // /// App info card
-  // Widget _buildAppInfoCard() {
-  //   return Container(
-  //     decoration: BoxDecoration(
-  //       color: AppColors.surface,
-  //       borderRadius: BorderRadius.circular(AppDimens.radiusXl),
-  //       border: Border.all(color: AppColors.border),
-  //     ),
-  //     child: Column(
-  //       children: [
-  //         _buildInfoRow(
-  //           icon: Icons.info_outline_rounded,
-  //           title: 'Version',
-  //           value: '1.0.0 (Production Build)',
-  //         ),
-  //         Divider(color: AppColors.border, height: 1.h),
-  //         _buildInfoRow(
-  //           icon: Icons.cloud_done_outlined,
-  //           title: 'AI Processing Engine',
-  //           value: 'FastAPI GPU Cloud Services',
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   /// Sign out ListTile matching the exact functionality and text from the bottom sheet
   Widget _buildSignOutTile(ProfileController controller) {

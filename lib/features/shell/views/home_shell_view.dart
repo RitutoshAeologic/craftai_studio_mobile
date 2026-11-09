@@ -14,12 +14,6 @@ import '../../explore/controllers/explore_controller.dart';
 import '../../studio/presentation/views/creation_studio_view.dart';
 import '../../studio/presentation/controllers/studio_controller.dart';
 import '../../tools/views/ai_tools_view.dart';
-import '../../tools/views/background_remover_view.dart';
-import '../../tools/views/ai_expand_view.dart';
-import '../../tools/views/upscale_view.dart';
-import '../../tools/views/ai_backgrounds_view.dart';
-import '../../tools/views/magic_object_eraser_view.dart';
-import '../../tools/views/photo_colorizer_view.dart';
 import '../../library/views/cloud_library_view.dart';
 import '../../profile/views/profile_view.dart';
 import '../../wallet/views/wallet_view.dart';
@@ -220,60 +214,18 @@ class _HomeShellViewState extends State<HomeShellView> {
                         70.h,
                 items: [
                   FabMenuItem(
-                    title: 'Creation Studio',
+                    title: 'Prompt to Image',
                     subtitle: 'Generate AI art with prompts & styles',
                     icon: Icons.auto_awesome_rounded,
                     accentColor: AppColors.primary,
                     onTap: () => Get.to(() => const CreationStudioView()),
                   ),
-                  // FabMenuItem(
-                  //   title: 'AI Tools Hub',
-                  //   subtitle: 'Explore all specialized editing tools',
-                  //   icon: Icons.handyman_rounded,
-                  //   accentColor: AppColors.secondary,
-                  //   onTap: () => controller.switchTab(2),
-                  // ),
                   FabMenuItem(
-                    title: 'Background Remover',
-                    subtitle: 'Isolate subjects with 1-click cutout',
-                    icon: Icons.layers_clear_rounded,
-                    accentColor: const Color(0xFF06B6D4),
-                    onTap: () => Get.to(() => const BackgroundRemoverView()),
-                  ),
-                  FabMenuItem(
-                    title: 'Magic Object Eraser',
-                    subtitle: 'Erase unwanted objects & text',
+                    title: 'AI Tools',
+                    subtitle: 'All specialized editing & enhancement tools',
                     icon: Icons.auto_fix_high_rounded,
                     accentColor: const Color(0xFFA855F7),
-                    onTap: () => Get.to(() => const MagicObjectEraserView()),
-                  ),
-                  FabMenuItem(
-                    title: 'Vintage Photo Colorizer',
-                    subtitle: 'Restore B&W photos to vivid color',
-                    icon: Icons.palette_rounded,
-                    accentColor: const Color(0xFF10B981),
-                    onTap: () => Get.to(() => const PhotoColorizerView()),
-                  ),
-                  FabMenuItem(
-                    title: 'AI Expand',
-                    subtitle: 'Outpaint and extend canvas dimensions',
-                    icon: Icons.aspect_ratio_rounded,
-                    accentColor: const Color(0xFF8B5CF6),
-                    onTap: () => Get.to(() => const AiExpandView()),
-                  ),
-                  FabMenuItem(
-                    title: 'Upscale 4K',
-                    subtitle: 'Enhance details and resolution',
-                    icon: Icons.hd_rounded,
-                    accentColor: const Color(0xFF3B82F6),
-                    onTap: () => Get.to(() => const UpscaleView()),
-                  ),
-                  FabMenuItem(
-                    title: 'AI Backgrounds',
-                    subtitle: 'Generate studio product scenery',
-                    icon: Icons.image_aspect_ratio_rounded,
-                    accentColor: const Color(0xFFF59E0B),
-                    onTap: () => Get.to(() => const AiBackgroundsView()),
+                    onTap: () => Get.to(() => const AiToolsView()),
                   ),
                 ],
               ),

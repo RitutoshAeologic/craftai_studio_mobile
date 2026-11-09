@@ -11,6 +11,7 @@ import 'package:craftai_studio_mobile/features/auth/data/auth_repository.dart';
 import 'package:craftai_studio_mobile/features/auth/domain/auth_user_model.dart';
 import 'package:craftai_studio_mobile/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/views/creation_studio_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/ai_tools_view.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/shell/views/home_shell_view.dart';
 
@@ -158,21 +159,20 @@ void main() {
       expect(triggerFinder, findsOneWidget);
 
       // Before tapping, menu items are not visible
-      expect(find.text('Creation Studio'), findsNothing);
-      expect(find.text('AI Tools Hub'), findsNothing);
+      expect(find.text('Prompt to Image'), findsNothing);
+      expect(find.text('AI Tools'), findsNothing);
 
       // Tap trigger to expand
       await tester.tap(triggerFinder);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      // After expand, items are visible
-      expect(find.text('Creation Studio'), findsOneWidget);
-      expect(find.text('AI Tools Hub'), findsOneWidget);
-      expect(find.text('Background Remover'), findsOneWidget);
-      expect(find.text('AI Expand'), findsOneWidget);
-      expect(find.text('Upscale 4K'), findsOneWidget);
-      expect(find.text('AI Backgrounds'), findsOneWidget);
+      // After expand, exactly two options are visible
+      expect(find.text('Prompt to Image'), findsOneWidget);
+      expect(find.text('AI Tools'), findsOneWidget);
+      expect(find.text('Background Remover'), findsNothing);
+      expect(find.text('AI Expand'), findsNothing);
+      expect(find.text('Upscale 4K'), findsNothing);
 
       // Tap trigger again to collapse
       await tester.tap(triggerFinder);
@@ -180,7 +180,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // After collapse, menu is hidden
-      expect(find.text('Creation Studio'), findsNothing);
+      expect(find.text('Prompt to Image'), findsNothing);
+      expect(find.text('AI Tools'), findsNothing);
     });
 
     testWidgets('Tapping Library and Explore navigates between tabs correctly',
@@ -206,7 +207,7 @@ void main() {
       expect(shellCtrl.currentIndex.value, 0);
     });
 
-    testWidgets('Tapping Creation Studio in FAB menu navigates to CreationStudioView cleanly',
+    testWidgets('Tapping Prompt to Image in FAB menu navigates to CreationStudioView cleanly',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -215,8 +216,31 @@ void main() {
       await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
       await tester.pump(const Duration(milliseconds: 300));
 
-      final shellCtrl = Get.find<ShellController>();
-      expect(shellCtrl.currentIndex.value, 0);
+      // Open Expandable FAB
+      final triggerFinder = find.byKey(const ValueKey('expandable_nav_fab_trigger'));
+      await tester.tap(triggerFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Tap Prompt to Image in expanded menu
+      await tester.tap(find.text('Prompt to Image'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Verify CreationStudioView elements are rendered cleanly
+      expect(find.byType(CreationStudioView), findsOneWidget);
+      expect(find.text(AppStrings.studioTitle), findsOneWidget);
+      expect(find.text('Surprise Me'), findsOneWidget);
+    });
+
+    testWidgets('Tapping AI Tools in FAB menu navigates to AiToolsView cleanly',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Open Expandable FAB
       final triggerFinder = find.byKey(const ValueKey('expandable_nav_fab_trigger'));
@@ -224,18 +248,14 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Tap Creation Studio in expanded menu
-      await tester.tap(find.text('Creation Studio'));
+      // Tap AI Tools in expanded menu
+      await tester.tap(find.text('AI Tools'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Verify currentIndex switched to 1 (Studio)
-      expect(shellCtrl.currentIndex.value, 1);
-
-      // Verify CreationStudioView elements are rendered cleanly
-      expect(find.byType(CreationStudioView), findsOneWidget);
-      expect(find.text(AppStrings.studioTitle), findsOneWidget);
-      expect(find.text('Surprise Me'), findsOneWidget);
+      // Verify AiToolsView elements are rendered cleanly
+      expect(find.byType(AiToolsView), findsOneWidget);
+      expect(find.text('Creative Toolbox'), findsOneWidget);
     });
   });
 }

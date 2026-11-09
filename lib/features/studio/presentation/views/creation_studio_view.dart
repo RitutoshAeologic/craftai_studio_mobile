@@ -44,6 +44,18 @@ class CreationStudioView extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  if (Navigator.of(context).canPop()) ...[
+                    IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: AppColors.textPrimary,
+                        size: 20.sp,
+                      ),
+                      tooltip: 'Back',
+                      onPressed: () => Get.back(),
+                    ),
+                    SizedBox(width: 4.w),
+                  ],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1235,7 +1247,9 @@ class CreationStudioView extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       final shellCtrl = Get.find<ShellController>();
-                      Get.back();
+                      if (Navigator.of(context).canPop()) {
+                        Get.back();
+                      }
                       shellCtrl.switchTab(3); // View in Library
                     },
                     style: ElevatedButton.styleFrom(

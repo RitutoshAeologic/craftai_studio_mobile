@@ -55,6 +55,18 @@ class AiToolsView extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    if (Navigator.of(context).canPop()) ...[
+                      IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: AppColors.textPrimary,
+                          size: 20.sp,
+                        ),
+                        tooltip: 'Back',
+                        onPressed: () => Get.back(),
+                      ),
+                      SizedBox(width: 4.w),
+                    ],
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
