@@ -6,6 +6,7 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/features/explore/controllers/explore_controller.dart';
+import 'package:craftai_studio_mobile/features/explore/data/repositories/category_repository.dart';
 import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
 
@@ -32,18 +33,9 @@ class PublishCreationSheet extends StatefulWidget {
 
 class _PublishCreationSheetState extends State<PublishCreationSheet> {
   late final TextEditingController _titleController;
-  String _selectedCategory = 'Anime';
+  late String _selectedCategory;
   bool _isPublishing = false;
-
-  final List<String> _categories = const [
-    'Anime',
-    'Photorealism',
-    'Cyberpunk',
-    '3D Render',
-    'Character',
-    'Architecture',
-    'Product',
-  ];
+  late final List<String> _categories;
 
   @override
   void initState() {
@@ -51,6 +43,30 @@ class _PublishCreationSheetState extends State<PublishCreationSheet> {
     final words = widget.job.prompt.split(' ');
     final defaultTitle = words.take(5).join(' ');
     _titleController = TextEditingController(text: defaultTitle.isNotEmpty ? defaultTitle : 'AI Visual Creation');
+
+    final repoCategories = CategoryRepository.instance
+        .getCachedCategories()
+        .where((c) => c.slug.toLowerCase() != 'all')
+        .map((c) => c.name)
+        .toList();
+
+    _categories = repoCategories.isNotEmpty
+        ? repoCategories
+        : const [
+            'Photorealism',
+            'Anime',
+            'Cyberpunk',
+            '3D Render',
+            'Character',
+            'Architecture',
+            'Product',
+          ];
+
+    final canonical = CategoryRepository.instance.getCanonicalCategory(widget.job.category);
+    _selectedCategory = _categories.firstWhere(
+      (c) => c.toLowerCase() == canonical.toLowerCase(),
+      orElse: () => _categories.first,
+    );
   }
 
   @override

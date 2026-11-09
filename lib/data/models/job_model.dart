@@ -9,6 +9,7 @@ class JobModel {
   final bool isDownloadUnlocked;
   final double downloadCost;
   final String toolApplied;
+  final String category;
   final String aspectRatio;
   final String dimensions;
   final int seed;
@@ -26,6 +27,7 @@ class JobModel {
     this.isDownloadUnlocked = false,
     this.downloadCost = 2.0,
     this.toolApplied = 'text_to_image',
+    this.category = 'General',
     this.aspectRatio = '1:1',
     this.dimensions = '1024x1024',
     this.seed = 42,
@@ -36,6 +38,7 @@ class JobModel {
   JobModel copyWith({
     bool? isDownloadUnlocked,
     String? toolApplied,
+    String? category,
     String? aspectRatio,
     String? dimensions,
     int? seed,
@@ -52,6 +55,7 @@ class JobModel {
       isDownloadUnlocked: isDownloadUnlocked ?? this.isDownloadUnlocked,
       downloadCost: downloadCost,
       toolApplied: toolApplied ?? this.toolApplied,
+      category: category ?? this.category,
       aspectRatio: aspectRatio ?? this.aspectRatio,
       dimensions: dimensions ?? this.dimensions,
       seed: seed ?? this.seed,
@@ -72,6 +76,7 @@ class JobModel {
       isDownloadUnlocked: json['is_download_unlocked'] as bool? ?? false,
       downloadCost: (json['download_cost'] as num?)?.toDouble() ?? 2.0,
       toolApplied: json['tool_applied'] as String? ?? 'text_to_image',
+      category: (json['category'] as String?)?.isNotEmpty == true ? json['category'] as String : 'General',
       aspectRatio: json['aspect_ratio'] as String? ?? '1:1',
       dimensions: json['dimensions'] as String? ?? '1024x1024',
       seed: (json['seed'] as num?)?.toInt() ?? 42,
@@ -97,6 +102,7 @@ class JobModel {
       'is_download_unlocked': isDownloadUnlocked,
       'download_cost': downloadCost,
       'tool_applied': toolApplied,
+      'category': category,
       'aspect_ratio': aspectRatio,
       'dimensions': dimensions,
       'seed': seed,

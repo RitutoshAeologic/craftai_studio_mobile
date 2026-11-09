@@ -33,9 +33,9 @@ class ExploreRemoteDataSource {
 
     var query = _supabase.from('explore_prompts').select('*');
 
-    // Server-side filter matching
-    if (category != null && category.isNotEmpty && category != 'All') {
-      query = query.eq('category', category);
+    // Server-side filter matching (case-insensitive)
+    if (category != null && category.isNotEmpty && category.toLowerCase() != 'all') {
+      query = query.ilike('category', category);
     }
     if (model != null && model.isNotEmpty && model != 'All Models') {
       query = query.eq('model_used', model);

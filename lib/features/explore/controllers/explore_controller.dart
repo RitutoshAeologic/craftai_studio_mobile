@@ -7,18 +7,27 @@ import 'package:craftai_studio_mobile/features/studio/presentation/controllers/s
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import '../domain/repositories/i_explore_repository.dart';
 import '../data/repositories/explore_repository_impl.dart';
+import '../domain/models/category_model.dart';
+import '../data/repositories/category_repository.dart';
 
 /// [ExploreController] manages the community discovery feed, style categorization,
 /// multi-dimensional filtering (Category, Model, Aspect Ratio), and Studio remixes.
 /// Follows Clean Architecture: Depends strictly on [IExploreRepository].
 class ExploreController extends GetxController {
   final IExploreRepository _repository;
+  final ICategoryRepository _categoryRepository;
 
-  ExploreController({IExploreRepository? repository})
-      : _repository = repository ?? ExploreRepositoryImpl();
+  ExploreController({
+    IExploreRepository? repository,
+    ICategoryRepository? categoryRepository,
+  })  : _repository = repository ?? ExploreRepositoryImpl(),
+        _categoryRepository = categoryRepository ?? CategoryRepository.instance;
 
   /// Currently active category filter (default: 'All').
   final RxString selectedCategory = 'All'.obs;
+
+  /// Curated master category models fetched from database / backend
+  final RxList<CategoryModel> categoryModels = <CategoryModel>[].obs;
 
   /// Currently active AI Model filter (default: 'All Models').
   final RxString selectedModel = 'All Models'.obs;
@@ -291,7 +300,21 @@ class ExploreController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    loadCategories();
     fetchExploreCards(isRefresh: true);
+  }
+
+  /// Fetches canonical categories from repository (cache-first + database/backend sync)
+  Future<void> loadCategories({bool forceRefresh = false}) async {
+    try {
+      final list = await _categoryRepository.getCategories(forceRefresh: forceRefresh);
+      if (list.isNotEmpty) {
+        categoryModels.assignAll(list);
+        categories.assignAll(list.map((c) => c.name).toList());
+      }
+    } catch (e) {
+      AppLogger.d('Category load notice: $e', tag: 'EXPLORE');
+    }
   }
 
   /// Compatibility alias for initial load
@@ -352,7 +375,10 @@ class ExploreController extends GetxController {
   Future<void> loadMoreCards() async => fetchExploreCards(isRefresh: false);
 
   /// Pull-to-refresh handler
-  Future<void> refreshCards() async => fetchExploreCards(isRefresh: true);
+  Future<void> refreshCards() async {
+    loadCategories(forceRefresh: true);
+    await fetchExploreCards(isRefresh: true);
+  }
 
   /// Returns cards filtered across Search Query, Category, AI Model, and Aspect Ratio
   List<ExploreCardModel> get filteredCards {
@@ -375,8 +401,9 @@ class ExploreController extends GetxController {
         }
       }
 
-      // 1. Category Filter
-      if (selectedCategory.value != 'All' && c.category != selectedCategory.value) {
+      // 1. Category Filter (Case-insensitive matching)
+      if (selectedCategory.value.toLowerCase() != 'all' &&
+          c.category.trim().toLowerCase() != selectedCategory.value.trim().toLowerCase()) {
         return false;
       }
 

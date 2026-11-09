@@ -170,7 +170,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     {
       'name': 'Realistic Photo',
       'subtitle': '8K DSLR Optics',
-      'category': 'Photoreal',
+      'category': 'Photorealism',
       'iconName': 'camera',
       'gradientStart': 0xFF1E2022,
       'gradientEnd': 0xFF3B3E42,
@@ -181,7 +181,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     {
       'name': '3D Cartoon',
       'subtitle': 'Cute Claymation',
-      'category': 'Pixar 3D',
+      'category': '3D Render',
       'iconName': '3d',
       'gradientStart': 0xFF9A3412,
       'gradientEnd': 0xFFEA580C,
@@ -192,7 +192,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     {
       'name': 'Anime / Manga',
       'subtitle': 'Makoto Shinkai',
-      'category': 'Anime Cel',
+      'category': 'Anime',
       'iconName': 'anime',
       'gradientStart': 0xFF4C1D95,
       'gradientEnd': 0xFF7C3AED,
@@ -203,7 +203,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     {
       'name': 'Cyberpunk Neon',
       'subtitle': 'Blade Runner 2049',
-      'category': 'Sci-Fi Neon',
+      'category': 'Cyberpunk',
       'iconName': 'neon',
       'gradientStart': 0xFF0E7490,
       'gradientEnd': 0xFF0284C7,
@@ -214,7 +214,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     {
       'name': 'Cinematic Art',
       'subtitle': '35mm Film Grain',
-      'category': 'Hollywood',
+      'category': 'Photorealism',
       'iconName': 'film',
       'gradientStart': 0xFF78350F,
       'gradientEnd': 0xFFB45309,
@@ -225,7 +225,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     {
       'name': 'Oil Painting',
       'subtitle': 'Textured Canvas',
-      'category': 'Renaissance',
+      'category': 'Character',
       'iconName': 'paint',
       'gradientStart': 0xFF312E81,
       'gradientEnd': 0xFF4338CA,
@@ -1248,12 +1248,19 @@ class StudioController extends GetxController with WidgetsBindingObserver {
         return;
       }
 
+      final selectedStyle = visualStyles.firstWhere(
+        (s) => s['name'] == selectedStylePreset.value,
+        orElse: () => visualStyles.first,
+      );
+      final categoryToSave = selectedStyle['category'] as String? ?? 'General';
+
       final libCtrl = Get.find<LibraryController>();
       libCtrl.addNewCreation(
         jobId: generatedTaskId,
         prompt: promptUsed,
         credits: cost,
         previewUrl: outputUrl,
+        category: categoryToSave,
       );
 
       // Persist to Supabase jobs table (use upsert to handle jobs created by backend)
@@ -1265,6 +1272,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
             'user_id': user.id,
             'type': 'IMAGE_GEN',
             'status': 'completed',
+            'category': categoryToSave,
             'prompt': promptUsed,
             'prompt_text': promptUsed,
             'preview_url': outputUrl,
@@ -1438,11 +1446,17 @@ class StudioController extends GetxController with WidgetsBindingObserver {
         : promptController.text.trim();
 
     if (Get.isRegistered<LibraryController>()) {
+      final selectedStyle = visualStyles.firstWhere(
+        (s) => s['name'] == selectedStylePreset.value,
+        orElse: () => visualStyles.first,
+      );
+      final categoryToSave = selectedStyle['category'] as String? ?? 'General';
       Get.find<LibraryController>().addNewCreation(
         jobId: taskId,
         prompt: promptUsed,
         credits: cost,
         previewUrl: url,
+        category: categoryToSave,
       );
     }
 

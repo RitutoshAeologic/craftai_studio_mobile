@@ -117,6 +117,7 @@ class LibraryController extends GetxController {
     required double credits,
     String? previewUrl,
     String type = 'IMAGE_GEN',
+    String? category,
     Map<String, dynamic>? metadata,
   }) {
     final validPreviewUrl = (previewUrl != null &&
@@ -134,6 +135,7 @@ class LibraryController extends GetxController {
       type: type,
       status: 'completed',
       prompt: prompt,
+      category: (category != null && category.trim().isNotEmpty) ? category.trim() : 'General',
       previewUrl: validPreviewUrl,
       creditsDeducted: credits,
       isDownloadUnlocked: false,

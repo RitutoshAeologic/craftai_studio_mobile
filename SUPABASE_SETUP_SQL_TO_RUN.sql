@@ -819,3 +819,85 @@ CREATE POLICY "Public view reference_images" ON storage.objects
 DROP POLICY IF EXISTS "Authenticated upload reference_images" ON storage.objects;
 CREATE POLICY "Authenticated upload reference_images" ON storage.objects
     FOR INSERT WITH CHECK (bucket_id = 'reference-images');
+
+-- ====================================================================
+-- 15. DYNAMIC CATEGORIES & IMAGE AUTO-CLASSIFICATION SYSTEM
+-- ====================================================================
+
+-- 1. Create Master Categories Table
+CREATE TABLE IF NOT EXISTS public.categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    icon_name VARCHAR(50) NOT NULL DEFAULT 'auto_awesome',
+    keywords TEXT[] NOT NULL DEFAULT '{}',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 2. Populate Standard Starter Categories with Smart Keyword Rules
+INSERT INTO public.categories (slug, name, icon_name, keywords, sort_order) VALUES
+('photorealism', 'Photorealism', 'camera_alt', ARRAY['photo', 'photograph', '85mm', 'portrait', 'realistic', 'dslr', 'raw photo', 'kodak', 'hyperrealistic', 'film grain', 'cinematic photo'], 1),
+('anime', 'Anime', 'palette', ARRAY['anime', 'manga', 'ghibli', 'makoto shinkai', 'cel shaded', 'waifu', 'kawaii', 'chibi', 'otaku', 'japanese animation'], 2),
+('cyberpunk', 'Cyberpunk', 'electric_bolt', ARRAY['cyberpunk', 'neon', 'futuristic', 'cyborg', 'synthwave', 'sci-fi', 'hologram', 'mecha', 'blade runner', 'matrix'], 3),
+('3d-render', '3D Render', 'view_in_ar', ARRAY['3d', 'render', 'octane', 'blender', 'unreal engine', 'cgi', 'isometric', 'pixar', 'claymation', 'digital 3d'], 4),
+('character', 'Character', 'person', ARRAY['character', 'portrait', 'warrior', 'knight', 'woman', 'man', 'hero', 'villain', 'avatar', 'ethereal noblewoman', 'samurai'], 5),
+('architecture', 'Architecture', 'apartment', ARRAY['architecture', 'building', 'house', 'interior', 'facade', 'modern villa', 'skyscraper', 'room design', 'urban'], 6),
+('product', 'Product', 'inventory_2', ARRAY['product', 'mockup', 'bottle', 'packaging', 'watch', 'sneakers', 'commercial', 'cosmetics', 'gadget', 'merchandise'], 7),
+('general', 'General', 'auto_awesome', ARRAY['art', 'illustration', 'creative', 'concept', 'abstract'], 99)
+ON CONFLICT (slug) DO UPDATE SET 
+    name = EXCLUDED.name,
+    icon_name = EXCLUDED.icon_name,
+    keywords = EXCLUDED.keywords,
+    sort_order = EXCLUDED.sort_order;
+
+-- 3. Enhance public.jobs Table (Store Category on User Creations)
+ALTER TABLE public.jobs 
+    ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'General',
+    ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_jobs_user_category ON public.jobs (user_id, category, created_at DESC);
+
+-- 4. Enhance public.explore_prompts Table
+ALTER TABLE public.explore_prompts
+    ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL;
+
+-- 5. Data Normalization & Backfill
+UPDATE public.explore_prompts SET category = 'Photorealism' 
+WHERE LOWER(category) IN ('photoreal', 'photorealism', 'photo', 'cinematic art', 'hollywood');
+
+UPDATE public.explore_prompts SET category = 'Anime' 
+WHERE LOWER(category) IN ('anime', 'anime cel', 'manga', 'japanese animation');
+
+UPDATE public.explore_prompts SET category = 'Cyberpunk' 
+WHERE LOWER(category) IN ('cyberpunk', 'cyberpunk neon', 'sci-fi neon', 'neon');
+
+UPDATE public.explore_prompts SET category = '3D Render' 
+WHERE LOWER(category) IN ('3d render', '3d', 'pixar 3d', '3d cartoon', 'render');
+
+UPDATE public.explore_prompts SET category = 'Character' 
+WHERE LOWER(category) IN ('character', 'portrait', 'person', 'avatar');
+
+UPDATE public.explore_prompts SET category = 'General' 
+WHERE category IS NULL OR category = '' OR LOWER(category) = 'portrait';
+
+-- Connect category_id foreign keys automatically
+UPDATE public.explore_prompts ep
+SET category_id = c.id
+FROM public.categories c
+WHERE LOWER(ep.category) = LOWER(c.name) OR LOWER(ep.category) = LOWER(c.slug);
+
+-- 6. Performance & Case-Insensitive Functional Indexes
+CREATE INDEX IF NOT EXISTS idx_explore_prompts_cat_lower ON public.explore_prompts (LOWER(category), created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_explore_prompts_category_id ON public.explore_prompts (category_id);
+
+-- 7. RLS Governance
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public can view active categories" ON public.categories;
+CREATE POLICY "Public can view active categories" ON public.categories
+    FOR SELECT USING (is_active = true);
+GRANT SELECT ON public.categories TO anon, authenticated;
+GRANT ALL ON public.categories TO service_role;
+
