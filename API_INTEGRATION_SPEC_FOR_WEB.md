@@ -22,6 +22,20 @@
 
 ---
 
+## ⚡ Executive Summary: Web Engineering Action Checklist
+
+This update standardizes **dynamic image categories**, eliminates **double credit deductions**, and harmonizes **PostgreSQL schema parity** across Web (Next.js 15) and Mobile (Flutter).
+
+| # | Action Item | Affected Web Surface | Implementation Reference |
+| :--- | :--- | :--- | :--- |
+| **1** | **Dynamic Category Taxonomy** | `/explore`, Category Filter Pills | Replace hardcoded arrays with `GET /api/v1/categories` or Supabase `categories` table. See **§2.13 & §3.7**. |
+| **2** | **Case-Insensitive PostgREST Queries** | `/explore`, Search Bar, Community Grid | Change `.eq('category', cat)` to `.ilike('category', cat)` to prevent 0-match drops. See **§3.7**. |
+| **3** | **Credit Deduction Single Source of Truth** | Studio Visual Generation (`/studio`) | **Do NOT** call `client.rpc('deduct_user_credits')` before generation. Backend auto-deducts atomically on `/dispatch`. See **§2.1 & §3.1**. |
+| **4** | **Flexible Model Name Support** | Model Selector (`/studio`) | You can now pass display names like `"SDXL-Lightning"`, `"RealVisXL v4.0"` or shorthands `"flux"`, `"sdxl"`. See **§2.1**. |
+| **5** | **Publishing Auto-Prefill Parity** | Library Publish Modal (`/library`) | Pre-fill category selector using `job.category` from `jobs` table before inserting to `explore_prompts` / `artworks`. See **§3.2 & §3.7**. |
+
+---
+
 ## 1. Authentication & Security Headers
 
 All requests from Next.js (Client Components or Server Actions) and Flutter Mobile should pass the Supabase JWT access token obtained via `@supabase/ssr` / `supabase_flutter`.
@@ -50,18 +64,25 @@ Content-Type: application/json
   "width": 1024,
   "height": 1024,
   "seed": 42,
-  "model": "flux",
+  "model": "FLUX.1 Schnell",
+  "category": "Photorealism",
   "remixed_from_prompt_id": null
 }
 ```
 *Field Notes:*
 - `prompt` (string, 1–4000 characters): Supports rich master prompts.
+- `category` (string, optional): Explicit category (e.g., `"Photorealism"`, `"Anime"`, `"Cyberpunk"`). If omitted, the backend's multi-stage classifier automatically tags the image based on prompt keywords and visual presets.
 - `negative_prompt` (string, optional): Explicit negative tokens to eliminate unwanted artifacts (used directly by SDXL / compiled engines).
 - `structured_metadata` (object, optional): Visual Director metadata (`subject`, `environment`, `lighting`, `camera_optics`, `avoid`). When passed, the backend automatically compiles model-specific prompts for the target engine.
-- `model` (string, optional): `"flux"` (default), `"sdxl"`, `"gemini"`, or `"chatgpt"`.
-- `width` / `height` (int, 512–2048): `1024x1024` (1:1), `768x1344` (9:16), `1344x768` (16:9).
+- `model` (string, optional): Supports both UI display labels (`"FLUX.1 Schnell"`, `"SDXL-Lightning"`, `"RealVisXL v4.0"`) and engine shorthands (`"flux"`, `"sdxl"`, `"lightning"`, `"gemini"`, `"chatgpt"`). Default: `"flux"`.
+- `width` / `height` (int, 512–2048): `1024x1024` (1:1), `768x1344` (9:16), `1344x768` (16:9), `896x1120` (4:5).
 - `face_reference_urls` (array of strings, optional): If 1–3 photo URLs are passed, engine auto-promotes to **Tier 1 (InstantID Face-Lock)**.
 - `remixed_from_prompt_id` (string, optional): Pass original Explore card ID if user is remixing a community prompt for creator royalty split.
+
+> ⚠️ **CRITICAL: Automatic Server-Side Credit Deduction**
+> When `POST /api/v1/generation/dispatch` is invoked with `Authorization: Bearer <token>`, the backend **automatically deducts 2 Credits (or 3 Credits for Face-Lock)** directly from the user's wallet in PostgreSQL.
+> **DO NOT** execute `client.rpc('deduct_user_credits')` on the web client before calling this endpoint. Doing so will double-deduct credits (user loses 4 Cr instead of 2 Cr).
+> Instead, update the web UI optimistically and refetch the wallet balance after generation completes.
 
 #### Response (HTTP 200):
 ```json
@@ -69,6 +90,7 @@ Content-Type: application/json
   "task_id": "gen_1dca6620",
   "tier": "Tier 0 (SDXL-Lightning RealVisXL Engine)",
   "status": "ready",
+  "category": "Photorealism",
   "estimated_seconds": 6,
   "direct_image_url": "https://txiuwtrmfvceddqsjvhk.supabase.co/storage/v1/object/public/user_generations/sdxl_5681d376fa734038960f7d46fe96efaa.png"
 }
@@ -1122,7 +1144,8 @@ The Web application must reflect the **exact same UI structure, screens, user fl
 ---
 
 ### 5.2 Screen 1: Explore Community Feed (`/explore`)
-- **Layout:** Masonry grid (Pinterest-style) with category tabs at the top (`All`, `Cyberpunk`, `Photorealism`, `Anime`, `Product`, `Character`, `Architecture`, `3D Render`).
+- **Layout:** Masonry grid (Pinterest-style) with dynamic category tabs at the top fetched from `GET /api/v1/categories` or Supabase `categories` table (Canonical list: `All`, `Photorealism`, `Anime`, `Cyberpunk`, `3D Render`, `Character`, `Architecture`, `Product`).
+- **Category Query Rule:** When filtering feed cards by category, always query using `.ilike('category', selectedCategory)` instead of `.eq('category', selectedCategory)` to ensure case-insensitive matching.
 - **Feed Card Elements:**
     - Full-bleed image preview.
     - Category pill in top-left corner.
@@ -1407,6 +1430,74 @@ export async function colorizePhoto(
     })
   });
   if (!res.ok) throw new Error(`Colorizer failed: ${res.statusText}`);
+  return res.json();
+}
+
+// 3. Dynamic Category Taxonomy Loader
+export interface CategoryItem {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  icon_name: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export async function fetchCategories(): Promise<CategoryItem[]> {
+  try {
+    const res = await fetch(`${BACKEND_BASE}/categories`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.categories || [];
+    }
+  } catch (err) {
+    console.warn("Backend categories API unavailable, falling back to static canonical list", err);
+  }
+  // Safe offline fallback matching Supabase seed
+  return [
+    { id: "all", slug: "all", name: "All", icon_name: "sparkles", sort_order: 0, is_active: true },
+    { id: "photorealism", slug: "photorealism", name: "Photorealism", icon_name: "camera", sort_order: 1, is_active: true },
+    { id: "anime", slug: "anime", name: "Anime", icon_name: "palette", sort_order: 2, is_active: true },
+    { id: "cyberpunk", slug: "cyberpunk", name: "Cyberpunk", icon_name: "bolt", sort_order: 3, is_active: true },
+    { id: "3d-render", slug: "3d-render", name: "3D Render", icon_name: "cube", sort_order: 4, is_active: true },
+    { id: "character", slug: "character", name: "Character", icon_name: "person", sort_order: 5, is_active: true },
+    { id: "architecture", slug: "architecture", name: "Architecture", icon_name: "home", sort_order: 6, is_active: true },
+    { id: "product", slug: "product", name: "Product", icon_name: "shopping_bag", sort_order: 7, is_active: true },
+  ];
+}
+
+// 4. Generation Dispatcher (Server-side auto-deducts 2 Credits atomically)
+export async function dispatchGeneration(params: {
+  prompt: string;
+  model?: string;
+  category?: string;
+  width?: number;
+  height?: number;
+  seed?: number;
+  token: string;
+}) {
+  // NOTE: DO NOT call client.rpc('deduct_user_credits') here.
+  // The backend automatically and atomically deducts credits when Authorization token is passed.
+  const res = await fetch(`${BACKEND_BASE}/generation/dispatch`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${params.token}`
+    },
+    body: JSON.stringify({
+      prompt: params.prompt,
+      model: params.model || "FLUX.1 Schnell",
+      category: params.category, // Auto-classified if omitted
+      width: params.width || 1024,
+      height: params.height || 1024,
+      seed: params.seed || 42
+    })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || errData.message || "Generation dispatch failed");
+  }
   return res.json();
 }
 ```
