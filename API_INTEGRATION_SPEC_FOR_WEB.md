@@ -779,6 +779,93 @@ Fetches the current dynamic catalog of studio backdrop presets, pricing, and pro
 
 ---
 
+### 2.13 Dynamic Master Categories & Taxonomy API
+- **Endpoint:** `GET /api/v1/categories` *(or `/api/v1/prompt-engineering/categories`)*
+- **Description:** Returns the active master taxonomy of visual categories managed in Supabase with safe fallback. The web team should use this endpoint (or query the Supabase `categories` table directly) to dynamically populate filter chips and publishing categories instead of hardcoding them in the web client.
+
+#### Response (HTTP 200):
+```json
+{
+  "total": 8,
+  "categories": [
+    {
+      "id": "cat_all",
+      "slug": "all",
+      "name": "All",
+      "description": "All community creations across styles",
+      "icon_name": "sparkles",
+      "sort_order": 0,
+      "is_active": true
+    },
+    {
+      "id": "cat_photorealism",
+      "slug": "photorealism",
+      "name": "Photorealism",
+      "description": "DSLR optics, portraiture, 8K realistic photography",
+      "icon_name": "camera",
+      "sort_order": 1,
+      "is_active": true
+    },
+    {
+      "id": "cat_anime",
+      "slug": "anime",
+      "name": "Anime",
+      "description": "Japanese animation, Makoto Shinkai, cel-shaded art",
+      "icon_name": "palette",
+      "sort_order": 2,
+      "is_active": true
+    },
+    {
+      "id": "cat_cyberpunk",
+      "slug": "cyberpunk",
+      "name": "Cyberpunk",
+      "description": "Futuristic neon cityscapes, sci-fi tech, high-contrast glow",
+      "icon_name": "bolt",
+      "sort_order": 3,
+      "is_active": true
+    },
+    {
+      "id": "cat_3d_render",
+      "slug": "3d-render",
+      "name": "3D Render",
+      "description": "Octane Render, Unreal Engine 5, claymation, isometric",
+      "icon_name": "cube",
+      "sort_order": 4,
+      "is_active": true
+    },
+    {
+      "id": "cat_character",
+      "slug": "character",
+      "name": "Character",
+      "description": "Human portraits, stylized avatars, oil painting portraits",
+      "icon_name": "person",
+      "sort_order": 5,
+      "is_active": true
+    },
+    {
+      "id": "cat_architecture",
+      "slug": "architecture",
+      "name": "Architecture",
+      "description": "Modern interiors, brutalist structures, biophilic design",
+      "icon_name": "home",
+      "sort_order": 6,
+      "is_active": true
+    },
+    {
+      "id": "cat_product",
+      "slug": "product",
+      "name": "Product",
+      "description": "Studio advertising, luxury mockups, clean commercial visuals",
+      "icon_name": "shopping_bag",
+      "sort_order": 7,
+      "is_active": true
+    }
+  ]
+}
+```
+
+---
+
 ## 3. Unified Supabase Database Schemas (Web & Mobile Parity)
 
 The Web app and Flutter Mobile app read and write directly to Supabase via `@supabase/ssr` / `@supabase/supabase-js` / `supabase_flutter`. All tables share **identical parameter names and cross-device user sync**.
@@ -819,6 +906,8 @@ The Web app and Flutter Mobile app read and write directly to Supabase via `@sup
 | `preview_url` / `image_url` | `TEXT` | High-res image URL in Supabase Storage |
 | `master_url` / `master_image_url` | `TEXT` | Uncompressed 4K master asset URL |
 | `tool_applied` | `TEXT` | Active mode (e.g., `'text_to_image'`, `'background_change'`) |
+| `category` | `TEXT` | Classified category (e.g. `'Photorealism'`, `'Anime'`, `'Cyberpunk'`, `'General'`) |
+| `category_id` | `UUID REFERENCES categories(id)` | Foreign key reference to master `categories` table |
 | `aspect_ratio` | `VARCHAR(10)` | `'1:1'`, `'16:9'`, `'9:16'`, `'4:5'`, `'3:4'` |
 | `dimensions` | `VARCHAR(20)` | Output resolution (e.g., `'1024x1024'`, `'1344x768'`) |
 | `seed` | `BIGINT` | Deterministic generation seed |
@@ -932,6 +1021,53 @@ await supabase.from('collection_items').insert({
 | `gender` | `TEXT` | `'female'`, `'male'`, `'non-binary'` |
 | `reference_photo_urls` | `TEXT[]` | 1–3 facial reference URLs in Supabase Storage |
 | `created_at` | `TIMESTAMPTZ` | Character creation timestamp |
+
+---
+
+### 3.7 `categories` (Master Image Taxonomy)
+> Master taxonomy table driving dynamic category chips, style tagging, and community exploration.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | `TEXT PRIMARY KEY` | Slug or UUID (e.g., `'photorealism'`, `'anime'`) |
+| `slug` | `TEXT UNIQUE NOT NULL` | URL-friendly identifier |
+| `name` | `TEXT NOT NULL` | Human-readable title (e.g., `'Photorealism'`, `'3D Render'`) |
+| `description` | `TEXT` | Category scope and visual direction notes |
+| `icon_name` | `TEXT DEFAULT 'sparkles'` | Material/Lucide icon identifier |
+| `sort_order` | `INT DEFAULT 0` | Display sorting priority |
+| `is_active` | `BOOLEAN DEFAULT true` | Controls visibility in active tabs |
+
+#### Web Implementation Best Practices:
+```typescript
+// 1. Fetching categories dynamically on Web (Next.js / React):
+const { data: categories } = await supabase
+  .from('categories')
+  .select('*')
+  .eq('is_active', true)
+  .order('sort_order', { ascending: true });
+
+// 2. Querying explore creations with case-insensitive category filtering:
+// Always use .ilike() instead of .eq() to prevent case sensitivity drops:
+let query = supabase.from('explore_prompts').select('*');
+if (selectedCategory && selectedCategory.toLowerCase() !== 'all') {
+  query = query.ilike('category', selectedCategory);
+}
+const { data: creations } = await query.order('created_at', { ascending: false });
+
+// 3. Publishing an artwork to Explore with prefilled category:
+// Use the classified category from the job model as default:
+await supabase.from('explore_prompts').insert({
+  title: creationTitle,
+  author_id: user.id,
+  user_id: user.id,
+  category: job.category || 'General', // Auto-prefilled from job classification
+  prompt: job.prompt,
+  preview_url: job.preview_url,
+  image_url: job.preview_url,
+  model_used: job.model_used || 'FLUX.1 Schnell',
+  is_marketplace_public: true,
+});
+```
 
 ---
 
