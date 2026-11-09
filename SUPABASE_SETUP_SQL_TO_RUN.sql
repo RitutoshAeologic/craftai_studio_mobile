@@ -893,6 +893,20 @@ WHERE LOWER(ep.category) = LOWER(c.name) OR LOWER(ep.category) = LOWER(c.slug);
 CREATE INDEX IF NOT EXISTS idx_explore_prompts_cat_lower ON public.explore_prompts (LOWER(category), created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_explore_prompts_category_id ON public.explore_prompts (category_id);
 
+-- Also index and backfill artworks table if used by Web team
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'artworks') THEN
+        CREATE INDEX IF NOT EXISTS idx_artworks_cat_lower ON public.artworks (LOWER(category), created_at DESC);
+        UPDATE public.artworks SET category = 'Photorealism' WHERE LOWER(category) IN ('photoreal', 'photorealism', 'photo', 'cinematic art', 'hollywood');
+        UPDATE public.artworks SET category = 'Anime' WHERE LOWER(category) IN ('anime', 'anime cel', 'manga', 'japanese animation');
+        UPDATE public.artworks SET category = 'Cyberpunk' WHERE LOWER(category) IN ('cyberpunk', 'cyberpunk neon', 'sci-fi neon', 'neon');
+        UPDATE public.artworks SET category = '3D Render' WHERE LOWER(category) IN ('3d render', '3d', 'pixar 3d', '3d cartoon', 'render');
+        UPDATE public.artworks SET category = 'Character' WHERE LOWER(category) IN ('character', 'portrait', 'person', 'avatar');
+        UPDATE public.artworks SET category = 'General' WHERE category IS NULL OR category = '';
+    END IF;
+END $$;
+
 -- 7. RLS Governance
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public can view active categories" ON public.categories;

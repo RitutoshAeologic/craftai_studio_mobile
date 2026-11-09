@@ -890,6 +890,12 @@ The Web app and Flutter Mobile app read and write directly to Supabase via `@sup
 * **Deduct Credits:** `client.rpc('deduct_user_credits', { p_user_id: user.id, p_amount: 2.0, p_reason: 'generation' })`
 * **Refund Credits:** `client.rpc('refund_user_credits', { p_user_id: user.id, p_amount: 1.0, p_reason: 'generation_failed' })`
 
+> ⚠️ **IMPORTANT (Credit Deduction Rule):**
+> When invoking `POST /api/v1/generation/dispatch` with `Authorization: Bearer <token>`, the **FastAPI backend automatically and atomically deducts credits server-side**.
+> **DO NOT** manually invoke `client.rpc('deduct_user_credits')` on the web client before/during generation dispatch, otherwise the user will be **double-charged** (2 + 2 = 4 Cr).
+> The client should simply update its local UI optimistically or refetch wallet balance after generation completes.
+> Use `client.rpc('deduct_user_credits')` **only** for client-managed direct operations (such as the 2-Credit 4K Master Download Paywall).
+
 ---
 
 ### 3.2 `jobs` (Unified Generations & History)
