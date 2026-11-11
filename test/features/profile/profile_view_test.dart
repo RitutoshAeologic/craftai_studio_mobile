@@ -130,8 +130,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Bottom bar only includes Explore and Library destinations
-      expect(find.text(AppStrings.tabExplore), findsOneWidget);
+      // When Explore (0) is active, Explore shows only icon and Library shows icon + label
+      expect(find.byIcon(Icons.explore), findsOneWidget);
       expect(find.text(AppStrings.tabLibrary), findsOneWidget);
+      expect(find.text(AppStrings.tabExplore), findsNothing);
 
       // Bottom bar omits Profile destination
       expect(find.text(AppStrings.tabProfile), findsNothing);

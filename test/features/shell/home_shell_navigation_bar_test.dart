@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
 import 'package:craftai_studio_mobile/core/theme/theme_controller.dart';
 import 'package:craftai_studio_mobile/features/auth/data/auth_repository.dart';
@@ -74,7 +73,7 @@ void main() {
   });
 
   group('HomeShellView Bottom Navigation Bar Layout Tests', () {
-    testWidgets('pill height remains compact (<= 66px) and does not inherit top notch padding on iOS',
+    testWidgets('bottom bar displays icon only for active tab and icon+label horizontally for inactive tab',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -86,19 +85,16 @@ void main() {
       await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView(), padding: iOSPadding));
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Find NavigationBar
-      final navBarFinder = find.byType(NavigationBar);
-      expect(navBarFinder, findsOneWidget);
+      final shellCtrl = Get.find<ShellController>();
+      expect(shellCtrl.currentIndex.value, 0);
 
-      final navBarRenderBox = tester.renderObject<RenderBox>(navBarFinder);
-      // NavigationBar height should be strictly around 62.h, NOT expanded to 62 + 47 = 109px
-      expect(navBarRenderBox.size.height, lessThanOrEqualTo(66.0));
-      expect(navBarRenderBox.size.height, greaterThanOrEqualTo(58.0));
-      // NavigationBar width is reduced horizontally (compact floating capsule <= 270px)
-      expect(navBarRenderBox.size.width, lessThanOrEqualTo(270.0));
+      // 1. Tab 0 (Explore) is active by default:
+      // Active Explore shows only icon (white), label is hidden
+      expect(find.byIcon(Icons.explore), findsOneWidget);
+      expect(find.text(AppStrings.tabExplore), findsNothing);
 
-      // Verify only 2 navigation destinations are present in the bottom bar
-      expect(find.text(AppStrings.tabExplore), findsOneWidget);
+      // Inactive Library displays both icon and label horizontally
+      expect(find.byIcon(Icons.folder_outlined), findsOneWidget);
       expect(find.text(AppStrings.tabLibrary), findsOneWidget);
 
       // Verify removed destinations are NOT present in the bottom bar
@@ -107,7 +103,7 @@ void main() {
       expect(find.text(AppStrings.tabProfile), findsNothing);
     });
 
-    testWidgets('selected bottom tab destination has theme-matched translucent indicator and white icon',
+    testWidgets('switching tab toggles active icon-only state and expands inactive label smoothly',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -116,37 +112,24 @@ void main() {
       await tester.pumpWidget(wrapWithScreenUtil(const HomeShellView()));
       await tester.pump(const Duration(milliseconds: 300));
 
-      // 1. Verify NavigationBarTheme indicatorColor is theme-matched translucent
-      final navBarTheme = tester.widget<NavigationBarTheme>(find.byType(NavigationBarTheme));
-      final indicatorColor = navBarTheme.data.indicatorColor;
-      expect(indicatorColor, isNotNull);
-      expect(indicatorColor, equals(AppColors.primary.withValues(alpha: 0.82)));
-      expect(indicatorColor!.a, closeTo(0.82, 0.01));
-
-      // 2. Tab 0 (Explore) is selected by default -> verify selected icon in NavigationBar is white
-      final exploreSelectedIcon = find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.byWidgetPredicate(
-          (widget) => widget is Icon && widget.icon == Icons.explore && widget.color == Colors.white,
-        ),
-      );
-      expect(exploreSelectedIcon, findsOneWidget);
-
-      // 3. Switch to Library (Tab 3)
       final shellCtrl = Get.find<ShellController>();
+      expect(shellCtrl.currentIndex.value, 0);
+
+      // Switch to Library (Tab 3)
       shellCtrl.switchTab(3);
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      final librarySelectedIcon = find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.byWidgetPredicate(
-          (widget) => widget is Icon && widget.icon == Icons.folder && widget.color == Colors.white,
-        ),
-      );
-      expect(librarySelectedIcon, findsOneWidget);
+      // Active Library shows only icon (white), label is hidden
+      expect(find.byIcon(Icons.folder), findsOneWidget);
+      expect(find.text(AppStrings.tabLibrary), findsNothing);
+
+      // Inactive Explore shows both icon and label horizontally
+      expect(find.byIcon(Icons.explore_outlined), findsOneWidget);
+      expect(find.text(AppStrings.tabExplore), findsOneWidget);
     });
 
-    testWidgets('ExpandableNavigationFab is rendered, expands upwards on tap, and collapses on re-tap',
+    testWidgets('ExpandableNavigationFab is located in bottom-right corner, expands upwards on tap, and collapses on re-tap',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3.0;
@@ -157,6 +140,10 @@ void main() {
 
       final triggerFinder = find.byKey(const ValueKey('expandable_nav_fab_trigger'));
       expect(triggerFinder, findsOneWidget);
+
+      // Verify FAB is located near the right edge of the screen (bottom-right)
+      final fabRect = tester.getRect(triggerFinder);
+      expect(fabRect.right, greaterThan(300.0));
 
       // Before tapping, menu items are not visible
       expect(find.text('Prompt to Image'), findsNothing);
@@ -199,11 +186,13 @@ void main() {
       // Tap Library in bottom bar
       await tester.tap(find.text(AppStrings.tabLibrary));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(shellCtrl.currentIndex.value, 3);
 
       // Tap Explore in bottom bar
       await tester.tap(find.text(AppStrings.tabExplore));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(shellCtrl.currentIndex.value, 0);
     });
 

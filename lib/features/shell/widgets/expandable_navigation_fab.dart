@@ -30,11 +30,13 @@ class FabMenuItem {
 class ExpandableNavigationFab extends StatefulWidget {
   final List<FabMenuItem> items;
   final double bottomOffset;
+  final double rightOffset;
 
   const ExpandableNavigationFab({
     super.key,
     required this.items,
     this.bottomOffset = 82.0,
+    this.rightOffset = 16.0,
   });
 
   @override
@@ -115,7 +117,7 @@ class ExpandableNavigationFabState extends State<ExpandableNavigationFab>
         final isMenuVisible = progress > 0.001;
 
         return Stack(
-          alignment: Alignment.bottomCenter,
+          alignment: Alignment.bottomRight,
           clipBehavior: Clip.none,
           children: [
             // Full-screen dismiss barrier when menu is expanded
@@ -144,12 +146,13 @@ class ExpandableNavigationFabState extends State<ExpandableNavigationFab>
             // Expanded menu items column
             if (isMenuVisible)
               Positioned(
-                bottom: widget.bottomOffset + 60.h,
+                right: widget.rightOffset,
+                bottom: widget.bottomOffset + 62.h,
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: ScaleTransition(
                     scale: Tween<double>(begin: 0.85, end: 1.0).animate(_expandAnimation),
-                    alignment: Alignment.bottomCenter,
+                    alignment: Alignment.bottomRight,
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.sizeOf(context).height * 0.65,
@@ -158,6 +161,7 @@ class ExpandableNavigationFabState extends State<ExpandableNavigationFab>
                         clipBehavior: Clip.none,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: List.generate(widget.items.length, (idx) {
                             final item = widget.items[idx];
                             return _buildMenuItem(item, idx, widget.items.length);
@@ -171,6 +175,7 @@ class ExpandableNavigationFabState extends State<ExpandableNavigationFab>
 
             // The main Trigger FAB button
             Positioned(
+              right: widget.rightOffset,
               bottom: widget.bottomOffset,
               child: Tooltip(
                 message: 'Create & AI Tools',

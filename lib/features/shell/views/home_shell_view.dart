@@ -20,6 +20,7 @@ import '../../wallet/views/wallet_view.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../shared/widgets/credit_cost_chip.dart';
 import '../../../shared/widgets/glass/luminous_mesh_canvas.dart';
+import '../../../shared/widgets/interactions/bouncy_tap.dart';
 
 class HomeShellView extends StatefulWidget {
   const HomeShellView({super.key});
@@ -109,15 +110,12 @@ class _HomeShellViewState extends State<HomeShellView> {
                 filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.glassDarkSurface,
-                    border: Border(
-                      bottom: BorderSide(
-                          color: AppColors.glassBorderSubtle, width: 1.w),
-                    ),
+                    color: Colors.transparent,
+
                   ),
                   child: SafeArea(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w)+EdgeInsets.only(bottom: 5),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -211,7 +209,8 @@ class _HomeShellViewState extends State<HomeShellView> {
                 key: _fabKey,
                 bottomOffset:
                     (MediaQuery.paddingOf(context).bottom > 0 ? 12.h : 14.h) +
-                        70.h,
+                        3.h,
+                rightOffset: 16.w,
                 items: [
                   FabMenuItem(
                     title: 'Prompt to Image',
@@ -234,10 +233,9 @@ class _HomeShellViewState extends State<HomeShellView> {
           bottomNavigationBar: Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              constraints: BoxConstraints(maxWidth: 260.w),
               margin: EdgeInsets.only(
-                left: 48.w,
-                right: 48.w,
+                left: 16.w,
+                right: 76.w,
                 bottom: MediaQuery.paddingOf(context).bottom > 0 ? 12.h : 14.h,
               ),
               child: ClipRRect(
@@ -245,80 +243,50 @@ class _HomeShellViewState extends State<HomeShellView> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                   child: Container(
-                    height: 62.h,
-                    padding: EdgeInsets.symmetric(horizontal: 10.w),
+                    height: 58.h,
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
                     decoration: BoxDecoration(
-                      color: AppColors.glassSurface.withValues(alpha: 0.4),
+                      color: AppColors.glassSurface.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(28.r),
                       border: Border.all(
                         color: AppColors.glassBorder,
                         width: 1.2.w,
                       ),
-                    ),
-                    child: MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        padding: EdgeInsets.zero,
-                        viewPadding: EdgeInsets.zero,
-                      ),
-                      child: NavigationBarTheme(
-                        data: NavigationBarThemeData(
-                          backgroundColor: Colors.transparent,
-                          surfaceTintColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          height: 62.h,
-                          indicatorColor: (controller.currentIndex.value == 0 ||
-                                  controller.currentIndex.value == 3)
-                              ? AppColors.primary.withValues(alpha: 0.82)
-                              : Colors.transparent,
-                          indicatorShape: const StadiumBorder(),
-                          labelTextStyle:
-                              WidgetStateProperty.resolveWith((states) {
-                            final isActualSelected =
-                                (controller.currentIndex.value == 0 ||
-                                    controller.currentIndex.value == 3);
-                            if (states.contains(WidgetState.selected) &&
-                                isActualSelected) {
-                              return TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w700,
-                              );
-                            }
-                            return TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w500,
-                            );
-                          }),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 16.r,
+                          offset: const Offset(0, 4),
                         ),
-                        child: NavigationBar(
-                          height: 62.h,
-                          selectedIndex:
-                              controller.currentIndex.value == 3 ? 1 : 0,
-                          onDestinationSelected: (idx) =>
-                              controller.switchTab(idx == 0 ? 0 : 3),
-                          backgroundColor: Colors.transparent,
-                          surfaceTintColor: Colors.transparent,
-                          elevation: 0,
-                          destinations: [
-                            NavigationDestination(
-                              icon: Icon(Icons.explore_outlined,
-                                  color: AppColors.textSecondary),
-                              selectedIcon: const Icon(Icons.explore,
-                                  color: Colors.white),
-                              label: AppStrings.tabExplore,
-                            ),
-                            NavigationDestination(
-                              icon: Icon(Icons.folder_outlined,
-                                  color: AppColors.textSecondary),
-                              selectedIcon:
-                                  const Icon(Icons.folder, color: Colors.white),
-                              label: AppStrings.tabLibrary,
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                     ),
+                    child: Obx(() {
+                      final currentIndex = controller.currentIndex.value;
+                      final isExploreSelected = currentIndex == 0;
+                      final isLibrarySelected = currentIndex == 3;
+
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildNavItem(
+                            isSelected: isExploreSelected,
+                            selectedIcon: Icons.explore,
+                            unselectedIcon: Icons.explore_outlined,
+                            label: AppStrings.tabExplore,
+                            onTap: () => controller.switchTab(0),
+                          ),
+                          SizedBox(width: 6.w),
+                          _buildNavItem(
+                            isSelected: isLibrarySelected,
+                            selectedIcon: Icons.folder,
+                            unselectedIcon: Icons.folder_outlined,
+                            label: AppStrings.tabLibrary,
+                            onTap: () => controller.switchTab(3),
+                          ),
+                        ],
+                      );
+                    }),
                   ),
                 ),
               ),
@@ -326,6 +294,75 @@ class _HomeShellViewState extends State<HomeShellView> {
           ),
         );
       }),
+    );
+  }
+
+  Widget _buildNavItem({
+    required bool isSelected,
+    required IconData selectedIcon,
+    required IconData unselectedIcon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return BouncyTap(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeInOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 12.w : 8.w,
+          vertical: 6.h,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.88)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(22.r),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.35),
+                    blurRadius: 10.r,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : unselectedIcon,
+              color: isSelected ? Colors.white : AppColors.textSecondary,
+              size: 20.sp,
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeInOutCubic,
+              child: !isSelected
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(width: 5.w),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11.5.sp,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

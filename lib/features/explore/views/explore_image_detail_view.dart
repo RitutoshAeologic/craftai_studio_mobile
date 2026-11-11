@@ -159,28 +159,28 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          Obx(() {
-            final colCtrl = Get.isRegistered<CollectionController>()
-                ? Get.find<CollectionController>()
-                : Get.put(CollectionController());
-            final isSaved = colCtrl.isItemSavedAnywhere(widget.card.id);
-            return IconButton(
-              icon: Icon(
-                isSaved ? Icons.bookmark : Icons.bookmark_border,
-                color: isSaved ? AppColors.primary : AppColors.textPrimary,
-              ),
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              tooltip: isSaved ? 'Saved in Collections' : 'Save to Collection',
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                SaveToCollectionSheet.show(
-                  context,
-                  itemId: widget.card.id,
-                  imageUrl: widget.card.previewUrl,
-                );
-              },
-            );
-          }),
+          // Obx(() {
+          //   final colCtrl = Get.isRegistered<CollectionController>()
+          //       ? Get.find<CollectionController>()
+          //       : Get.put(CollectionController());
+          //   final isSaved = colCtrl.isItemSavedAnywhere(widget.card.id);
+          //   return IconButton(
+          //     icon: Icon(
+          //       isSaved ? Icons.bookmark : Icons.bookmark_border,
+          //       color: isSaved ? AppColors.primary : AppColors.textPrimary,
+          //     ),
+          //     constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          //     tooltip: isSaved ? 'Saved in Collections' : 'Save to Collection',
+          //     onPressed: () {
+          //       HapticFeedback.lightImpact();
+          //       SaveToCollectionSheet.show(
+          //         context,
+          //         itemId: widget.card.id,
+          //         imageUrl: widget.card.previewUrl,
+          //       );
+          //     },
+          //   );
+          // }),
           IconButton(
             icon: Icon(Icons.share_outlined, color: AppColors.textPrimary),
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),

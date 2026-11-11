@@ -113,63 +113,63 @@ class AiToolsView extends StatelessWidget {
             // =================================================================
             // CATEGORY FILTER CHIPS
             // =================================================================
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 44.h,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-                  itemCount: controller.categories.length,
-                  separatorBuilder: (_, __) => SizedBox(width: 8.w),
-                  itemBuilder: (context, idx) {
-                    final cat = controller.categories[idx];
-                    return Obx(() {
-                      final isSel = controller.selectedCategory.value == cat;
-                      return BouncyTap(
-                        onTap: () => controller.setCategory(cat),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
-                          decoration: BoxDecoration(
-                            gradient: isSel ? AppColors.aiCosmicGradient : null,
-                            color: isSel ? null : AppColors.surface,
-                            borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                            border: Border.all(
-                              color: isSel ? Colors.transparent : AppColors.border,
-                              width: 1.0,
-                            ),
-                            boxShadow: isSel
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.primary.withValues(alpha: 0.28),
-                                      blurRadius: 8.r,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ]
-                                : [
-                                    BoxShadow(
-                                      color: const Color(0xFF090D16).withValues(alpha: 0.04),
-                                      blurRadius: 4.r,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              cat == 'all' ? 'All Skills' : cat,
-                              style: AppTextStyles.captionBold.copyWith(
-                                color: isSel ? Colors.white : AppColors.textSecondary,
-                                fontSize: 11.sp,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    });
-                  },
-                ),
-              ),
-            ),
+            // SliverToBoxAdapter(
+            //   child: SizedBox(
+            //     height: 44.h,
+            //     child: ListView.separated(
+            //       scrollDirection: Axis.horizontal,
+            //       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+            //       itemCount: controller.categories.length,
+            //       separatorBuilder: (_, __) => SizedBox(width: 8.w),
+            //       itemBuilder: (context, idx) {
+            //         final cat = controller.categories[idx];
+            //         return Obx(() {
+            //           final isSel = controller.selectedCategory.value == cat;
+            //           return BouncyTap(
+            //             onTap: () => controller.setCategory(cat),
+            //             child: AnimatedContainer(
+            //               duration: const Duration(milliseconds: 180),
+            //               padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
+            //               decoration: BoxDecoration(
+            //                 gradient: isSel ? AppColors.aiCosmicGradient : null,
+            //                 color: isSel ? null : AppColors.surface,
+            //                 borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+            //                 border: Border.all(
+            //                   color: isSel ? Colors.transparent : AppColors.border,
+            //                   width: 1.0,
+            //                 ),
+            //                 boxShadow: isSel
+            //                     ? [
+            //                         BoxShadow(
+            //                           color: AppColors.primary.withValues(alpha: 0.28),
+            //                           blurRadius: 8.r,
+            //                           offset: const Offset(0, 2),
+            //                         ),
+            //                       ]
+            //                     : [
+            //                         BoxShadow(
+            //                           color: const Color(0xFF090D16).withValues(alpha: 0.04),
+            //                           blurRadius: 4.r,
+            //                           offset: const Offset(0, 1),
+            //                         ),
+            //                       ],
+            //               ),
+            //               child: Center(
+            //                 child: Text(
+            //                   cat == 'all' ? 'All Skills' : cat,
+            //                   style: AppTextStyles.captionBold.copyWith(
+            //                     color: isSel ? Colors.white : AppColors.textSecondary,
+            //                     fontSize: 11.sp,
+            //                   ),
+            //                 ),
+            //               ),
+            //             ),
+            //           );
+            //         });
+            //       },
+            //     ),
+            //   ),
+            // ),
 
             // =================================================================
             // INTERACTIVE TOOL WORKSPACE (Background Remover Hero Card)
@@ -204,18 +204,28 @@ class AiToolsView extends StatelessWidget {
               ),
             ),
 
-            Obx(() => SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final tool = controller.filteredTools[index];
-                    return _buildToolListCard(context, tool, controller);
-                  },
-                  childCount: controller.filteredTools.length,
+            Obx(() {
+              final width = MediaQuery.sizeOf(context).width;
+              final crossAxisCount = width > 600 ? 3 : 2;
+              return SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 12.w,
+                    mainAxisSpacing: 12.h,
+                    childAspectRatio: 0.82,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final tool = controller.filteredTools[index];
+                      return _buildToolGridCard(context, tool, controller);
+                    },
+                    childCount: controller.filteredTools.length,
+                  ),
                 ),
-              ),
-            )),
+              );
+            }),
 
             SliverToBoxAdapter(
               child: SizedBox(height: 100.h),
@@ -511,7 +521,7 @@ class AiToolsView extends StatelessWidget {
     );
   }
 
-  Widget _buildToolListCard(BuildContext context, Map<String, dynamic> tool, ToolsController controller) {
+  Widget _buildToolGridCard(BuildContext context, Map<String, dynamic> tool, ToolsController controller) {
     final toolId = tool['id'] as String;
     final accentColor = (tool['accentColor'] as Color?) ?? AppColors.primary;
     final iconData = (tool['iconData'] as IconData?) ?? AppIcons.magicEraser;
@@ -560,7 +570,6 @@ class AiToolsView extends StatelessWidget {
     return BouncyTap(
       onTap: handleTap,
       child: Container(
-        margin: EdgeInsets.only(bottom: 12.h),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18.r),
           boxShadow: [
@@ -581,7 +590,7 @@ class AiToolsView extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              padding: EdgeInsets.all(10.w),
               decoration: BoxDecoration(
                 color: AppColors.glassSurface,
                 borderRadius: BorderRadius.circular(18.r),
@@ -590,76 +599,101 @@ class AiToolsView extends StatelessWidget {
                   width: 1.2.w,
                 ),
               ),
-              child: Row(
-          children: [
-            // Modern iridescent frosted glass icon tile (No raw emojis)
-            GlassIconTile(
-              icon: iconData,
-              size: 44,
-              iconSize: 20,
-              accentColor: accentColor,
-            ),
-            SizedBox(width: 14.w),
-
-            // Title, Subtitle, and Badge
-            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Top Row: Glass Icon & Credits Badge
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          tool['title'] as String,
-                          style: AppTextStyles.bodyMediumBold.copyWith(
-                            fontSize: 14.sp,
-                            color: AppColors.textPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      GlassIconTile(
+                        icon: iconData,
+                        size: 36,
+                        iconSize: 18,
+                        accentColor: accentColor,
                       ),
-                      SizedBox(width: 6.w),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                        decoration: BoxDecoration(
-                          color: accentColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                          border: Border.all(color: accentColor.withValues(alpha: 0.35)),
-                        ),
-                        child: Text(
-                          tool['credits'] as String,
-                          style: AppTextStyles.captionXs.copyWith(
-                            color: accentColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10.sp,
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                          decoration: BoxDecoration(
+                            color: accentColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                            border: Border.all(color: accentColor.withValues(alpha: 0.35)),
+                          ),
+                          child: Text(
+                            tool['credits'] as String,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.captionXs.copyWith(
+                              color: accentColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 9.sp,
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 3.h),
+                  SizedBox(height: 8.h),
+
+                  // Tool Title
                   Text(
-                    tool['desc'] as String,
+                    tool['title'] as String,
+                    style: AppTextStyles.bodyMediumBold.copyWith(
+                      fontSize: 13.sp,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.captionXs.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.3,
+                  ),
+                  SizedBox(height: 4.h),
+
+                  // Description
+                  Expanded(
+                    child: Text(
+                      tool['desc'] as String,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.captionXs.copyWith(
+                        color: AppColors.textSecondary,
+                        fontSize: 10.5.sp,
+                        height: 1.25,
+                      ),
                     ),
+                  ),
+
+                  // Bottom Category & Arrow
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          (tool['category'] as String?) ?? 'Tool',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.captionXs.copyWith(
+                            color: AppColors.textTertiary,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 13.sp,
+                        color: accentColor,
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            SizedBox(width: 8.w),
-            Icon(Icons.arrow_forward_ios, size: 12.sp, color: AppColors.textTertiary),
-          ],
+          ),
         ),
       ),
-    ),
-  ),
-),
-);
+    );
   }
 
   void _showRemixImageSourceSheet(BuildContext context) {

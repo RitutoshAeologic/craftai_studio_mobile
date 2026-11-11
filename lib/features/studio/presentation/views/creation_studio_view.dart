@@ -420,8 +420,7 @@ class CreationStudioView extends StatelessWidget {
                   label: label,
                   onPressed: isBusy ? null : controller.generateVisual,
                   isLoading: isGen,
-                  icon:
-                      Icon(Icons.auto_awesome, color: AppColors.surface),
+                  icon: Icon(Icons.auto_awesome, color: AppColors.surface),
                 );
               }),
               SizedBox(height: 100.h),
