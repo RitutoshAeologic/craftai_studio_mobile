@@ -9,6 +9,8 @@ import 'package:craftai_studio_mobile/features/studio/presentation/controllers/s
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/tools/views/magic_object_eraser_view.dart';
 import 'package:craftai_studio_mobile/features/tools/views/photo_colorizer_view.dart';
+import 'package:craftai_studio_mobile/features/tools/views/background_remover_view.dart';
+import 'package:craftai_studio_mobile/features/remix/views/remix_chat_view.dart';
 
 /// [StudioImageEditActionsSheet] presents the comprehensive image editing and workflow modal.
 /// Options:
@@ -78,28 +80,28 @@ class StudioImageEditActionsSheet extends StatelessWidget {
               // )),
 
               // Option 2: Remix in Lab (Conversational Chat)
-              // _buildActionItem(
-              //   icon: Icons.shuffle_rounded,
-              //   iconColor: AppColors.purpleAccent,
-              //   title: 'Remix in Lab (Chat)',
-              //   subtitle: 'Conversational style & lighting tuning anchored to this creation',
-              //   badge: 'Remix Lab',
-              //   onTap: () {
-              //     Navigator.of(context).pop();
-              //     WidgetsBinding.instance.addPostFrameCallback((_) {
-              //       Get.to(
-              //         () => const RemixChatView(),
-              //         arguments: {
-              //           'anchorImageUrl': job.previewUrl,
-              //           'sourceType': 'library',
-              //           'initialPrompt': job.prompt,
-              //           'authorName': 'Your Creation',
-              //         },
-              //         transition: Transition.rightToLeft,
-              //       );
-              //     });
-              //   },
-              // ),
+              _buildActionItem(
+                icon: Icons.shuffle_rounded,
+                iconColor: AppColors.purpleAccent,
+                title: 'Remix in Lab (Chat)',
+                subtitle: 'Conversational style & lighting tuning anchored to this creation',
+                badge: 'Remix Lab',
+                onTap: () {
+                  Navigator.of(context).pop();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Get.to(
+                      () => const RemixChatView(),
+                      arguments: {
+                        'anchorImageUrl': job.previewUrl,
+                        'sourceType': 'library',
+                        'initialPrompt': job.prompt,
+                        'authorName': 'Your Creation',
+                      },
+                      transition: Transition.rightToLeft,
+                    );
+                  });
+                },
+              ),
 
               // Option 3: Remove Background
               _buildActionItem(
@@ -109,7 +111,12 @@ class StudioImageEditActionsSheet extends StatelessWidget {
                 subtitle: 'Zero-token local CPU transparent PNG cutout',
                 onTap: () {
                   Navigator.of(context).pop();
-                  shellCtrl.switchTab(2); // AI Tools
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Get.to(
+                      () => BackgroundRemoverView(initialImagePath: job.previewUrl),
+                      transition: Transition.rightToLeft,
+                    );
+                  });
                 },
               ),
 

@@ -296,7 +296,7 @@ class _AiExpandSheetState extends State<AiExpandSheet> {
 
   Widget _buildAlignmentSelector() {
     final alignments = [
-      {'id': 'auto', 'label': 'Auto ✦', 'icon': Icons.auto_awesome},
+      {'id': 'auto', 'label': 'Auto', 'icon': Icons.auto_awesome},
       {'id': 'center', 'label': 'Center', 'icon': Icons.filter_center_focus},
       {'id': 'left', 'label': 'Left', 'icon': Icons.align_horizontal_left},
       {'id': 'right', 'label': 'Right', 'icon': Icons.align_horizontal_right},

@@ -441,7 +441,7 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
                               )
                             : Icon(Icons.auto_fix_high_rounded, size: 18.sp, color: Colors.white),
                         label: Text(
-                          isProcessing ? controller.processingMessage.value : '⚡ ERASE OBJECT (Sub-Second)',
+                          isProcessing ? controller.processingMessage.value : 'Erase Object (Sub-Second)',
                           style: AppTextStyles.buttonMedium.copyWith(color: Colors.white),
                         ),
                       ),

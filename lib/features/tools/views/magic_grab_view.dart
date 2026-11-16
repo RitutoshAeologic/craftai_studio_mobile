@@ -615,7 +615,7 @@ class _MagicGrabViewState extends State<MagicGrabView> {
                       ? (controller.processingMessage.value.isNotEmpty
                           ? controller.processingMessage.value
                           : 'Extracting layer...')
-                      : 'Grab Subject 🖐️',
+                      : 'Grab Subject',
                   style: AppTextStyles.button.copyWith(color: Colors.white, fontSize: 14.sp),
                 ),
                 onPressed: isProcessing ? null : _executeGrab,
