@@ -71,152 +71,161 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // =================================================================
-            // INTEGRATED SEARCH BAR
+            // UNIFIED COHESIVE HEADER: SEARCH BAR + PINTEREST FILTER DROPDOWNS
             // =================================================================
             Container(
-              height: 42.h,
-              margin: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 8.h),
               decoration: BoxDecoration(
-                color: AppColors.surfaceLight.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                border: Border.all(
-                  color: AppColors.border,
-                  width: 1.w,
+                color: AppColors.surface,
+                border: Border(
+                  bottom: BorderSide(color: AppColors.borderSubtle, width: 1.0),
                 ),
               ),
-              padding: EdgeInsets.symmetric(horizontal: 12.w),
-              child: Row(
+              padding: EdgeInsets.fromLTRB(14.w, 6.h, 14.w, 8.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.search_rounded,
-                    size: 19.sp,
-                    color: AppColors.textSecondary,
-                  ),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      style: AppTextStyles.bodyMedium
-                          .copyWith(color: AppColors.textPrimary),
-                      decoration: InputDecoration(
-                        hintText: 'Search prompts, artists, styles...',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textMuted,
-                          fontSize: 13.sp,
-                        ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onChanged: (val) {
-                        _controller.isSearching.value = val.trim().isNotEmpty;
-                        _controller.setSearchQuery(val);
-                      },
-                    ),
-                  ),
-                  Obx(() {
-                    if (_controller.searchQuery.value.isNotEmpty) {
-                      return GestureDetector(
-                        onTap: () {
-                          _searchController.clear();
-                          _controller.clearSearch();
-                        },
-                        behavior: HitTestBehavior.opaque,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 4.w),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 18.sp,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }),
-                ],
-              ),
-            ),
-
-            // =================================================================
-            // THREE PRIMARY DROPDOWN FILTERS + ACTIVE FILTER BADGE
-            // =================================================================
-            Container(
-              color: AppColors.surface,
-              padding: EdgeInsets.fromLTRB(14.w, 4.h, 14.w, 8.h),
-              child: Obx(() {
-                final selectedCategory = _controller.selectedCategory.value;
-                final selectedModel = _controller.selectedModel.value;
-                final selectedRatio =
-                    _controller.selectedAspectRatios.contains('All')
-                        ? 'All'
-                        : _controller.selectedAspectRatios.first;
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Explore Feed',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                  // Pinterest-style Integrated Search Bar
+                  Container(
+                    height: 42.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(
+                        color: AppColors.borderSubtle,
+                        width: 1.0,
                       ),
                     ),
-                    SizedBox(height: 8.h),
-                    Row(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                    child: Row(
                       children: [
-                        // Dropdown 1: Categories
-                        Expanded(
-                          child: _buildFilterDropdown(
-                            title: 'Categories',
-                            value: selectedCategory,
-                            items: _controller.categories,
-                            isDefault: selectedCategory == 'All',
-                            onChanged: (val) {
-                              if (val != null) {
-                                HapticFeedback.selectionClick();
-                                _controller.setCategory(val);
-                              }
-                            },
-                          ),
+                        Icon(
+                          Icons.search_rounded,
+                          size: 19.sp,
+                          color: AppColors.textSecondary,
                         ),
                         SizedBox(width: 8.w),
-
-                        // Dropdown 2: Models
                         Expanded(
-                          child: _buildFilterDropdown(
-                            title: 'Models',
-                            value: selectedModel,
-                            items: _controller.models,
-                            isDefault: selectedModel == 'All Models',
+                          child: TextField(
+                            controller: _searchController,
+                            style: AppTextStyles.bodyMedium
+                                .copyWith(color: AppColors.textPrimary),
+                            decoration: InputDecoration(
+                              hintText: 'Search prompts, artists, styles...',
+                              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.textMuted,
+                                fontSize: 13.sp,
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
                             onChanged: (val) {
-                              if (val != null) {
-                                HapticFeedback.selectionClick();
-                                _controller.setModel(val);
-                              }
+                              _controller.isSearching.value = val.trim().isNotEmpty;
+                              _controller.setSearchQuery(val);
                             },
                           ),
                         ),
-                        SizedBox(width: 8.w),
-
-                        // Dropdown 3: Aspect Ratio
-                        Expanded(
-                          child: _buildFilterDropdown(
-                            title: 'Aspect Ratio',
-                            value: selectedRatio,
-                            items: _controller.aspectRatios,
-                            isDefault: selectedRatio == 'All',
-                            onChanged: (val) {
-                              if (val != null) {
-                                HapticFeedback.selectionClick();
-                                _controller.setAspectRatio(val);
-                              }
-                            },
-                          ),
-                        ),
+                        Obx(() {
+                          if (_controller.searchQuery.value.isNotEmpty) {
+                            return GestureDetector(
+                              onTap: () {
+                                _searchController.clear();
+                                _controller.clearSearch();
+                              },
+                              behavior: HitTestBehavior.opaque,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 4.w),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  size: 18.sp,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        }),
                       ],
                     ),
+                  ),
+
+                  SizedBox(height: 10.h),
+
+                  // Three Primary Dropdown Filters + Active Filter Badges
+                  Obx(() {
+                    final selectedCategory = _controller.selectedCategory.value;
+                    final selectedModel = _controller.selectedModel.value;
+                    final selectedRatio =
+                        _controller.selectedAspectRatios.contains('All')
+                            ? 'All'
+                            : _controller.selectedAspectRatios.first;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Explore Feed',
+                          style: AppTextStyles.titleMedium.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        Row(
+                          children: [
+                            // Dropdown 1: Categories
+                            Expanded(
+                              child: _buildFilterDropdown(
+                                title: 'Categories',
+                                value: selectedCategory,
+                                items: _controller.categories,
+                                isDefault: selectedCategory == 'All',
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    HapticFeedback.selectionClick();
+                                    _controller.setCategory(val);
+                                  }
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+
+                            // Dropdown 2: Models
+                            Expanded(
+                              child: _buildFilterDropdown(
+                                title: 'Models',
+                                value: selectedModel,
+                                items: _controller.models,
+                                isDefault: selectedModel == 'All Models',
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    HapticFeedback.selectionClick();
+                                    _controller.setModel(val);
+                                  }
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+
+                            // Dropdown 3: Aspect Ratio
+                            Expanded(
+                              child: _buildFilterDropdown(
+                                title: 'Aspect Ratio',
+                                value: selectedRatio,
+                                items: _controller.aspectRatios,
+                                isDefault: selectedRatio == 'All',
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    HapticFeedback.selectionClick();
+                                    _controller.setAspectRatio(val);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
 
                     // Active filters indicator bar & quick reset
                     if (_controller.hasActiveFilters) ...[
@@ -273,13 +282,13 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
                   ],
                 );
               }),
-            ),
+            ],
+          ),
+        ),
 
-            Divider(height: 1, color: AppColors.border),
-
-            // =================================================================
-            // SCATTERED MASONRY GRID WITH INFINITE SCROLL & SKELETON LOADERS
-            // =================================================================
+        // =================================================================
+        // SCATTERED MASONRY GRID WITH INFINITE SCROLL & SKELETON LOADERS
+        // =================================================================
             Expanded(
               child: Obx(() {
                 // Initial Loading Shimmer State
@@ -563,15 +572,15 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
     final displayText = isDefault ? title : value;
 
     return Container(
-      height: 40.h,
+      height: 38.h,
       padding: EdgeInsets.symmetric(horizontal: 10.w),
       decoration: BoxDecoration(
         color: !isDefault
             ? AppColors.primary.withValues(alpha: 0.10)
             : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: !isDefault ? AppColors.primary : AppColors.border,
+          color: !isDefault ? AppColors.primary : AppColors.borderSubtle,
           width: !isDefault ? 1.5 : 1.0,
         ),
       ),
@@ -580,7 +589,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
           value: safeValue,
           isExpanded: true,
           dropdownColor: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+          borderRadius: BorderRadius.circular(14.r),
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
             size: 18.sp,

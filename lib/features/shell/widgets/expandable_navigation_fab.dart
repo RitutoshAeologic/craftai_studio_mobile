@@ -192,13 +192,15 @@ class ExpandableNavigationFabState extends State<ExpandableNavigationFab>
                         color: Colors.white.withValues(alpha: 0.35),
                         width: 1.5.w,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.45),
-                          blurRadius: 16.r,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow: _isExpanded
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.30),
+                                blurRadius: 12.r,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                     ),
                     child: Center(
                       child: RotationTransition(
@@ -240,13 +242,6 @@ class ExpandableNavigationFabState extends State<ExpandableNavigationFab>
               color: AppColors.glassBorderSubtle,
               width: 1.2.w,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.22),
-                blurRadius: 12.r,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: Row(
             children: [

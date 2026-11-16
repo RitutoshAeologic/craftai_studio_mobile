@@ -14,6 +14,7 @@ import '../../explore/controllers/explore_controller.dart';
 import '../../studio/presentation/views/creation_studio_view.dart';
 import '../../studio/presentation/controllers/studio_controller.dart';
 import '../../tools/views/ai_tools_view.dart';
+import '../../remix/views/remix_chat_view.dart';
 import '../../library/views/cloud_library_view.dart';
 import '../../profile/views/profile_view.dart';
 import '../../wallet/views/wallet_view.dart';
@@ -271,6 +272,25 @@ class _HomeShellViewState extends State<HomeShellView> {
                     onTap: () {
                       HapticFeedback.lightImpact();
                       controller.switchTab(1);
+                    },
+                  ),
+                  FabMenuItem(
+                    title: 'Remix in Lab',
+                    subtitle: 'Conversational prompt refinement & face-lock',
+                    icon: Icons.shuffle_rounded,
+                    accentColor: const Color(0xFF8B5CF6),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Get.to(
+                        () => const RemixChatView(),
+                        arguments: {
+                          'anchorImageUrl': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
+                          'sourceType': 'explore',
+                          'initialPrompt': 'Remix this artwork with balanced styling',
+                          'authorName': 'Community Creator',
+                        },
+                        transition: Transition.rightToLeft,
+                      );
                     },
                   ),
                   FabMenuItem(
