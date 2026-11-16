@@ -254,6 +254,31 @@ void main() {
       expect(remixController.inputController.text, 'Cyberpunk Neon, Studio Ghibli Anime');
     });
 
+    test('addModifierTag prevents duplicate tags and toggles off existing selections', () {
+      remixController = Get.put(RemixChatController(repository: mockRepo));
+
+      // 1. Initial selection
+      remixController.addModifierTag('+ Cyberpunk Neon');
+      expect(remixController.inputController.text, 'Cyberpunk Neon');
+      expect(remixController.isTagActive('+ Cyberpunk Neon'), isTrue);
+
+      // 2. Second tap on same option should toggle it off, NOT duplicate
+      remixController.addModifierTag('+ Cyberpunk Neon');
+      expect(remixController.inputController.text, '');
+      expect(remixController.isTagActive('+ Cyberpunk Neon'), isFalse);
+
+      // 3. Multi-tag toggle behavior
+      remixController.addModifierTag('+ Cyberpunk Neon');
+      remixController.addModifierTag('+ Studio Ghibli Anime');
+      expect(remixController.inputController.text, 'Cyberpunk Neon, Studio Ghibli Anime');
+
+      // Toggling off first tag preserves second tag
+      remixController.addModifierTag('+ Cyberpunk Neon');
+      expect(remixController.inputController.text, 'Studio Ghibli Anime');
+      expect(remixController.isTagActive('+ Cyberpunk Neon'), isFalse);
+      expect(remixController.isTagActive('+ Studio Ghibli Anime'), isTrue);
+    });
+
     test('sendInstruction ignores empty or whitespace-only inputs', () async {
       remixController = Get.put(RemixChatController(repository: mockRepo));
       await Future<void>.delayed(const Duration(milliseconds: 20));

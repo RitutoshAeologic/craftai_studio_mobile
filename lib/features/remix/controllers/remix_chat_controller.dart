@@ -158,16 +158,53 @@ class RemixChatController extends GetxController {
     HapticFeedback.selectionClick();
   }
 
-  /// Appends a quick modifier tag to the active input text
+  /// Extracts the clean modifier text from a raw chip string (e.g. '+ Cyberpunk Neon' -> 'Cyberpunk Neon')
+  String cleanTag(String tag) {
+    return tag.replaceFirst(RegExp(r'^[+\-•\s]+'), '').trim();
+  }
+
+  /// Checks whether a given modifier tag is currently present in the active input
+  bool isTagActive(String tag) {
+    final clean = cleanTag(tag).toLowerCase();
+    if (clean.isEmpty) return false;
+    final currentText = inputController.text.toLowerCase();
+    if (currentText.isEmpty) return false;
+
+    final segments = currentText
+        .split(RegExp(r'[,;\n]'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty);
+    return segments.any((s) => s == clean);
+  }
+
+  /// Appends or toggles a quick modifier tag to prevent duplicate entries.
+  /// If the tag is already present in the active input, it cleanly toggles it off.
+  /// If not present, it appends it with comma separation.
   void addModifierTag(String tag) {
     if (isSending.value || isGenerating.value) return;
     HapticFeedback.selectionClick();
-    final current = inputController.text.trim();
-    if (current.isEmpty) {
-      inputController.text = tag.replaceFirst('+ ', '');
+
+    final clean = cleanTag(tag);
+    if (clean.isEmpty) return;
+
+    final currentText = inputController.text.trim();
+
+    if (isTagActive(tag)) {
+      // Toggle OFF: Cleanly remove this tag from comma-separated segments
+      final segments = currentText
+          .split(RegExp(r'\s*,\s*'))
+          .where((s) => s.trim().toLowerCase() != clean.toLowerCase() && s.trim().isNotEmpty)
+          .toList();
+      inputController.text = segments.join(', ');
     } else {
-      inputController.text = '$current, ${tag.replaceFirst('+ ', '')}';
+      // Toggle ON: Append tag without duplicating
+      if (currentText.isEmpty) {
+        inputController.text = clean;
+      } else {
+        inputController.text = '$currentText, $clean';
+      }
     }
+
     inputController.selection = TextSelection.fromPosition(
       TextPosition(offset: inputController.text.length),
     );

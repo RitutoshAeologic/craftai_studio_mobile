@@ -458,20 +458,38 @@ class _RemixChatViewState extends State<RemixChatView> {
           separatorBuilder: (_, __) => SizedBox(width: 6.w),
           itemBuilder: (context, index) {
             final chip = controller.suggestedChips[index];
-            return ActionChip(
-              label: Text(chip),
-              labelStyle: AppTextStyles.captionXs.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-              backgroundColor: AppColors.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                side: BorderSide(color: AppColors.border),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 0),
-              onPressed: () => controller.addModifierTag(chip),
-            );
+            return Obx(() {
+              // Reactively recompute active selection when input text changes
+              final _ = controller.promptLength.value;
+              final isSelected = controller.isTagActive(chip);
+
+              return ActionChip(
+                avatar: isSelected
+                    ? Icon(
+                        Icons.check_rounded,
+                        size: 13.sp,
+                        color: AppColors.primary,
+                      )
+                    : null,
+                label: Text(chip),
+                labelStyle: AppTextStyles.captionXs.copyWith(
+                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                ),
+                backgroundColor: isSelected
+                    ? AppColors.primary.withValues(alpha: 0.12)
+                    : AppColors.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                  side: BorderSide(
+                    color: isSelected ? AppColors.primary : AppColors.border,
+                    width: isSelected ? 1.4 : 1.0,
+                  ),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 0),
+                onPressed: () => controller.addModifierTag(chip),
+              );
+            });
           },
         ),
       ),
