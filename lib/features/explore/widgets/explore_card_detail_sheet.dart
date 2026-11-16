@@ -620,7 +620,7 @@ class ExploreCardDetailSheet extends StatelessWidget {
                         ),
                         icon: Icon(Icons.shuffle_rounded, size: 16.sp, color: AppColors.purpleAccent),
                         label: Text(
-                          '⚡ Remix in Lab (Chat)',
+                          'Remix in Lab (Chat)',
                           style: AppTextStyles.bodyMediumBold.copyWith(color: AppColors.purpleAccent),
                         ),
                       ),
@@ -646,7 +646,7 @@ class ExploreCardDetailSheet extends StatelessWidget {
                         ),
                         icon: Icon(Icons.face_retouching_natural, size: 16.sp, color: AppColors.orangeAccent),
                         label: Text(
-                          '⚡ Remix on My Photo (Subject Lock)',
+                          'Remix on My Photo (Subject Lock)',
                           style: AppTextStyles.captionBold.copyWith(color: AppColors.orangeAccent),
                         ),
                       ),

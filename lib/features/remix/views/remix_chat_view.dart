@@ -626,7 +626,7 @@ class _RemixChatViewState extends State<RemixChatView> {
             label: Text(
               isBusy
                   ? (controller.isGenerating.value ? 'Diffusing Latents...' : 'Refining Recipe...')
-                  : '⚡ Generate Remix (1 Credit)',
+                  : 'Generate Remix (1 Credit)',
               style: AppTextStyles.bodyMediumBold.copyWith(color: Colors.white),
             ),
           ),

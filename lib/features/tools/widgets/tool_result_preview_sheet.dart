@@ -305,7 +305,7 @@ class ToolResultPreviewSheet extends StatelessWidget {
                             SizedBox(width: 8.w),
                             Flexible(
                               child: Text(
-                                '⚡ Remix in Lab (Chat)',
+                                'Remix in Lab',
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w600,

@@ -62,7 +62,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // 1. Verify Polish button is present
-      expect(find.text('Polish ✨'), findsOneWidget);
+      expect(find.text('Polish'), findsOneWidget);
 
       // 2. Verify Aspect Ratio dropdown is present adjacent to Polish button
       expect(find.byType(DropdownButton<String>), findsOneWidget);

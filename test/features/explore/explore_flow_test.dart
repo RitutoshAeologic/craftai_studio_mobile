@@ -153,7 +153,7 @@ void main() {
       expect(find.text('2.0 Credits'), findsOneWidget);
 
       // Hick's 1-CTA & Thumb Zone Sticky Bar
-      expect(find.text('⚡ Remix in Studio'), findsOneWidget);
+      expect(find.text('Remix in Lab'), findsOneWidget);
       expect(find.text('Save'), findsOneWidget);
       expect(find.text('Use Ref'), findsOneWidget);
       expect(find.text('Share'), findsOneWidget);

@@ -11,7 +11,7 @@ class AppStrings {
   static const String studioTitle = "Studio";
   static const String quickStarterTemplates = "Quick Starter Templates";
   static const String promptInputHint = "Describe your scene or tap a starter template above...";
-  static const String btnCopilot = "Copilot ✨";
+  static const String btnCopilot = "Copilot";
   static const String btnEnhance = "Enhance";
   static const String btnAiEdit = "AI Edit";
   static const String consistentCharacterTitle = "Consistent Character & References";
@@ -24,7 +24,7 @@ class AppStrings {
   static const String seedRandom = "Random";
   static const String aspectRatioTitle = "Aspect Ratio";
   static const String resolutionTitle = "Resolution";
-  static const String btnGenerate = "Generate ✨";
+  static const String btnGenerate = "Generate";
   static const String credits = "Credits";
   static const String cr = "Cr";
   static const String generatingOnGpu = "Generating on GPU...";

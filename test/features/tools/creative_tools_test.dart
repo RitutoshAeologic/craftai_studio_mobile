@@ -441,7 +441,7 @@ void main() {
       expect(find.text('AI Backgrounds'), findsOneWidget);
       expect(find.text('Pure White • 1k Quality'), findsOneWidget);
       expect(find.byType(BeforeAfterSlider), findsOneWidget);
-      expect(find.text('⚡ Remix in Lab (Chat)'), findsOneWidget);
+      expect(find.text('Remix in Lab'), findsOneWidget);
       expect(find.text('Studio Canvas'), findsOneWidget);
       expect(find.text('Done'), findsOneWidget);
     });
@@ -461,7 +461,7 @@ void main() {
       expect(find.text('AI Expand'), findsOneWidget);
       expect(find.text('Target Ratio: 16:9 • 1k'), findsOneWidget);
       expect(find.byType(BeforeAfterSlider), findsNothing);
-      expect(find.text('⚡ Remix in Lab (Chat)'), findsOneWidget);
+      expect(find.text('Remix in Lab'), findsOneWidget);
     });
 
     testWidgets('Renders BeforeAfterSlider with local file path for originalImageUrl', (tester) async {

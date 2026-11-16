@@ -808,7 +808,7 @@ class CreationStudioView extends StatelessWidget {
                               ),
                             SizedBox(width: 4.w),
                             Text(
-                              isEnhancing ? 'Polishing...' : 'Polish ✨',
+                              isEnhancing ? 'Polishing...' : 'Polish',
                               style: AppTextStyles.captionBold.copyWith(
                                 color: hasPrompt
                                     ? AppColors.surface

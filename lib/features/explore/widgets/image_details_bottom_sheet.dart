@@ -12,6 +12,7 @@ import 'package:craftai_studio_mobile/features/library/controllers/collection_co
 import 'package:craftai_studio_mobile/features/library/widgets/save_to_collection_sheet.dart';
 import '../views/explore_image_detail_view.dart';
 import '../views/explore_category_view.dart';
+import 'package:craftai_studio_mobile/features/remix/views/remix_chat_view.dart';
 
 /// [ImageDetailsBottomSheet] is the central inspection modal for Explore artwork.
 /// It strictly implements Miller's Law (3 chunked cards), Hick's Law (1 Primary CTA),
@@ -552,7 +553,7 @@ class _ImageDetailsBottomSheetState extends State<ImageDetailsBottomSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Dominant Primary CTA: Remix in Studio (Full Width, 52dp)
+          // Dominant Primary CTA: Remix in Lab (Full Width, 52dp)
           SizedBox(
             width: double.infinity,
             height: 52.h,
@@ -560,7 +561,20 @@ class _ImageDetailsBottomSheetState extends State<ImageDetailsBottomSheet> {
               onPressed: () {
                 HapticFeedback.mediumImpact();
                 Navigator.of(context).pop();
-                controller.useAsPrompt(widget.card);
+                Get.to(
+                  () => const RemixChatView(),
+                  arguments: {
+                    'anchorImageUrl': widget.card.previewUrl,
+                    'sourceType': 'explore',
+                    'remixedFromPromptId': widget.card.id,
+                    'initialPrompt': widget.card.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', ''),
+                    'authorName': widget.card.authorName,
+                    'royaltyPercent': widget.card.remixFee > 0
+                        ? (widget.card.creatorRoyaltyCut / widget.card.remixFee * 100).toInt()
+                        : 40,
+                  },
+                  transition: Transition.rightToLeft,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -570,9 +584,9 @@ class _ImageDetailsBottomSheetState extends State<ImageDetailsBottomSheet> {
                   borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                 ),
               ),
-              icon: const Icon(Icons.bolt, size: 22),
+              icon: const Icon(Icons.shuffle_rounded, size: 20),
               label: Text(
-                '⚡ Remix in Studio',
+                'Remix in Lab',
                 style: AppTextStyles.titleSmall.copyWith(
                   fontWeight: FontWeight.w800,
                   color: AppColors.surface,
