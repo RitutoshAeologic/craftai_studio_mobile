@@ -162,6 +162,9 @@
 - [ ] Analytics events emitted per `prod.md §8` for the new feature
 - [ ] **UI-Backend Feature & Engine Parity:** Every AI model, tool, engine, or pipeline supported on the backend (e.g. LLMs for prompt expansion, diffusion models for generation) MUST have an explicit, user-facing control/selector on the frontend UI. Never hide multi-model capabilities behind an invisible server-side default or black box.
 - [ ] **AI Engine Transparency:** The UI must visibly indicate which AI model/tool is currently active (e.g., model badges, latency chips, credit cost tags) so the user has full clarity and control.
+- [ ] **Single-Icon Policy (Zero Emoji Duplication):** Never mix a Flutter `Icon` widget (`icon: Icon(...)`) with a Unicode emoji/symbol (`⚡`, `✨`, `🖐️`, etc.) inside button labels or action chips.
+- [ ] **Action-to-Intent Verification:** Every CTA button label must strictly match the executed action (e.g. "Remix in Lab" must route to `RemixChatView`, not a generic studio tab switch).
+- [ ] **UI/UX Integrity Test Passing:** `test/core/ui_ux_integrity_test.dart` must pass with zero violations on every PR.
 
 **Standing rules:**
 - AI-generated code is an unreviewed first draft — "the AI wrote it" is never a valid explanation for a production bug.
