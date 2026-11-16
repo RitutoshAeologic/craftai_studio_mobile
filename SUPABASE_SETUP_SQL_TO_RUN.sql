@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS public.characters (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX IF NOT EXISTS idx_characters_user_id ON public.characters (user_id);
+
 ALTER TABLE public.characters ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users manage own characters" ON public.characters;
 CREATE POLICY "Users manage own characters" ON public.characters
@@ -95,6 +97,7 @@ UPDATE public.explore_prompts SET remixes_count = total_remixes WHERE remixes_co
 
 CREATE INDEX IF NOT EXISTS idx_explore_category_created ON public.explore_prompts (category, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_explore_user ON public.explore_prompts (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_explore_author ON public.explore_prompts (author_id) WHERE author_id IS NOT NULL;
 
 -- GIN Universal Search Index for instant keyword filtering
 DROP INDEX IF EXISTS public.idx_explore_prompts_fts;
@@ -205,6 +208,8 @@ UPDATE public.jobs SET output_url = preview_url WHERE output_url IS NULL AND pre
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_job_id ON public.jobs (job_id) WHERE job_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_jobs_user_created ON public.jobs (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_character_id ON public.jobs (character_id) WHERE character_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_jobs_remixed_from_prompt_id ON public.jobs (remixed_from_prompt_id) WHERE remixed_from_prompt_id IS NOT NULL;
 
 ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users insert own jobs" ON public.jobs;
@@ -300,6 +305,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_job
 CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_explore 
     ON public.collection_items (collection_id, explore_prompt_id) 
     WHERE explore_prompt_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_collection_items_collection_id ON public.collection_items (collection_id);
+CREATE INDEX IF NOT EXISTS idx_collection_items_user_id ON public.collection_items (user_id);
+CREATE INDEX IF NOT EXISTS idx_collection_items_job_id ON public.collection_items (job_id) WHERE job_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_collection_items_explore_prompt_id ON public.collection_items (explore_prompt_id) WHERE explore_prompt_id IS NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_artwork 
     ON public.collection_items (collection_id, artwork_id) 
@@ -638,9 +648,9 @@ CREATE POLICY "Anyone can view artworks" ON public.artworks FOR SELECT USING (tr
 DROP POLICY IF EXISTS "Anyone can insert artworks" ON public.artworks;
 CREATE POLICY "Anyone can insert artworks" ON public.artworks FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS "Users update own artworks" ON public.artworks;
-CREATE POLICY "Users update own artworks" ON public.artworks FOR UPDATE USING (auth.uid() = user_id OR auth.uid() = author_id);
+CREATE POLICY "Users update own artworks" ON public.artworks FOR UPDATE USING ((SELECT auth.uid()) = user_id OR (SELECT auth.uid()) = author_id);
 DROP POLICY IF EXISTS "Users delete own artworks" ON public.artworks;
-CREATE POLICY "Users delete own artworks" ON public.artworks FOR DELETE USING (auth.uid() = user_id OR auth.uid() = author_id);
+CREATE POLICY "Users delete own artworks" ON public.artworks FOR DELETE USING ((SELECT auth.uid()) = user_id OR (SELECT auth.uid()) = author_id);
 GRANT ALL ON public.artworks TO anon, authenticated, service_role;
 
 -- Populate initial artworks from explore_prompts so Web and Mobile show same community feed
@@ -848,7 +858,8 @@ ALTER TABLE public.categories
     ADD COLUMN IF NOT EXISTS sort_order INT NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_categories_slug ON public.categories (slug);
+-- Drop manual duplicate index if created previously (Postgres UNIQUE constraint on slug already provides index)
+DROP INDEX IF EXISTS public.uq_categories_slug;
 
 -- 2. Populate Standard Starter Categories with Smart Keyword Rules
 INSERT INTO public.categories (slug, name, icon_name, keywords, sort_order) VALUES
@@ -965,7 +976,8 @@ ALTER TABLE public.credit_packages
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
     ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_credit_packages_package_id ON public.credit_packages (package_id);
+-- Drop manual duplicate index if created previously (Postgres UNIQUE constraint on package_id already provides index)
+DROP INDEX IF EXISTS public.uq_credit_packages_package_id;
 
 ALTER TABLE public.credit_packages ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public can view active packages" ON public.credit_packages;
@@ -1009,12 +1021,17 @@ ALTER TABLE public.payment_transactions
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
     ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_transactions_payment_id ON public.payment_transactions (razorpay_payment_id);
+-- Drop manual duplicate index if created previously (Postgres UNIQUE constraint on razorpay_payment_id already provides index)
+DROP INDEX IF EXISTS public.uq_payment_transactions_payment_id;
+
+-- Covering indexes for foreign keys
+CREATE INDEX IF NOT EXISTS idx_payment_transactions_user_id ON public.payment_transactions (user_id);
+CREATE INDEX IF NOT EXISTS idx_payment_transactions_package_id ON public.payment_transactions (package_id);
 
 ALTER TABLE public.payment_transactions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users view own transactions" ON public.payment_transactions;
 CREATE POLICY "Users view own transactions" ON public.payment_transactions
-    FOR SELECT USING (auth.uid() = user_id);
+    FOR SELECT USING ((SELECT auth.uid()) = user_id);
 GRANT ALL ON public.payment_transactions TO authenticated, service_role;
 
 -- C. WALLET LEDGER (Itemized Credit Passbook)
@@ -1042,7 +1059,7 @@ CREATE INDEX IF NOT EXISTS idx_wallet_ledger_user ON public.wallet_ledger(user_i
 ALTER TABLE public.wallet_ledger ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users view own ledger" ON public.wallet_ledger;
 CREATE POLICY "Users view own ledger" ON public.wallet_ledger
-    FOR SELECT USING (auth.uid() = user_id);
+    FOR SELECT USING ((SELECT auth.uid()) = user_id);
 GRANT ALL ON public.wallet_ledger TO authenticated, service_role;
 
 -- D. ATOMIC RPC: fulfill_credit_purchase (Strictly Idempotent, Concurrency Safe, & Dual Web/Mobile Compatible)
@@ -1213,7 +1230,7 @@ CREATE INDEX IF NOT EXISTS idx_remix_sessions_prompt ON public.remix_sessions(re
 ALTER TABLE public.remix_sessions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users manage own remix sessions" ON public.remix_sessions;
 CREATE POLICY "Users manage own remix sessions" ON public.remix_sessions
-    FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+    FOR ALL USING ((SELECT auth.uid()) = user_id OR user_id IS NULL);
 GRANT ALL ON public.remix_sessions TO anon, authenticated, service_role;
 
 -- 2. Atomic Creator Royalty Credit RPC
