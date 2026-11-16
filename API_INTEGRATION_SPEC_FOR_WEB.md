@@ -1822,4 +1822,149 @@ export function useRazorpayCheckout() {
 }
 ```
 
+---
+
+## 8. Conversational Remix Lab & Creator Royalty Integration (Web Implementation)
+
+### 8.1 Overview & Architecture
+The **Remix Lab** (`/remix` and `/remix/[id]`) enables users to take any community artwork or personal creation, lock it as an anchor, and converse with an AI copilot (Groq Llama 3.3 / Gemini 2.5 Flash) to iterate on prompt recipes while preserving visual composition integrity.
+
+```
+┌─────────────────────────┐       ┌───────────────────────────┐       ┌────────────────────────┐
+│  Explore Card / Library │ ───>  │  Remix Lab Workspace      │ ───>  │  FLUX.1 Synthesis      │
+│  (Lock as Anchor Image) │       │  (Iterative AI Dialogue)  │       │  (+ 1.60 Cr Royalty)   │
+└─────────────────────────┘       └───────────────────────────┘       └────────────────────────┘
+```
+
+### 8.2 Client API Adapter (`src/lib/api/backend-client.ts`)
+To ensure zero field mismatches with the FastAPI backend, use the unified adapter pattern that harmonizes both `{ id, messages }` and `{ session_id, welcome_message }`:
+
+```typescript
+export interface RemixSessionResponse {
+  session_id: string;
+  anchor_image_url: string;
+  welcome_message?: string;
+  suggested_chips?: string[];
+}
+
+export interface RemixChatResponse {
+  turn_count: number;
+  refined_prompt: string;
+  explanation?: string;
+  diff_added?: string;
+  diff_removed?: string;
+  suggested_chips?: string[];
+  latency_ms?: number;
+}
+
+export async function initRemixSession(params: {
+  anchor_image_url: string;
+  source_type?: string;
+  style_weight?: number;
+}): Promise<RemixSessionResponse> {
+  const authHeader = await getAuthHeader();
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/v1/prompt-engineering/remix/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeader },
+      body: JSON.stringify({
+        anchor_image_url: params.anchor_image_url,
+        source_type: params.source_type || 'explore_card',
+        style_weight: params.style_weight ?? 0.75,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        session_id: data.session_id || data.id,
+        anchor_image_url: data.anchor_image_url || params.anchor_image_url,
+        welcome_message: data.welcome_message || data.messages?.[0]?.content || 'Anchor image locked! How would you like to remix this artwork?',
+        suggested_chips: data.suggested_chips || data.messages?.[0]?.suggested_chips || [],
+      };
+    }
+  } catch (err) {
+    console.warn('[initRemixSession] Fallback:', err);
+  }
+
+  // Safe offline fallback
+  return {
+    session_id: `remix_sess_${Math.random().toString(36).substring(2, 10)}`,
+    anchor_image_url: params.anchor_image_url,
+    welcome_message: 'Anchor image locked! How would you like to remix or transform this artwork?',
+    suggested_chips: [
+      'Switch lighting to moody cinematic golden hour',
+      'Convert art style to Japanese Ukiyo-e woodblock print',
+      'Transform into a miniature 3D isometric diorama',
+      'Add dramatic volumetric rain reflections',
+    ],
+  };
+}
+
+export async function sendRemixChat(params: {
+  session_id: string;
+  user_instruction: string;
+  ai_model?: string;
+  base_prompt?: string;
+}): Promise<RemixChatResponse> {
+  const authHeader = await getAuthHeader();
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/v1/prompt-engineering/remix/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeader },
+      body: JSON.stringify({
+        session_id: params.session_id,
+        user_instruction: params.user_instruction,
+        ai_model: params.ai_model || 'groq',
+        base_prompt: params.base_prompt || '',
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        turn_count: data.turn_count || 1,
+        refined_prompt: data.refined_prompt || data.compiled_prompt || params.user_instruction,
+        explanation: data.explanation || data.assistant_message?.content || 'Recipe updated for synthesis.',
+        diff_added: Array.isArray(data.assistant_message?.diff_added) ? data.assistant_message.diff_added.join(', ') : '',
+        diff_removed: '',
+        suggested_chips: data.suggested_chips || data.assistant_message?.suggested_chips || [],
+        latency_ms: data.latency_ms || 100,
+      };
+    }
+  } catch (err) {
+    console.warn('[sendRemixChat] Fallback:', err);
+  }
+
+  // Safe offline fallback
+  return {
+    turn_count: 1,
+    refined_prompt: `${params.base_prompt || 'Artwork'}, ${params.user_instruction}, cinematic lighting, 8k quality`,
+    explanation: `Applied transformation: "${params.user_instruction}"`,
+    diff_added: params.user_instruction,
+    diff_removed: '',
+    suggested_chips: [
+      'Add intense lighting reflections',
+      'Make textures ultra photorealistic 8K',
+      'Switch perspective to dynamic low angle',
+    ],
+    latency_ms: 600,
+  };
+}
+```
+
+### 8.3 Dispatching Remix Generation with Creator Royalty Link
+When synthesizing the remixed artwork, ensure `remixed_from_prompt_id` is passed into `dispatchGeneration`:
+```typescript
+const dispatchRes = await dispatchGeneration({
+  prompt: `${refinedPrompt}, style weight ${styleWeight}`,
+  model: 'flux',
+  width: 1024,
+  height: 1024,
+  remixed_from_prompt_id: remixedFromPromptId || null, // Auto-triggers 1.60 Credit royalty to original author
+});
+```
+
+### 8.4 Avoid Passing General Artworks to `face_reference_urls`
+Only pass images into `face_reference_urls` if the artwork is a portrait/selfie or character lock. For general scene, architecture, or cyberpunk remixes, leave `face_reference_urls: null` so the diffusion pipeline uses standard compositional style transfer rather than InstantID face landmarking.
+
+
 

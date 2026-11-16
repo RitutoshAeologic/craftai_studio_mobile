@@ -1172,4 +1172,130 @@ VALUES
 ('pack_master_999', 'Master Agency Pack', 'Max Power', 999.00, 11.99, 1000, 500, FALSE, 4, '["750 High-Res Generations", "500 Mega Bonus Credits", "Full Commercial License", "Zero Watermark", "VIP Generation Server"]'::jsonb)
 ON CONFLICT (package_id) DO NOTHING;
 
+-- ====================================================================
+-- 16. REMIX LAB SESSIONS & CREATOR ROYALTY LEDGER SYSTEM
+-- ====================================================================
+
+-- 1. Persistent Remix Sessions Table (Multi-Device & Cross-Platform State)
+CREATE TABLE IF NOT EXISTS public.remix_sessions (
+    id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    anchor_image_url TEXT NOT NULL,
+    source_type VARCHAR(50) NOT NULL DEFAULT 'explore',
+    remixed_from_prompt_id UUID REFERENCES public.explore_prompts(id) ON DELETE SET NULL,
+    current_prompt TEXT NOT NULL,
+    style_weight NUMERIC(3, 2) NOT NULL DEFAULT 0.60,
+    turn_count INT NOT NULL DEFAULT 0,
+    last_generated_job_id TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
+    messages JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.remix_sessions 
+    ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS anchor_image_url TEXT,
+    ADD COLUMN IF NOT EXISTS source_type VARCHAR(50) DEFAULT 'explore',
+    ADD COLUMN IF NOT EXISTS remixed_from_prompt_id UUID REFERENCES public.explore_prompts(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS current_prompt TEXT,
+    ADD COLUMN IF NOT EXISTS style_weight NUMERIC(3, 2) DEFAULT 0.60,
+    ADD COLUMN IF NOT EXISTS turn_count INT DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS last_generated_job_id TEXT,
+    ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active',
+    ADD COLUMN IF NOT EXISTS messages JSONB DEFAULT '[]'::jsonb,
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_remix_sessions_user ON public.remix_sessions(user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_remix_sessions_prompt ON public.remix_sessions(remixed_from_prompt_id);
+
+ALTER TABLE public.remix_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own remix sessions" ON public.remix_sessions;
+CREATE POLICY "Users manage own remix sessions" ON public.remix_sessions
+    FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+GRANT ALL ON public.remix_sessions TO anon, authenticated, service_role;
+
+-- 2. Atomic Creator Royalty Credit RPC
+CREATE OR REPLACE FUNCTION public.increment_creator_royalty(
+    p_creator_id UUID,
+    p_amount NUMERIC(10, 2),
+    p_prompt_id UUID DEFAULT NULL,
+    p_buyer_id UUID DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_wallet public.wallets;
+    v_new_balance NUMERIC(10, 2);
+    v_prompt_title TEXT;
+BEGIN
+    IF p_prompt_id IS NOT NULL THEN
+        SELECT title INTO v_prompt_title FROM public.explore_prompts WHERE id = p_prompt_id;
+    END IF;
+    v_prompt_title := COALESCE(v_prompt_title, 'Community Artwork');
+
+    SELECT * INTO v_wallet FROM public.wallets WHERE user_id = p_creator_id FOR UPDATE;
+    IF NOT FOUND THEN
+        INSERT INTO public.wallets (user_id, free_daily_balance, purchased_balance, earned_royalty_balance, total_royalties_earned, credits)
+        VALUES (p_creator_id, 5.00, 0.00, p_amount, p_amount, 5.00 + p_amount)
+        RETURNING * INTO v_wallet;
+    ELSE
+        UPDATE public.wallets 
+        SET 
+            earned_royalty_balance = COALESCE(earned_royalty_balance, 0.00) + p_amount,
+            total_royalties_earned = COALESCE(total_royalties_earned, 0.00) + p_amount,
+            credits = credits + p_amount,
+            updated_at = NOW()
+        WHERE user_id = p_creator_id
+        RETURNING * INTO v_wallet;
+    END IF;
+
+    v_new_balance := v_wallet.credits;
+
+    INSERT INTO public.wallet_ledger (
+        user_id, amount, balance_after, event_type, description, reference_id
+    ) VALUES (
+        p_creator_id,
+        p_amount,
+        v_new_balance,
+        'royalty',
+        'Creator Royalty: Community remix of "' || v_prompt_title || '" (+' || p_amount || ' Credits)',
+        COALESCE(p_prompt_id::text, 'remix')
+    );
+
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'credited', p_amount,
+        'new_balance', v_new_balance,
+        'creator_id', p_creator_id
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+GRANT EXECUTE ON FUNCTION public.increment_creator_royalty TO authenticated, service_role;
+
+-- 3. Atomic Prompt Remix Counter RPC
+CREATE OR REPLACE FUNCTION public.increment_prompt_remix_count(p_prompt_id UUID)
+RETURNS INT AS $$
+DECLARE
+    new_count INT;
+BEGIN
+    UPDATE public.explore_prompts
+    SET 
+        remixes_count = COALESCE(remixes_count, 0) + 1,
+        total_remixes = COALESCE(total_remixes, 0) + 1
+    WHERE id = p_prompt_id
+    RETURNING remixes_count INTO new_count;
+
+    UPDATE public.artworks
+    SET 
+        remixes_count = COALESCE(remixes_count, 0) + 1,
+        total_remixes = COALESCE(total_remixes, 0) + 1
+    WHERE id = p_prompt_id::text;
+
+    RETURN COALESCE(new_count, 1);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+GRANT EXECUTE ON FUNCTION public.increment_prompt_remix_count TO anon, authenticated, service_role;
+
+
 
