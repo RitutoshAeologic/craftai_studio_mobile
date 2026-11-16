@@ -34,6 +34,5 @@ class WalletModel {
   }
 
   double get totalSpendable => purchasedBalance + earnedRoyaltyBalance + freeDailyBalance;
-  double get totalBalance => totalSpendable;
   bool get isEligibleForPayout => earnedRoyaltyBalance >= 25.0;
 }

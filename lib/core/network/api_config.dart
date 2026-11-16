@@ -50,13 +50,6 @@ class ApiConfig {
   /// Whether the app is running on a native Android device.
   static bool get isAndroidDevice => !kIsWeb && Platform.isAndroid;
 
-  /// The Razorpay Key ID for client-side payment checkout.
-  static String get razorpayKeyId {
-    const envKey = String.fromEnvironment('RAZORPAY_KEY_ID');
-    if (envKey.isNotEmpty) return envKey;
-    return 'rzp_test_Tz9TU5AYYJCplL';
-  }
-
   /// Builds a WebSocket URL for streaming generation progress.
   /// Matches API_INTEGRATION_SPEC.md §2.2:
   /// ws://.../api/v1/prompt-engineering/generation/ws/generation/{task_id}
