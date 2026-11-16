@@ -91,61 +91,59 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        title: Text(
-          'Cloud Library',
-          style: AppTextStyles.titleMedium.copyWith(
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(48.h),
-          child: Column(
-            children: [
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-                height: 36.h,
+    return Material(
+      color: AppColors.background,
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Unified Clean Header with TabBar (Eliminates Stacked Double AppBar)
+            Container(
+              padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 10.h),
+              child: Container(
+                height: 40.h,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceLight,
-                  borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                  borderRadius:
+                      BorderRadius.circular(AppDimens.radiusRound),
                   border: Border.all(color: AppColors.border),
                 ),
                 child: TabBar(
                   controller: _tabController,
                   indicator: BoxDecoration(
                     color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                    borderRadius:
+                        BorderRadius.circular(AppDimens.radiusRound),
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
                   labelColor: AppColors.white,
                   unselectedLabelColor: AppColors.textSecondary,
-                  labelStyle:
-                      AppTextStyles.captionBold.copyWith(fontSize: 12.5.sp),
-                  unselectedLabelStyle:
-                      AppTextStyles.captionBold.copyWith(fontSize: 12.5.sp),
+                  labelStyle: AppTextStyles.captionBold
+                      .copyWith(fontSize: 12.5.sp),
+                  unselectedLabelStyle: AppTextStyles.captionBold
+                      .copyWith(fontSize: 12.5.sp),
                   tabs: const [
                     Tab(text: 'Current'),
                     Tab(text: 'Collections'),
                   ],
                 ),
               ),
-              Container(color: AppColors.border, height: 1.h),
-            ],
-          ),
+            ),
+            Divider(color: AppColors.borderSubtle, height: 1.h),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildCurrentTab(),
+                  _buildCollectionsTab(),
+                ],
+              ),
+            ),
+          ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildCurrentTab(),
-          _buildCollectionsTab(),
-        ],
       ),
     );
   }
@@ -181,7 +179,12 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics()),
-          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
+          padding: EdgeInsets.fromLTRB(
+            16.w,
+            16.h,
+            16.w,
+            MediaQuery.paddingOf(context).bottom + 140.h,
+          ),
           itemCount: _controller.myCreations.length + 1,
           itemBuilder: (context, idx) {
             // Last item is the dynamic pagination footer
@@ -240,7 +243,12 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics()),
-          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
+          padding: EdgeInsets.fromLTRB(
+            16.w,
+            16.h,
+            16.w,
+            MediaQuery.paddingOf(context).bottom + 140.h,
+          ),
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -823,199 +831,270 @@ class _CloudLibraryViewState extends State<CloudLibraryView>
     );
   }
 
+  /// Dynamically computes aspect ratio from ratio string (e.g. '16:9', '9:16', '1:1')
+  /// or dimensions (e.g. '1024x1024', '1920x1080') so creation cards adapt fluidly
+  double _parseAspectRatio(String? ratioStr, String? dimensionsStr) {
+    if (ratioStr != null && ratioStr.isNotEmpty) {
+      final clean = ratioStr.replaceAll(RegExp(r'[^\d:]'), '');
+      if (clean.contains(':')) {
+        final parts = clean.split(':');
+        if (parts.length == 2) {
+          final w = double.tryParse(parts[0]);
+          final h = double.tryParse(parts[1]);
+          if (w != null && h != null && h > 0) {
+            return (w / h).clamp(0.55, 1.85);
+          }
+        }
+      }
+    }
+
+    if (dimensionsStr != null && dimensionsStr.isNotEmpty) {
+      final clean =
+          dimensionsStr.toLowerCase().replaceAll(RegExp(r'[^\dx]'), '');
+      if (clean.contains('x')) {
+        final parts = clean.split('x');
+        if (parts.length == 2) {
+          final w = double.tryParse(parts[0]);
+          final h = double.tryParse(parts[1]);
+          if (w != null && h != null && h > 0) {
+            return (w / h).clamp(0.55, 1.85);
+          }
+        }
+      }
+    }
+
+    return 1.0;
+  }
+
   /// Artwork creation card with image preview, cloud status pill, and actions
   Widget _buildCreationCard(BuildContext context, JobModel job) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Get.to(() => CreationDetailView(job: job));
-                },
-                child: Container(
-                  height: 220.h,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    // color: AppColors.black,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(14.r)),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Center(
+    return BouncyTap(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Get.to(() => CreationDetailView(job: job));
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16.h),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                AspectRatio(
+                  aspectRatio:
+                      _parseAspectRatio(job.aspectRatio, job.dimensions),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceLight,
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(14.r)),
+                    ),
+                    clipBehavior: Clip.antiAlias,
                     child: AppNetworkImage(
-                      imageUrl: job.previewUrl.isNotEmpty && job.previewUrl.startsWith('http')
+                      imageUrl: job.previewUrl.isNotEmpty &&
+                              job.previewUrl.startsWith('http')
                           ? job.previewUrl
                           : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop',
                       fit: BoxFit.contain,
                       placeholder: Container(color: AppColors.surfaceLight),
                       errorWidget: Container(
                         color: AppColors.surfaceLight,
-                        child: Center(child: Icon(Icons.broken_image, color: AppColors.textMuted)),
+                        child: Center(
+                            child: Icon(Icons.broken_image,
+                                color: AppColors.textMuted)),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-              // Creation timestamp badge (Top-left)
-              Positioned(
-                top: 8.h,
-                left: 8.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.65),
-                    borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                  ),
-                  child: Text(
-                    _formatJobDate(job.createdAt),
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Delete button (Top-right: glassy frosted effect with black icon)
-              Positioned(
-                top: 8.h,
-                right: 8.w,
-                child: BouncyTap(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    _confirmDelete(context, _controller, job);
-                  },
-                  child: ClipOval(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        width: 36.w,
-                        height: 36.w,
-                        alignment: Alignment.center,
+                // Creation timestamp and aspect ratio badge (Top-left)
+                Positioned(
+                  top: 8.h,
+                  left: 8.w,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.70),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            width: 1.2.w,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 8.r,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          color: Colors.black.withValues(alpha: 0.65),
+                          borderRadius:
+                              BorderRadius.circular(AppDimens.radiusRound),
                         ),
-                        child: Icon(
-                          Icons.delete_outline_rounded,
-                          color: Colors.black,
-                          size: 18.sp,
+                        child: Text(
+                          _formatJobDate(job.createdAt),
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: EdgeInsets.all(12.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  job.prompt,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 10.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(6.r),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.cloud_done_rounded,
-                            size: 13.sp,
-                            color: AppColors.accentSuccess,
+                      if (job.aspectRatio.isNotEmpty &&
+                          job.aspectRatio != 'Auto') ...[
+                        SizedBox(width: 5.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 7.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.65),
+                            borderRadius:
+                                BorderRadius.circular(AppDimens.radiusRound),
                           ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            'Cloud Saved',
+                          child: Text(
+                            job.aspectRatio,
                             style: TextStyle(
-                              fontSize: 11.sp,
-                              color: AppColors.accentSuccess,
+                              fontSize: 10.sp,
+                              color: AppColors.white,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Get.to(() => CreationDetailView(job: job));
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 8.w, vertical: 4.h),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      icon: Text(
-                        'View Details',
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Delete button (Top-right: glassy frosted effect with black icon)
+                Positioned(
+                  top: 8.h,
+                  right: 8.w,
+                  child: BouncyTap(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _confirmDelete(context, _controller, job);
+                    },
+                    child: ClipOval(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          width: 36.w,
+                          height: 36.w,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.70),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              width: 1.2.w,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 8.r,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.black,
+                            size: 18.sp,
+                          ),
                         ),
                       ),
-                      label: Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 10.sp,
-                        color: AppColors.primary,
-                      ),
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            Padding(
+              padding: EdgeInsets.all(12.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    job.prompt,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceLight,
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.cloud_done_rounded,
+                              size: 13.sp,
+                              color: AppColors.accentSuccess,
+                            ),
+                            SizedBox(width: 4.w),
+                            Text(
+                              'Cloud Saved',
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: AppColors.accentSuccess,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (job.category.isNotEmpty) ...[
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 7.w, vertical: 3.h),
+                              decoration: BoxDecoration(
+                                color:
+                                    AppColors.primary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: Text(
+                                job.category,
+                                style: TextStyle(
+                                  fontSize: 10.5.sp,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 6.w),
+                          ],
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 12.sp,
+                            color: AppColors.textMuted,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

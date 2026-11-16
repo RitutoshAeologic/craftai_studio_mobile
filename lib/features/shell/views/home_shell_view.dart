@@ -69,7 +69,7 @@ class _HomeShellViewState extends State<HomeShellView> {
           }
         }
 
-        // 2. Non-Explore tabs (Studio, AI Tools, Library, Profile) navigate to Explore (Tab 0)
+        // 2. Non-Explore tabs (Studio, AI Tools, Library) navigate to Explore (Tab 0)
         if (controller.currentIndex.value != 0) {
           controller.switchTab(0);
           return;
@@ -99,95 +99,145 @@ class _HomeShellViewState extends State<HomeShellView> {
               child: const ProfileView()),
         ];
 
+        final topPadding = MediaQuery.paddingOf(context).top;
+        final bottomPadding = MediaQuery.paddingOf(context).bottom;
+
         return Scaffold(
           key: ValueKey('shell_$activePreset'),
           extendBody: true,
           backgroundColor: AppColors.background,
           appBar: PreferredSize(
-            preferredSize: Size.fromHeight(60.h),
+            preferredSize: Size.fromHeight(56.h + topPadding),
             child: ClipRect(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-
+                  height: 56.h + topPadding,
+                  padding: EdgeInsets.only(
+                    top: topPadding,
+                    left: 16.w,
+                    right: 16.w,
                   ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w)+EdgeInsets.only(bottom: 5),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 34.w,
-                                  height: 34.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.background.withValues(alpha: 0.88),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.borderSubtle,
+                        width: 0.8.w,
+                      ),
+                    ),
+                  ),
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 34.w,
+                                height: 34.w,
+                                decoration: BoxDecoration(
+                                  gradient: AppColors.aiCosmicGradient,
+                                  borderRadius: BorderRadius.circular(10.r),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary
+                                          .withValues(alpha: 0.35),
+                                      blurRadius: 10.r,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'C',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 18.sp,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 10.w),
+                              Flexible(
+                                child: RichText(
+                                  overflow: TextOverflow.ellipsis,
+                                  text: TextSpan(
+                                    text: 'CraftAI ',
+                                    style: TextStyle(
+                                      fontSize: 18.sp,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textPrimary,
+                                      letterSpacing: -0.3,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: 'Studio',
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CreditCostChip(
+                              creditsRx: controller.userCredits,
+                              onTap: () => Get.to(() => const WalletView()),
+                              isHighlighted: true,
+                            ),
+                            SizedBox(width: 8.w),
+                            Tooltip(
+                              message: 'Profile',
+                              child: BouncyTap(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  Get.to(() => const ProfileView());
+                                },
+                                child: Container(
+                                  width: 32.w,
+                                  height: 32.w,
                                   decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
                                     gradient: AppColors.aiCosmicGradient,
-                                    borderRadius: BorderRadius.circular(10.r),
+                                    border: Border.all(
+                                      color: AppColors.glassBorderSubtle,
+                                      width: 1.2.w,
+                                    ),
                                     boxShadow: [
                                       BoxShadow(
                                         color: AppColors.primary
-                                            .withValues(alpha: 0.35),
-                                        blurRadius: 10.r,
+                                            .withValues(alpha: 0.25),
+                                        blurRadius: 8.r,
                                         offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
                                   child: Center(
-                                    child: Text(
-                                      'C',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 18.sp,
-                                        letterSpacing: -0.5,
-                                      ),
+                                    child: Icon(
+                                      Icons.person_rounded,
+                                      size: 17.sp,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: 10.w),
-                                Flexible(
-                                  child: RichText(
-                                    overflow: TextOverflow.ellipsis,
-                                    text: TextSpan(
-                                      text: 'CraftAI ',
-                                      style: TextStyle(
-                                        fontSize: 18.sp,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.textPrimary,
-                                        letterSpacing: -0.3,
-                                      ),
-                                      children: [
-                                        TextSpan(
-                                          text: 'Studio',
-                                          style: TextStyle(
-                                            color: AppColors.textSecondary,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              CreditCostChip(
-                                creditsRx: controller.userCredits,
-                                onTap: () => Get.to(() => const WalletView()),
-                                isHighlighted: true,
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -208,8 +258,9 @@ class _HomeShellViewState extends State<HomeShellView> {
               ExpandableNavigationFab(
                 key: _fabKey,
                 bottomOffset:
-                    (MediaQuery.paddingOf(context).bottom > 0 ? 12.h : 14.h) +
-                        3.h,
+                    (bottomPadding > 0 ? bottomPadding + 8.h : 14.h) +
+                        58.h +
+                        12.h,
                 rightOffset: 16.w,
                 items: [
                   FabMenuItem(
@@ -217,14 +268,20 @@ class _HomeShellViewState extends State<HomeShellView> {
                     subtitle: 'Generate AI art with prompts & styles',
                     icon: Icons.auto_awesome_rounded,
                     accentColor: AppColors.primary,
-                    onTap: () => Get.to(() => const CreationStudioView()),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      controller.switchTab(1);
+                    },
                   ),
                   FabMenuItem(
                     title: 'AI Tools',
                     subtitle: 'All specialized editing & enhancement tools',
                     icon: Icons.auto_fix_high_rounded,
                     accentColor: const Color(0xFFA855F7),
-                    onTap: () => Get.to(() => const AiToolsView()),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      controller.switchTab(2);
+                    },
                   ),
                 ],
               ),
@@ -234,9 +291,7 @@ class _HomeShellViewState extends State<HomeShellView> {
             alignment: Alignment.bottomCenter,
             child: Container(
               margin: EdgeInsets.only(
-                left: 16.w,
-                right: 76.w,
-                bottom: MediaQuery.paddingOf(context).bottom > 0 ? 12.h : 14.h,
+                bottom: bottomPadding > 0 ? bottomPadding + 8.h : 14.h,
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(28.r),
@@ -244,9 +299,10 @@ class _HomeShellViewState extends State<HomeShellView> {
                   filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                   child: Container(
                     height: 58.h,
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
                     decoration: BoxDecoration(
-                      color: AppColors.glassSurface.withValues(alpha: 0.65),
+                      color: AppColors.glassSurface.withValues(alpha: 0.70),
                       borderRadius: BorderRadius.circular(28.r),
                       border: Border.all(
                         color: AppColors.glassBorder,
@@ -267,7 +323,6 @@ class _HomeShellViewState extends State<HomeShellView> {
 
                       return Row(
                         mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _buildNavItem(
                             isSelected: isExploreSelected,

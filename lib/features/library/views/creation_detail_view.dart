@@ -13,6 +13,7 @@ import 'package:craftai_studio_mobile/features/library/widgets/download_paywall_
 import 'package:craftai_studio_mobile/features/library/widgets/publish_creation_sheet.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/widgets/studio_image_edit_actions_sheet.dart';
 import '../../../shared/widgets/interactions/bouncy_tap.dart';
+import '../../../shared/widgets/image/zoomable_image_lightbox.dart';
 
 /// [CreationDetailView] renders the full-screen MeiGen image detail screen.
 /// Features:
@@ -242,7 +243,63 @@ class _CreationDetailViewState extends State<CreationDetailView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: Padding(
+          padding: EdgeInsets.only(left: 12.w),
+          child: Center(
+            child: IconButton(
+              onPressed: () => Get.back(),
+              tooltip: 'Back',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.black.withValues(alpha: 0.04),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.arrow_back_ios_new_rounded, size: 16.sp, color: AppColors.textPrimary),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 16.w),
+            child: Center(
+              child: ElevatedButton.icon(
+                onPressed: () => PublishCreationSheet.show(context, widget.job),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.surface,
+                  foregroundColor: AppColors.textPrimary,
+                  elevation: 0,
+                  side: BorderSide(color: AppColors.border),
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusRound)),
+                ),
+                icon: Icon(Icons.add, size: 16.sp, color: AppColors.textPrimary),
+                label: Text(
+                  'Publish',
+                  style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
+        top: false,
         child: Stack(
           children: [
             // Scrollable Content
@@ -251,181 +308,218 @@ class _CreationDetailViewState extends State<CreationDetailView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Navigation Bar
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Back Button
-                        IconButton(
-                          onPressed: () => Get.back(),
-                          icon: Container(
-                            padding: EdgeInsets.all(8.w),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Icon(Icons.arrow_back_ios_new_rounded, size: 16.sp, color: AppColors.textPrimary),
-                          ),
-                        ),
-
-                        // + Publish Button
-                        ElevatedButton.icon(
-                          onPressed: () => PublishCreationSheet.show(context, widget.job),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.surface,
-                            foregroundColor: AppColors.textPrimary,
-                            elevation: 0,
-                            side: BorderSide(color: AppColors.border),
-                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusRound)),
-                          ),
-                          icon: Icon(Icons.add, size: 16.sp, color: AppColors.textPrimary),
-                          label: Text(
-                            'Publish',
-                            style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
                   SizedBox(height: 8.h),
 
-                  // Hero Image Display
+                  // Hero Image Display with Pinch & Zoom Lightbox trigger
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16.r),
-                      child: Container(
-                        constraints: BoxConstraints(
-                          minHeight: 220.h,
-                          maxHeight: 450.h,
-                        ),
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16.r),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Center(
-                          child: CachedNetworkImage(
-                            imageUrl: widget.job.previewUrl.isNotEmpty && widget.job.previewUrl.startsWith('http')
-                                ? widget.job.previewUrl
-                                : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop',
-                            fit: BoxFit.contain,
-                            placeholder: (_, __) => Container(color: AppColors.surfaceLight),
-                            errorWidget: (_, __, ___) => Container(
-                              color: AppColors.surfaceLight,
-                              child: Center(child: Icon(Icons.broken_image, color: AppColors.textMuted)),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        final effectiveUrl = widget.job.previewUrl.isNotEmpty &&
+                                widget.job.previewUrl.startsWith('http')
+                            ? widget.job.previewUrl
+                            : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop';
+                        ZoomableImageLightbox.show(
+                          context: context,
+                          imageUrl: effectiveUrl,
+                          heroTag: 'creation_detail_hero_${widget.job.jobId}',
+                          title: widget.job.prompt.isNotEmpty
+                              ? widget.job.prompt
+                              : 'Creation Artwork',
+                          subtitle: widget.job.toolApplied,
+                          aspectRatioStr: widget.job.aspectRatio,
+                          onDownload: () => _openDownloadPaywall(context),
+                        );
+                      },
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16.r),
+                            child: Container(
+                              constraints: BoxConstraints(
+                                minHeight: 220.h,
+                                maxHeight: 450.h,
+                              ),
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(16.r),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Center(
+                                child: Hero(
+                                  tag: 'creation_detail_hero_${widget.job.jobId}',
+                                  child: CachedNetworkImage(
+                                    imageUrl: widget.job.previewUrl.isNotEmpty &&
+                                            widget.job.previewUrl.startsWith('http')
+                                        ? widget.job.previewUrl
+                                        : 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop',
+                                    fit: BoxFit.contain,
+                                    placeholder: (_, __) =>
+                                        Container(color: AppColors.surfaceLight),
+                                    errorWidget: (_, __, ___) => Container(
+                                      color: AppColors.surfaceLight,
+                                      child: Center(
+                                          child: Icon(Icons.broken_image,
+                                              color: AppColors.textMuted)),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                          // Subtle zoom affordance badge (Bottom-right)
+                          Positioned(
+                            bottom: 10.h,
+                            right: 10.w,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8.w, vertical: 4.h),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.55),
+                                borderRadius:
+                                    BorderRadius.circular(AppDimens.radiusRound),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.20),
+                                  width: 1.w,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.zoom_in_rounded,
+                                      size: 14.sp, color: Colors.white),
+                                  SizedBox(width: 4.w),
+                                  Text(
+                                    'Pinch & Zoom',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10.5.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
 
                   SizedBox(height: 12.h),
 
-                  // Actions Row: Like, Download, Copy, More
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 4.w,
-                      runSpacing: 4.h,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Like Button
-                            IconButton(
-                              onPressed: _toggleLike,
-                              icon: Icon(
-                                _isLiked ? Icons.favorite : Icons.favorite_border,
-                                color: _isLiked ? AppColors.accentError : AppColors.textPrimary,
-                                size: 22.sp,
-                              ),
-                            ),
-                            Text(
-                              '$_likeCount',
-                              style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
-                            ),
-                            SizedBox(width: 12.w),
-
-                            // Copy Button
-                            TextButton.icon(
-                              onPressed: _copyPrompt,
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                              ),
-                              icon: Icon(Icons.copy_rounded, size: 16.sp, color: AppColors.textPrimary),
-                              label: Text(
-                                'Copy',
-                                style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
-                              ),
-                            ),
-                          ],
+                  // Unified Responsive Actions Toolbar
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 16.w),
+                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.black.withValues(alpha: 0.03),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // 4K Download button
-                            IconButton(
-                              onPressed: () => _openDownloadPaywall(context),
-                              icon: Icon(
-                                _isDownloadUnlocked ? Icons.download_done_rounded : Icons.file_download_outlined,
-                                size: 22.sp,
-                                color: _isDownloadUnlocked ? AppColors.accentSuccess : AppColors.textPrimary,
-                              ),
-                              tooltip: _isDownloadUnlocked ? 'Download 4K (Unlocked)' : 'Download 4K (2 Credits)',
-                            ),
-
-                            // Delete button (Glassy frosted with black icon)
-                            Tooltip(
-                              message: 'Delete Creation',
-                              child: BouncyTap(
-                                onTap: () => _showDeleteConfirmation(context),
-                                child: Container(
-                                  width: 36.w,
-                                  height: 36.w,
-                                  margin: EdgeInsets.symmetric(horizontal: 4.w),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.70),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: AppColors.border.withValues(alpha: 0.8),
-                                      width: 1.w,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.04),
-                                        blurRadius: 6.r,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.delete_outline_rounded,
-                                      size: 18.sp,
-                                      color: Colors.black,
-                                    ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Like Action
+                        BouncyTap(
+                          onTap: _toggleLike,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isLiked ? Icons.favorite : Icons.favorite_border,
+                                  color: _isLiked ? AppColors.accentError : AppColors.textPrimary,
+                                  size: 18.sp,
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  '$_likeCount',
+                                  style: AppTextStyles.captionBold.copyWith(
+                                    color: _isLiked ? AppColors.accentError : AppColors.textPrimary,
+                                    fontSize: 12.sp,
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Container(width: 1.w, height: 18.h, color: AppColors.border),
+
+                        // Copy Prompt Action
+                        BouncyTap(
+                          onTap: _copyPrompt,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.copy_rounded, size: 16.sp, color: AppColors.textPrimary),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  'Copy',
+                                  style: AppTextStyles.captionBold.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 12.sp,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Container(width: 1.w, height: 18.h, color: AppColors.border),
+
+                        // 4K Download Action
+                        BouncyTap(
+                          onTap: () => _openDownloadPaywall(context),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isDownloadUnlocked ? Icons.download_done_rounded : Icons.file_download_outlined,
+                                  size: 18.sp,
+                                  color: _isDownloadUnlocked ? AppColors.accentSuccess : AppColors.textPrimary,
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  '4K',
+                                  style: AppTextStyles.captionBold.copyWith(
+                                    color: _isDownloadUnlocked ? AppColors.accentSuccess : AppColors.textPrimary,
+                                    fontSize: 12.sp,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Container(width: 1.w, height: 18.h, color: AppColors.border),
+
+                        // Delete Action
+                        Tooltip(
+                          message: 'Delete Creation',
+                          child: BouncyTap(
+                            onTap: () => _showDeleteConfirmation(context),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+                              child: Icon(
+                                Icons.delete_outline_rounded,
+                                size: 18.sp,
+                                color: AppColors.textMuted,
                               ),
                             ),
-
-                            // More options
-                            // IconButton(
-                            //   onPressed: () => StudioImageEditActionsSheet.show(context, widget.job),
-                            //   icon: Icon(Icons.more_vert_rounded, size: 22.sp, color: AppColors.textPrimary),
-                            // ),
-                          ],
+                          ),
                         ),
                       ],
                     ),

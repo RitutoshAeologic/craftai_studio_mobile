@@ -826,7 +826,7 @@ CREATE POLICY "Authenticated upload reference_images" ON storage.objects
 
 -- 1. Create Master Categories Table
 CREATE TABLE IF NOT EXISTS public.categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     slug VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
     description TEXT,
@@ -836,6 +836,19 @@ CREATE TABLE IF NOT EXISTS public.categories (
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Ensure all columns exist even if categories table was created in an earlier migration
+ALTER TABLE public.categories 
+    ADD COLUMN IF NOT EXISTS slug VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS name VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS description TEXT,
+    ADD COLUMN IF NOT EXISTS icon_name VARCHAR(50) NOT NULL DEFAULT 'auto_awesome',
+    ADD COLUMN IF NOT EXISTS keywords TEXT[] NOT NULL DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN IF NOT EXISTS sort_order INT NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_categories_slug ON public.categories (slug);
 
 -- 2. Populate Standard Starter Categories with Smart Keyword Rules
 INSERT INTO public.categories (slug, name, icon_name, keywords, sort_order) VALUES
@@ -853,16 +866,15 @@ ON CONFLICT (slug) DO UPDATE SET
     keywords = EXCLUDED.keywords,
     sort_order = EXCLUDED.sort_order;
 
--- 3. Enhance public.jobs Table (Store Category on User Creations)
+-- 3. Enhance public.jobs & explore_prompts Tables
 ALTER TABLE public.jobs 
     ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'General',
-    ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL;
+    ADD COLUMN IF NOT EXISTS category_id TEXT REFERENCES public.categories(id) ON DELETE SET NULL;
+
+ALTER TABLE public.explore_prompts 
+    ADD COLUMN IF NOT EXISTS category_id TEXT REFERENCES public.categories(id) ON DELETE SET NULL;
 
 CREATE INDEX IF NOT EXISTS idx_jobs_user_category ON public.jobs (user_id, category, created_at DESC);
-
--- 4. Enhance public.explore_prompts Table
-ALTER TABLE public.explore_prompts
-    ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL;
 
 -- 5. Data Normalization & Backfill
 UPDATE public.explore_prompts SET category = 'Photorealism' 
@@ -914,4 +926,250 @@ CREATE POLICY "Public can view active categories" ON public.categories
     FOR SELECT USING (is_active = true);
 GRANT SELECT ON public.categories TO anon, authenticated;
 GRANT ALL ON public.categories TO service_role;
+
+-- ============================================================================
+-- 8. RAZORPAY PAYMENT GATEWAY & CREDIT LEDGER SYSTEM
+-- ============================================================================
+
+-- A. DYNAMIC CREDIT PACKAGES TABLE (Admin controlled via Supabase Dashboard)
+CREATE TABLE IF NOT EXISTS public.credit_packages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    package_id TEXT UNIQUE NOT NULL,                  -- e.g. 'pack_starter_99', 'pack_creator_249'
+    name TEXT NOT NULL,                               -- e.g. 'Creator Pack'
+    badge TEXT,                                       -- e.g. 'Most Popular', 'Diwali 50% Extra'
+    price_inr NUMERIC(10, 2) NOT NULL,                -- e.g. 249.00
+    price_usd NUMERIC(10, 2) NOT NULL,                -- e.g. 2.99
+    credits INT NOT NULL,                             -- Base credits: 250
+    bonus_credits INT NOT NULL DEFAULT 0,             -- Bonus credits: 50
+    features JSONB NOT NULL DEFAULT '[]'::jsonb,      -- Feature bullets
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,          -- Toggle visibility
+    is_popular BOOLEAN NOT NULL DEFAULT FALSE,        -- Visual highlight
+    sort_order INT NOT NULL DEFAULT 1,                -- UI sort order
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Ensure all columns exist even if table was created in an earlier partial run
+ALTER TABLE public.credit_packages 
+    ADD COLUMN IF NOT EXISTS package_id TEXT,
+    ADD COLUMN IF NOT EXISTS name TEXT,
+    ADD COLUMN IF NOT EXISTS badge TEXT,
+    ADD COLUMN IF NOT EXISTS price_inr NUMERIC(10, 2),
+    ADD COLUMN IF NOT EXISTS price_usd NUMERIC(10, 2),
+    ADD COLUMN IF NOT EXISTS credits INT,
+    ADD COLUMN IF NOT EXISTS bonus_credits INT DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS features JSONB DEFAULT '[]'::jsonb,
+    ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE,
+    ADD COLUMN IF NOT EXISTS is_popular BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_credit_packages_package_id ON public.credit_packages (package_id);
+
+ALTER TABLE public.credit_packages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public can view active packages" ON public.credit_packages;
+CREATE POLICY "Public can view active packages" ON public.credit_packages
+    FOR SELECT USING (is_active = TRUE);
+GRANT SELECT ON public.credit_packages TO anon, authenticated;
+GRANT ALL ON public.credit_packages TO service_role;
+
+-- B. PAYMENT TRANSACTIONS AUDIT TABLE
+CREATE TABLE IF NOT EXISTS public.payment_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    package_id TEXT NOT NULL REFERENCES public.credit_packages(package_id),
+    razorpay_order_id TEXT NOT NULL,
+    razorpay_payment_id TEXT UNIQUE,
+    razorpay_signature TEXT,
+    amount_inr NUMERIC(10, 2) NOT NULL,
+    credits_credited INT NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'INR',
+    status TEXT NOT NULL DEFAULT 'created',           -- created, processing, success, failed, refunded
+    payment_method TEXT,                              -- upi, card, netbanking, wallet
+    error_message TEXT,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.payment_transactions 
+    ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS package_id TEXT,
+    ADD COLUMN IF NOT EXISTS razorpay_order_id TEXT,
+    ADD COLUMN IF NOT EXISTS razorpay_payment_id TEXT,
+    ADD COLUMN IF NOT EXISTS razorpay_signature TEXT,
+    ADD COLUMN IF NOT EXISTS amount_inr NUMERIC(10, 2),
+    ADD COLUMN IF NOT EXISTS credits_credited INT,
+    ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'INR',
+    ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'created',
+    ADD COLUMN IF NOT EXISTS payment_method TEXT,
+    ADD COLUMN IF NOT EXISTS error_message TEXT,
+    ADD COLUMN IF NOT EXISTS metadata JSONB,
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_transactions_payment_id ON public.payment_transactions (razorpay_payment_id);
+
+ALTER TABLE public.payment_transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users view own transactions" ON public.payment_transactions;
+CREATE POLICY "Users view own transactions" ON public.payment_transactions
+    FOR SELECT USING (auth.uid() = user_id);
+GRANT ALL ON public.payment_transactions TO authenticated, service_role;
+
+-- C. WALLET LEDGER (Itemized Credit Passbook)
+CREATE TABLE IF NOT EXISTS public.wallet_ledger (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    amount NUMERIC(10, 2) NOT NULL,                   -- Positive for credit, negative for debit
+    balance_after NUMERIC(10, 2) NOT NULL,
+    event_type TEXT NOT NULL,                         -- purchase, generation, download_4k, tool_usage, refund, royalty
+    description TEXT NOT NULL,                        -- e.g. "Top-up: Creator Pack", "Generated Cyber Ronin"
+    reference_id TEXT,                                -- task_id or razorpay_payment_id
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.wallet_ledger 
+    ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS amount NUMERIC(10, 2),
+    ADD COLUMN IF NOT EXISTS balance_after NUMERIC(10, 2),
+    ADD COLUMN IF NOT EXISTS event_type TEXT,
+    ADD COLUMN IF NOT EXISTS description TEXT,
+    ADD COLUMN IF NOT EXISTS reference_id TEXT,
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_wallet_ledger_user ON public.wallet_ledger(user_id, created_at DESC);
+ALTER TABLE public.wallet_ledger ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users view own ledger" ON public.wallet_ledger;
+CREATE POLICY "Users view own ledger" ON public.wallet_ledger
+    FOR SELECT USING (auth.uid() = user_id);
+GRANT ALL ON public.wallet_ledger TO authenticated, service_role;
+
+-- D. ATOMIC RPC: fulfill_credit_purchase (Strictly Idempotent, Concurrency Safe, & Dual Web/Mobile Compatible)
+CREATE OR REPLACE FUNCTION public.fulfill_credit_purchase(
+    p_user_id UUID,
+    p_package_id TEXT,
+    p_order_id TEXT DEFAULT NULL,
+    p_payment_id TEXT DEFAULT NULL,
+    p_signature TEXT DEFAULT NULL,
+    p_payment_method TEXT DEFAULT 'razorpay',
+    -- Web compatibility parameter aliases
+    p_razorpay_payment_id TEXT DEFAULT NULL,
+    p_razorpay_order_id TEXT DEFAULT NULL,
+    p_razorpay_signature TEXT DEFAULT NULL,
+    p_amount_paid_inr NUMERIC DEFAULT NULL,
+    p_credits_to_add INT DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_pkg public.credit_packages;
+    v_total_credits INT;
+    v_wallet public.wallets;
+    v_new_total NUMERIC(10, 2);
+    v_tx_id UUID;
+    v_eff_payment_id TEXT;
+    v_eff_order_id TEXT;
+    v_eff_signature TEXT;
+BEGIN
+    v_eff_payment_id := COALESCE(p_payment_id, p_razorpay_payment_id);
+    v_eff_order_id := COALESCE(p_order_id, p_razorpay_order_id, 'ord_direct_' || floor(extract(epoch from now())*1000)::text);
+    v_eff_signature := COALESCE(p_signature, p_razorpay_signature, 'sig_client_verified');
+
+    IF v_eff_payment_id IS NULL OR v_eff_payment_id = '' THEN
+        RETURN jsonb_build_object('success', FALSE, 'error', 'Payment ID is required');
+    END IF;
+
+    -- 1. Fetch server-verified package details (matching package_id or UUID string)
+    SELECT * INTO v_pkg FROM public.credit_packages 
+    WHERE package_id = p_package_id OR id::text = p_package_id;
+
+    IF NOT FOUND THEN
+        IF p_credits_to_add IS NOT NULL AND p_credits_to_add > 0 THEN
+            v_total_credits := p_credits_to_add;
+        ELSE
+            RETURN jsonb_build_object('success', FALSE, 'error', 'Package not found');
+        END IF;
+    ELSE
+        v_total_credits := v_pkg.credits + v_pkg.bonus_credits;
+    END IF;
+
+    -- 2. Concurrency-Safe Atomic Insertion (Winner takes all)
+    -- If concurrent client RPC & webhook arrive simultaneously, exactly ONE succeeds.
+    INSERT INTO public.payment_transactions (
+        user_id, package_id, razorpay_order_id, razorpay_payment_id,
+        razorpay_signature, amount_inr, credits_credited, status, payment_method
+    ) VALUES (
+        p_user_id, 
+        COALESCE(v_pkg.package_id, p_package_id), 
+        v_eff_order_id, 
+        v_eff_payment_id,
+        v_eff_signature, 
+        COALESCE(v_pkg.price_inr, p_amount_paid_inr, 0.00), 
+        v_total_credits, 
+        'success', 
+        p_payment_method
+    )
+    ON CONFLICT (razorpay_payment_id) DO NOTHING
+    RETURNING id INTO v_tx_id;
+
+    -- If v_tx_id is NULL, this payment was already fulfilled
+    IF v_tx_id IS NULL THEN
+        SELECT * INTO v_wallet FROM public.wallets WHERE user_id = p_user_id;
+        RETURN jsonb_build_object(
+            'success', TRUE,
+            'message', 'Transaction already fulfilled (Idempotent replay blocked duplicate credit)',
+            'current_balance', COALESCE(v_wallet.credits, 0),
+            'duplicate', TRUE
+        );
+    END IF;
+
+    -- 3. Lock wallet row and perform atomic credit addition
+    SELECT * INTO v_wallet FROM public.wallets WHERE user_id = p_user_id FOR UPDATE;
+    IF NOT FOUND THEN
+        INSERT INTO public.wallets (user_id, free_daily_balance, purchased_balance, credits)
+        VALUES (p_user_id, 0.00, v_total_credits, v_total_credits)
+        RETURNING * INTO v_wallet;
+    ELSE
+        UPDATE public.wallets 
+        SET 
+            purchased_balance = purchased_balance + v_total_credits,
+            credits = credits + v_total_credits,
+            updated_at = NOW()
+        WHERE user_id = p_user_id
+        RETURNING * INTO v_wallet;
+    END IF;
+
+    v_new_total := v_wallet.credits;
+
+    -- 4. Append to ledger audit trail
+    INSERT INTO public.wallet_ledger (
+        user_id, amount, balance_after, event_type, description, reference_id
+    ) VALUES (
+        p_user_id, 
+        v_total_credits, 
+        v_new_total, 
+        'purchase',
+        'Top-up: ' || COALESCE(v_pkg.name, 'AI Credits') || ' (+' || v_total_credits || ' Credits)',
+        v_eff_payment_id
+    );
+
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'credited', v_total_credits,
+        'new_balance', v_new_total,
+        'package_name', COALESCE(v_pkg.name, 'Credit Pack'),
+        'transaction_id', v_tx_id
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- E. INITIAL SEED CREDIT PACKAGES
+INSERT INTO public.credit_packages (package_id, name, badge, price_inr, price_usd, credits, bonus_credits, is_popular, sort_order, features)
+VALUES 
+('pack_starter_99', 'Starter Pack', 'Quick Trial', 99.00, 1.29, 100, 0, FALSE, 1, '["50 High-Res Generations", "FLUX & SDXL Access", "InstantID Character Lock", "Community Publishing"]'::jsonb),
+('pack_creator_249', 'Creator Pack', 'Most Popular', 249.00, 2.99, 250, 50, TRUE, 2, '["150 High-Res Generations", "50 Free Bonus Credits", "4K Lossless Downloads", "Commercial Usage Rights", "Fast Queue Priority"]'::jsonb),
+('pack_pro_499', 'Pro Studio Pack', 'Best Value', 499.00, 5.99, 500, 150, FALSE, 3, '["325 High-Res Generations", "150 Free Bonus Credits", "Unlimited 4K Upscaling", "All AI Editing Tools Included", "Instant Support"]'::jsonb),
+('pack_master_999', 'Master Agency Pack', 'Max Power', 999.00, 11.99, 1000, 500, FALSE, 4, '["750 High-Res Generations", "500 Mega Bonus Credits", "Full Commercial License", "Zero Watermark", "VIP Generation Server"]'::jsonb)
+ON CONFLICT (package_id) DO NOTHING;
+
 

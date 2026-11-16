@@ -249,10 +249,12 @@ class _MagicObjectEraserViewState extends State<MagicObjectEraserView> {
         title: Text('Magic Object Eraser', style: AppTextStyles.h2.copyWith(fontSize: 18.sp)),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
-            onPressed: () => _pickImage(ImageSource.gallery),
-          ),
+          if (_decodedImage != null)
+            IconButton(
+              icon: Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
+              tooltip: 'Replace Photo',
+              onPressed: () => _pickImage(ImageSource.gallery),
+            ),
         ],
       ),
       body: SafeArea(

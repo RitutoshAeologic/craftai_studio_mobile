@@ -8,9 +8,6 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import '../controllers/explore_controller.dart';
 import '../widgets/explore_card_widget.dart';
-import '../../profile/views/profile_view.dart';
-import '../../auth/presentation/controllers/auth_controller.dart';
-import '../../../shared/widgets/interactions/bouncy_tap.dart';
 
 /// [ExploreFeedView] displays community artwork in an organic Scattered Masonry grid
 /// with 3 primary dropdown filters at the top: Categories, Models, and Aspect Ratio.
@@ -67,82 +64,6 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        titleSpacing: 14.w,
-        title: Container(
-          height: 40.h,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight.withValues(alpha: 0.75),
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(
-              color: AppColors.border.withValues(alpha: 0.8),
-              width: 1.w,
-            ),
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 10.w),
-          child: Row(
-            children: [
-              Icon(
-                Icons.search_rounded,
-                size: 19.sp,
-                color: AppColors.textSecondary,
-              ),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.textPrimary),
-                  decoration: InputDecoration(
-                    hintText: 'Search prompts, artists, styles...',
-                    hintStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textMuted,
-                      fontSize: 13.sp,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: (val) {
-                    _controller.isSearching.value = val.trim().isNotEmpty;
-                    _controller.setSearchQuery(val);
-                  },
-                ),
-              ),
-              Obx(() {
-                if (_controller.searchQuery.value.isNotEmpty) {
-                  return GestureDetector(
-                    onTap: () {
-                      _searchController.clear();
-                      _controller.clearSearch();
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4.w),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 18.sp,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
-            ],
-          ),
-        ),
-        actions: [
-          _buildProfileAvatarButton(),
-          SizedBox(width: 14.w),
-        ],
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1.h),
-          child: Container(color: AppColors.border, height: 1.h),
-        ),
-      ),
       body: SafeArea(
         top: false,
         bottom: false,
@@ -150,11 +71,79 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // =================================================================
+            // INTEGRATED SEARCH BAR
+            // =================================================================
+            Container(
+              height: 42.h,
+              margin: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 8.h),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                border: Border.all(
+                  color: AppColors.border,
+                  width: 1.w,
+                ),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.search_rounded,
+                    size: 19.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      style: AppTextStyles.bodyMedium
+                          .copyWith(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        hintText: 'Search prompts, artists, styles...',
+                        hintStyle: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textMuted,
+                          fontSize: 13.sp,
+                        ),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onChanged: (val) {
+                        _controller.isSearching.value = val.trim().isNotEmpty;
+                        _controller.setSearchQuery(val);
+                      },
+                    ),
+                  ),
+                  Obx(() {
+                    if (_controller.searchQuery.value.isNotEmpty) {
+                      return GestureDetector(
+                        onTap: () {
+                          _searchController.clear();
+                          _controller.clearSearch();
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4.w),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 18.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
+                ],
+              ),
+            ),
+
+            // =================================================================
             // THREE PRIMARY DROPDOWN FILTERS + ACTIVE FILTER BADGE
             // =================================================================
             Container(
               color: AppColors.surface,
-              padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 8.h),
+              padding: EdgeInsets.fromLTRB(14.w, 4.h, 14.w, 8.h),
               child: Obx(() {
                 final selectedCategory = _controller.selectedCategory.value;
                 final selectedModel = _controller.selectedModel.value;
@@ -440,7 +429,7 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
   /// Bottom pagination footer rendering loaders, retry pill, or end-of-feed chip
   Widget _buildPaginationFooter(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final navBarPadding = bottomInset > 0 ? bottomInset + 88.h : 96.h;
+    final navBarPadding = bottomInset > 0 ? bottomInset + 130.h : 140.h;
 
     return Padding(
       padding: EdgeInsets.only(bottom: navBarPadding),
@@ -644,70 +633,6 @@ class _ExploreFeedViewState extends State<ExploreFeedView> {
             );
           }).toList(),
           onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileAvatarButton() {
-    return Tooltip(
-      message: 'Profile',
-      child: BouncyTap(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          Get.to(() => const ProfileView());
-        },
-        child: Container(
-          width: 38.w,
-          height: 38.w,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: AppColors.aiCosmicGradient,
-            border: Border.all(
-              color: AppColors.glassBorderSubtle,
-              width: 1.5.w,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.25),
-                blurRadius: 8.r,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Get.isRegistered<AuthController>()
-              ? Obx(() {
-                  final user = Get.find<AuthController>().currentUser.value;
-                  final name = user?.displayName?.trim() ?? '';
-                  final initial = name.isNotEmpty ? name[0].toUpperCase() : '';
-
-                  if (initial.isNotEmpty) {
-                    return Center(
-                      child: Text(
-                        initial,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15.sp,
-                        ),
-                      ),
-                    );
-                  }
-                  return Center(
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: Colors.white,
-                      size: 20.sp,
-                    ),
-                  );
-                })
-              : Center(
-                  child: Icon(
-                    Icons.person_rounded,
-                    color: Colors.white,
-                    size: 20.sp,
-                  ),
-                ),
         ),
       ),
     );

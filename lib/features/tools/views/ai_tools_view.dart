@@ -51,7 +51,7 @@ class AiToolsView extends StatelessWidget {
             // =================================================================
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
+                padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 6.h),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -73,7 +73,8 @@ class AiToolsView extends StatelessWidget {
                         children: [
                           Text(
                             'Creative Toolbox',
-                            style: AppTextStyles.h1.copyWith(fontSize: 20.sp),
+                            style: AppTextStyles.titleMedium
+                                .copyWith(fontWeight: FontWeight.w800, fontSize: 17.sp),
                           ),
                           SizedBox(height: 2.h),
                           Text(
@@ -86,25 +87,6 @@ class AiToolsView extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 8.w),
-                    // Container(
-                    //   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                    //   decoration: BoxDecoration(
-                    //     color: AppColors.surface,
-                    //     borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                    //     border: Border.all(color: AppColors.border),
-                    //   ),
-                    //   child: Row(
-                    //     mainAxisSize: MainAxisSize.min,
-                    //     children: [
-                    //       Icon(Icons.bolt, color: AppColors.primary, size: 14.sp),
-                    //       SizedBox(width: 4.w),
-                    //       Obx(() => Text(
-                    //         '${shellCtrl.userCredits.value.toStringAsFixed(0)} Cr',
-                    //         style: AppTextStyles.captionBold.copyWith(color: AppColors.primary),
-                    //       )),
-                    //     ],
-                    //   ),
-                    // ),
                   ],
                 ),
               ),
@@ -207,6 +189,7 @@ class AiToolsView extends StatelessWidget {
             Obx(() {
               final width = MediaQuery.sizeOf(context).width;
               final crossAxisCount = width > 600 ? 3 : 2;
+
               return SliverPadding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 sliver: SliverGrid(
@@ -228,7 +211,7 @@ class AiToolsView extends StatelessWidget {
             }),
 
             SliverToBoxAdapter(
-              child: SizedBox(height: 100.h),
+              child: SizedBox(height: MediaQuery.paddingOf(context).bottom + 140.h),
             ),
           ],
         ),

@@ -65,7 +65,7 @@ void main() {
       // Verify AppBar
       expect(find.text('Cyber Ronin in Rain'), findsOneWidget);
       expect(find.byIcon(Icons.arrow_back_ios_new), findsOneWidget);
-      expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
+      expect(find.byIcon(Icons.bookmark_add_outlined), findsOneWidget);
       expect(find.byIcon(Icons.share_outlined), findsAtLeastNWidgets(1));
 
       // Verify Chunk 1: Visual Identity

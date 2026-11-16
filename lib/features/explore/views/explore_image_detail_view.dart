@@ -14,6 +14,7 @@ import 'package:craftai_studio_mobile/features/explore/widgets/explore_card_widg
 import 'package:craftai_studio_mobile/features/explore/views/explore_category_view.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/collection_controller.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/save_to_collection_sheet.dart';
+import '../../../shared/widgets/image/zoomable_image_lightbox.dart';
 
 /// [ExploreImageDetailView] is the dedicated full-page screen for exploring
 /// artwork details, generation parameters, prompt recipes, and related community creations.
@@ -158,37 +159,6 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        actions: [
-          // Obx(() {
-          //   final colCtrl = Get.isRegistered<CollectionController>()
-          //       ? Get.find<CollectionController>()
-          //       : Get.put(CollectionController());
-          //   final isSaved = colCtrl.isItemSavedAnywhere(widget.card.id);
-          //   return IconButton(
-          //     icon: Icon(
-          //       isSaved ? Icons.bookmark : Icons.bookmark_border,
-          //       color: isSaved ? AppColors.primary : AppColors.textPrimary,
-          //     ),
-          //     constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-          //     tooltip: isSaved ? 'Saved in Collections' : 'Save to Collection',
-          //     onPressed: () {
-          //       HapticFeedback.lightImpact();
-          //       SaveToCollectionSheet.show(
-          //         context,
-          //         itemId: widget.card.id,
-          //         imageUrl: widget.card.previewUrl,
-          //       );
-          //     },
-          //   );
-          // }),
-          IconButton(
-            icon: Icon(Icons.share_outlined, color: AppColors.textPrimary),
-            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            tooltip: 'Share Artwork',
-            onPressed: _shareArtwork,
-          ),
-          SizedBox(width: 4.w),
-        ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(1.h),
           child: Container(color: AppColors.border, height: 1.h),
@@ -279,23 +249,44 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero Artwork Preview
+          // Hero Artwork Preview with Tap-to-Zoom Lightbox
           Stack(
             children: [
-              AspectRatio(
-                aspectRatio: 1.0,
-                child: CachedNetworkImage(
-                  imageUrl: widget.card.previewUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(
-                    color: AppColors.surfaceLight,
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  ZoomableImageLightbox.show(
+                    context: context,
+                    imageUrl: widget.card.previewUrl,
+                    heroTag: 'explore_hero_${widget.card.id}',
+                    title: widget.card.title.isNotEmpty
+                        ? widget.card.title
+                        : widget.card.category,
+                    subtitle: widget.card.modelUsed,
+                    aspectRatioStr: widget.card.aspectRatio,
+                    onShare: _shareArtwork,
+                  );
+                },
+                child: AspectRatio(
+                  aspectRatio: 1.0,
+                  child: Hero(
+                    tag: 'explore_hero_${widget.card.id}',
+                    child: CachedNetworkImage(
+                      imageUrl: widget.card.previewUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(
+                        color: AppColors.surfaceLight,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.primary),
+                        ),
+                      ),
+                      errorWidget: (_, __, ___) => Container(
+                        color: AppColors.surfaceLight,
+                        child: Icon(Icons.broken_image,
+                            color: AppColors.textMuted, size: 40),
+                      ),
                     ),
-                  ),
-                  errorWidget: (_, __, ___) => Container(
-                    color: AppColors.surfaceLight,
-                    child: Icon(Icons.broken_image, color: AppColors.textMuted, size: 40),
                   ),
                 ),
               ),
@@ -337,6 +328,57 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
                         ),
                         SizedBox(width: 2.w),
                         Icon(Icons.chevron_right, size: 14.sp, color: AppColors.surface),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Subtle zoom affordance badge (Bottom-right)
+              Positioned(
+                bottom: 12.h,
+                right: 12.w,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    ZoomableImageLightbox.show(
+                      context: context,
+                      imageUrl: widget.card.previewUrl,
+                      heroTag: 'explore_hero_${widget.card.id}',
+                      title: widget.card.title.isNotEmpty
+                          ? widget.card.title
+                          : widget.card.category,
+                      subtitle: widget.card.modelUsed,
+                      aspectRatioStr: widget.card.aspectRatio,
+                      onShare: _shareArtwork,
+                    );
+                  },
+                  child: Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      borderRadius:
+                          BorderRadius.circular(AppDimens.radiusRound),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.20),
+                        width: 1.w,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.zoom_in_rounded,
+                            size: 14.sp, color: Colors.white),
+                        SizedBox(width: 4.w),
+                        Text(
+                          'Pinch & Zoom',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.5.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   ),

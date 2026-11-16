@@ -30,10 +30,14 @@ class CreationStudioView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
+        top: false,
+        bottom: false,
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppDimens.spacingLg,
-            vertical: AppDimens.vSpacingMd,
+          padding: EdgeInsets.fromLTRB(
+            AppDimens.spacingLg,
+            8.h,
+            AppDimens.spacingLg,
+            MediaQuery.paddingOf(context).bottom + 140.h,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,8 +68,8 @@ class CreationStudioView extends StatelessWidget {
                           AppStrings.studioTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.h1
-                              .copyWith(fontWeight: FontWeight.w900),
+                          style: AppTextStyles.titleMedium
+                              .copyWith(fontWeight: FontWeight.w800, fontSize: 17.sp),
                         ),
                         SizedBox(height: 2.h),
                         Row(
@@ -423,7 +427,7 @@ class CreationStudioView extends StatelessWidget {
                   icon: Icon(Icons.auto_awesome, color: AppColors.surface),
                 );
               }),
-              SizedBox(height: 100.h),
+              const SizedBox.shrink(),
             ],
           ),
         ),

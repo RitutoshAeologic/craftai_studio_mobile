@@ -303,9 +303,10 @@ class _MagicGrabViewState extends State<MagicGrabView> {
         ),
         centerTitle: true,
         actions: [
-          if (!_isGrabbed)
+          if (_imagePath != null && !_isGrabbed)
             IconButton(
               icon: Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
+              tooltip: 'Replace Photo',
               onPressed: () => _pickImage(ImageSource.gallery),
             )
           else

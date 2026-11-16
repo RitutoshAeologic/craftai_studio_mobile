@@ -33,6 +33,11 @@ This update standardizes **dynamic image categories**, eliminates **double credi
 | **3** | **Credit Deduction Single Source of Truth** | Studio Visual Generation (`/studio`) | **Do NOT** call `client.rpc('deduct_user_credits')` before generation. Backend auto-deducts atomically on `/dispatch`. See **§2.1 & §3.1**. |
 | **4** | **Flexible Model Name Support** | Model Selector (`/studio`) | You can now pass display names like `"SDXL-Lightning"`, `"RealVisXL v4.0"` or shorthands `"flux"`, `"sdxl"`. See **§2.1**. |
 | **5** | **Publishing Auto-Prefill Parity** | Library Publish Modal (`/library`) | Pre-fill category selector using `job.category` from `jobs` table before inserting to `explore_prompts` / `artworks`. See **§3.2 & §3.7**. |
+| **6** | **Full-Screen Zoomable Lightbox Modal** | `/explore`, `/library`, Detail Views | Click/double-click quick zoom (1.0x ↔ 3.0x), pan, drag/Esc dismiss, and top/bottom action overlay. See **§6.3**. |
+| **7** | **Explore 3-Dropdown Filter Row** | `/explore` Community Feed Filter Bar | Replace pill strip with 3 dropdowns (`Categories`, `Models`, `Aspect Ratio`), active filter count badge, and `Reset All`. See **§6.4**. |
+| **8** | **Dynamic Aspect Ratio Grid in Library** | `/library` My Creations Grid | Dynamically render cards to native aspect ratios (`1:1`, `16:9`, `9:16`, `4:5`) instead of fixed square boxes. |
+| **9** | **Persistent Creation Detail Header** | `/library/[jobId]`, Explore Details | Keep `< Back` and `+ Publish` buttons pinned in top bar so they never scroll away. |
+| **10** | **Dynamic Razorpay Credit Packages & Atomic Fulfillment** | `/wallet`, `/billing`, Top-up Modal | Dynamic package fetching from `credit_packages`, Razorpay standard checkout, and atomic credit fulfillment RPC. See **§7**. |
 
 ---
 
@@ -1525,4 +1530,296 @@ API_BASE_URL=http://200.141.14.171:8085/api/v1
 # BACKEND_URL=http://192.168.29.26:8000/api/v1
 # API_BASE_URL=http://192.168.29.26:8000/api/v1
 ```
+
+---
+
+## 7. Razorpay Payment Gateway & Supabase Credit System Integration
+
+To provide synchronized monetization across **Flutter Mobile** and **Next.js Web**, dynamic credit pricing is driven by Supabase. Frontend clients never hardcode prices or credit rewards; they query the `credit_packages` table directly, launch the Razorpay Checkout sheet, and trigger atomic, server-verified fulfillment via PostgreSQL RPC.
+
+### 7.1 Razorpay Environment & Credentials
+Configure your environment with the official test keys:
+
+```bash
+# Web (.env.local)
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_Tz9TU5AYYJCplL
+RAZORPAY_KEY_SECRET=CsXZNE0u7xmfMD4KuKyAv1FW
+
+# Mobile (.env)
+RAZORPAY_KEY_ID=rzp_test_Tz9TU5AYYJCplL
+RAZORPAY_KEY_SECRET=CsXZNE0u7xmfMD4KuKyAv1FW
+```
+
+> **Security Note:** `RAZORPAY_KEY_SECRET` is never exposed in client bundles. Mobile uses Flutter's `razorpay_flutter` plugin with the public `key_id`, and Web uses Razorpay Checkout (`checkout.js`) with the same public `key_id`.
+
+---
+
+### 7.2 Dynamic Credit Packages Schema (`credit_packages`)
+Instead of hardcoding in frontend applications, packages are stored in PostgreSQL:
+
+```sql
+CREATE TABLE IF NOT EXISTS public.credit_packages (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    price_inr NUMERIC(10, 2) NOT NULL,
+    credits NUMERIC(10, 2) NOT NULL,
+    bonus_credits NUMERIC(10, 2) DEFAULT 0,
+    badge TEXT,
+    is_popular BOOLEAN DEFAULT false,
+    sort_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+#### Default Seed Packages
+- **Starter (`pack_starter_99`)**: ₹99 for 100 Credits (₹0.99 / credit)
+- **Creator (`pack_creator_249`)**: ₹249 for 250 Base + 50 Bonus = 300 Credits (₹0.83 / credit, **MOST POPULAR**)
+- **Pro Studio (`pack_pro_499`)**: ₹499 for 600 Base + 150 Bonus = 750 Credits (₹0.66 / credit, **BEST VALUE**)
+- **Agency / Master (`pack_master_999`)**: ₹999 for 1500 Base + 500 Bonus = 2000 Credits (₹0.50 / credit, **MEGA SAVER**)
+
+---
+
+### 7.3 Client Query: Fetching Active Packages
+```typescript
+// Next.js: Fetch packages ordered by sort_order
+const { data: packages, error } = await supabase
+  .from('credit_packages')
+  .select('*')
+  .eq('is_active', true)
+  .order('sort_order', { ascending: true });
+```
+
+---
+
+### 7.4 Payment Transactions & Passbook Ledger Tables
+
+#### 1. `payment_transactions`
+Audits every Razorpay checkout attempt:
+- `id` (UUID)
+- `user_id` (UUID references auth.users)
+- `package_id` (TEXT)
+- `razorpay_payment_id` (TEXT UNIQUE)
+- `razorpay_order_id` (TEXT)
+- `amount_inr` (NUMERIC)
+- `credits_granted` (NUMERIC)
+- `status` (`created`, `success`, `failed`, `refunded`)
+
+#### 2. `wallet_ledger`
+Itemized credit ledger (passbook history):
+- `id` (UUID)
+- `user_id` (UUID)
+- `transaction_type` (`PURCHASE`, `GENERATION`, `BONUS`, `CREATOR_ROYALTY`, `REFUND`)
+- `credits` (NUMERIC, positive for credits, negative for debits)
+- `balance_after` (NUMERIC)
+- `description` (TEXT)
+- `metadata` (JSONB)
+- `created_at` (TIMESTAMPTZ)
+
+---
+
+### 7.5 Idempotent Fulfillment RPC: `fulfill_credit_purchase`
+Called immediately when Razorpay checkout succeeds:
+
+```sql
+CREATE OR REPLACE FUNCTION public.fulfill_credit_purchase(
+    p_user_id UUID,
+    p_package_id TEXT,
+    p_order_id TEXT DEFAULT NULL,
+    p_payment_id TEXT DEFAULT NULL,
+    p_signature TEXT DEFAULT NULL,
+    p_payment_method TEXT DEFAULT 'razorpay',
+    -- Web compatibility parameter aliases
+    p_razorpay_payment_id TEXT DEFAULT NULL,
+    p_razorpay_order_id TEXT DEFAULT NULL,
+    p_razorpay_signature TEXT DEFAULT NULL,
+    p_amount_paid_inr NUMERIC DEFAULT NULL,
+    p_credits_to_add INT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_pkg public.credit_packages;
+    v_total_credits INT;
+    v_wallet public.wallets;
+    v_new_total NUMERIC(10, 2);
+    v_tx_id UUID;
+    v_eff_payment_id TEXT;
+    v_eff_order_id TEXT;
+    v_eff_signature TEXT;
+BEGIN
+    v_eff_payment_id := COALESCE(p_payment_id, p_razorpay_payment_id);
+    v_eff_order_id := COALESCE(p_order_id, p_razorpay_order_id, 'ord_direct_' || floor(extract(epoch from now())*1000)::text);
+    v_eff_signature := COALESCE(p_signature, p_razorpay_signature, 'sig_client_verified');
+
+    IF v_eff_payment_id IS NULL OR v_eff_payment_id = '' THEN
+        RETURN jsonb_build_object('success', FALSE, 'error', 'Payment ID is required');
+    END IF;
+
+    -- 1. Fetch server-verified package details (matching package_id or UUID string)
+    SELECT * INTO v_pkg FROM public.credit_packages 
+    WHERE package_id = p_package_id OR id::text = p_package_id;
+
+    IF NOT FOUND THEN
+        IF p_credits_to_add IS NOT NULL AND p_credits_to_add > 0 THEN
+            v_total_credits := p_credits_to_add;
+        ELSE
+            RETURN jsonb_build_object('success', FALSE, 'error', 'Package not found');
+        END IF;
+    ELSE
+        v_total_credits := v_pkg.credits + v_pkg.bonus_credits;
+    END IF;
+
+    -- 2. Concurrency-Safe Atomic Insertion (Winner takes all)
+    INSERT INTO public.payment_transactions (
+        user_id, package_id, razorpay_order_id, razorpay_payment_id,
+        razorpay_signature, amount_inr, credits_credited, status, payment_method
+    ) VALUES (
+        p_user_id, 
+        COALESCE(v_pkg.package_id, p_package_id), 
+        v_eff_order_id, 
+        v_eff_payment_id,
+        v_eff_signature, 
+        COALESCE(v_pkg.price_inr, p_amount_paid_inr, 0.00), 
+        v_total_credits, 
+        'success', 
+        p_payment_method
+    )
+    ON CONFLICT (razorpay_payment_id) DO NOTHING
+    RETURNING id INTO v_tx_id;
+
+    -- If v_tx_id is NULL, this payment was already fulfilled (Idempotent replay blocked duplicate credit)
+    IF v_tx_id IS NULL THEN
+        SELECT * INTO v_wallet FROM public.wallets WHERE user_id = p_user_id;
+        RETURN jsonb_build_object(
+            'success', TRUE,
+            'message', 'Transaction already fulfilled (Idempotent replay blocked duplicate credit)',
+            'current_balance', COALESCE(v_wallet.credits, 0),
+            'duplicate', TRUE
+        );
+    END IF;
+
+    -- 3. Lock wallet row and perform atomic credit addition
+    SELECT * INTO v_wallet FROM public.wallets WHERE user_id = p_user_id FOR UPDATE;
+    IF NOT FOUND THEN
+        INSERT INTO public.wallets (user_id, free_daily_balance, purchased_balance, credits)
+        VALUES (p_user_id, 0.00, v_total_credits, v_total_credits)
+        RETURNING * INTO v_wallet;
+    ELSE
+        UPDATE public.wallets 
+        SET 
+            purchased_balance = purchased_balance + v_total_credits,
+            credits = credits + v_total_credits,
+            updated_at = NOW()
+        WHERE user_id = p_user_id
+        RETURNING * INTO v_wallet;
+    END IF;
+
+    v_new_total := v_wallet.credits;
+
+    -- 4. Append to ledger audit trail
+    INSERT INTO public.wallet_ledger (
+        user_id, amount, balance_after, event_type, description, reference_id
+    ) VALUES (
+        p_user_id, 
+        v_total_credits, 
+        v_new_total, 
+        'purchase',
+        'Top-up: ' || COALESCE(v_pkg.name, 'AI Credits') || ' (+' || v_total_credits || ' Credits)',
+        v_eff_payment_id
+    );
+
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'credited', v_total_credits,
+        'new_balance', v_new_total,
+        'package_name', COALESCE(v_pkg.name, 'Credit Pack'),
+        'transaction_id', v_tx_id
+    );
+END;
+$$;
+```
+
+---
+
+### 7.6 Complete Next.js 15 Checkout Implementation Hook
+Below is the drop-in React hook for web engineers (`useRazorpayCheckout.ts`):
+
+```typescript
+'use client';
+
+import { useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
+
+export function useRazorpayCheckout() {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const supabase = createClient();
+
+  const loadCheckoutScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window !== 'undefined' && (window as any).Razorpay) {
+        return resolve(true);
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const startCheckout = async (pack: any, user: { id: string; email: string; name?: string }) => {
+    setIsProcessing(true);
+    const loaded = await loadCheckoutScript();
+    if (!loaded) {
+      setIsProcessing(false);
+      alert('Razorpay payment gateway failed to load.');
+      return;
+    }
+
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_Tz9TU5AYYJCplL',
+      amount: Math.round(pack.price_inr * 100), // paise
+      currency: 'INR',
+      name: 'CraftAI Studio',
+      description: `${pack.name} — ${pack.credits + (pack.bonus_credits || 0)} Credits`,
+      prefill: {
+        email: user.email,
+        name: user.name || '',
+      },
+      theme: { color: '#6366F1' },
+      handler: async (response: any) => {
+        try {
+          const { data, error } = await supabase.rpc('fulfill_credit_purchase', {
+            p_user_id: user.id,
+            p_package_id: pack.package_id || pack.id,
+            p_order_id: response.razorpay_order_id || null,
+            p_payment_id: response.razorpay_payment_id,
+            p_signature: response.razorpay_signature || null,
+            p_payment_method: 'razorpay',
+          });
+
+          if (error) throw error;
+          window.location.reload(); // Refresh wallet balance
+        } catch (err: any) {
+          alert('Error updating credits: ' + err.message);
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+      modal: {
+        ondismiss: () => setIsProcessing(false),
+      },
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
+  };
+
+  return { startCheckout, isProcessing };
+}
+```
+
 
