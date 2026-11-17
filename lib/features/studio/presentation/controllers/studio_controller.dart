@@ -605,6 +605,21 @@ class StudioController extends GetxController with WidgetsBindingObserver {
   /// It is NOT uploaded until the user explicitly hits "Generate".
   void addReferencePhotoFile(File file) {
     if (isBusy) return;
+
+    final validationErr = ReferenceImageUploader.validateFile(file);
+    if (validationErr != null) {
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        Get.snackbar(
+          'Invalid Photo',
+          validationErr.message,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.surface,
+          colorText: AppColors.accentWarning,
+        );
+      }
+      return;
+    }
+
     if (referenceImages.length < 3) {
       referenceImages.add(file.path);
       Get.snackbar(

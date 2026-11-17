@@ -25,11 +25,36 @@ class ReferenceImageUploader {
     }
 
     final fileSize = file.lengthSync();
+    if (fileSize == 0) {
+      return const StudioValidationFailure('The selected photo is empty (0 bytes). Please select a valid photo.');
+    }
     if (fileSize > maxFileSizeInBytes) {
       final sizeMb = (fileSize / (1024 * 1024)).toStringAsFixed(1);
       return StudioValidationFailure(
         'File size ($sizeMb MB) exceeds the 10 MB limit. Please select a smaller photo.',
       );
+    }
+
+    // Verify image binary header magic numbers to reject corrupt files or fake extensions
+    try {
+      final bytes = file.readAsBytesSync();
+      if (bytes.length < 16) {
+        return const StudioValidationFailure('The selected photo is corrupted or incomplete.');
+      }
+      final isJpeg = bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
+      final isPng = bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47;
+      final isHeic = bytes.length > 12 &&
+          String.fromCharCodes(bytes.sublist(4, 12)).toLowerCase().contains('ftyp');
+      final isWebp = bytes.length > 12 &&
+          String.fromCharCodes(bytes.sublist(0, 4)) == 'RIFF' &&
+          String.fromCharCodes(bytes.sublist(8, 12)) == 'WEBP';
+      if (!isJpeg && !isPng && !isHeic && !isWebp) {
+        return const StudioValidationFailure(
+          'Corrupted or invalid image file. Please select a valid photo.',
+        );
+      }
+    } catch (_) {
+      return const StudioValidationFailure('Could not read image file. Please try another photo.');
     }
 
     return null;

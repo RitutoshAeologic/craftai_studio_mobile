@@ -199,6 +199,11 @@ class ToolsController extends GetxController {
       final xfile = await _picker.pickImage(source: source, imageQuality: 90);
       if (xfile != null) {
         final file = File(xfile.path);
+        final err = ReferenceImageUploader.validateFile(file);
+        if (err != null) {
+          _showNotice('Invalid Photo', err.message);
+          return null;
+        }
         inputImagePath.value = file.path;
         resultImageUrl.value = null;
         return file;
