@@ -6,6 +6,14 @@
 > **Target Tech Stack:** Flutter Mobile (iOS & Android) • FastAPI Gateway (Python 3.11) • Supabase (PostgreSQL 15+, Auth, Storage, Realtime, pgvector) • Razorpay (INR) / Stripe (USD) • Serverless GPU Workers.  
 > **Verification Status:** **256 / 256 Automated Tests Passing** • `flutter analyze`: **0 Issues Found**.
 
+> [!WARNING]
+> **CRITICAL QA NOTICE ON IMAGE GENERATION QUALITY & FREE TIER ENGINES:**  
+> Currently, the platform operates on **free community AI generation models / free tier inference endpoints** (such as Pollinations.ai / open community fallbacks) because paid commercial API keys (e.g., Black Forest Labs paid FLUX Pro API, Fal.ai, or Replicate dedicated GPU clusters) are **NOT yet configured**.  
+> **Key QA Guidelines:**
+> 1. **Visual Fidelity Limitation:** Free model outputs may appear basic, lower fidelity, or aesthetically sub-optimal. This is an **expected third-party provider limitation**, NOT an application defect.
+> 2. **Primary QA Focus:** QA testing must strictly validate **functional and technical flows**: UI responsiveness, progress loaders, WebSocket/HTTP generation pipelines, accurate wallet credit deduction, private Cloud Library saving, Remix Chat Lab iteration, and Tools Hub features.
+> 3. Studio-grade 8K photorealism will activate automatically once production paid enterprise keys are attached.
+
 ---
 
 # PART I: CORE SYSTEM ARCHITECTURE & PRODUCTION RULES
@@ -233,6 +241,11 @@ Managed dynamically via `public.credit_packages` in Supabase:
 # PART V: QA VERIFICATION MATRIX & TEST CHECKLIST
 
 ## 10. QA Step-by-Step Test Scenarios
+
+> [!IMPORTANT]
+> **QA Evaluation Standard on Free-Tier Generation Models:**  
+> Test cases must be evaluated on **functional execution and technical reliability** (HTTP 200 / WebSocket handshake, correct wallet credit deduction, loader animation, image rendering, and Cloud Library persistence).  
+> **Do NOT fail test cases based on image realism or aesthetic flaws**, as free community generation engines are active in Phase 1 testing. High-fidelity photorealism is tied to commercial enterprise keys arriving at production launch.
 
 ### Test Suite 1: UI/UX Integrity & Single-Icon Policy
 * **TC-UI-01: Zero Icon Duplication**
