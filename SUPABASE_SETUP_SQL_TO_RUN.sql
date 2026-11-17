@@ -208,8 +208,9 @@ UPDATE public.jobs SET output_url = preview_url WHERE output_url IS NULL AND pre
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_job_id ON public.jobs (job_id) WHERE job_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_jobs_user_created ON public.jobs (user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_jobs_character_id ON public.jobs (character_id) WHERE character_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_jobs_remixed_from_prompt_id ON public.jobs (remixed_from_prompt_id) WHERE remixed_from_prompt_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON public.jobs (user_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_character_id ON public.jobs (character_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_remixed_from_prompt_id ON public.jobs (remixed_from_prompt_id);
 
 ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users insert own jobs" ON public.jobs;
