@@ -4,7 +4,7 @@
 > **Document Purpose:** 100% accurate, zero-fluff system flow, database schema, design system tokens, and QA verification matrix reflecting the actual codebase.  
 > **Target Reviewers:** QA Engineers, Mobile Engineers, Backend Engineers.  
 > **Target Tech Stack:** Flutter Mobile (iOS & Android) • FastAPI Gateway (Python 3.11) • Supabase (PostgreSQL 15+, Auth, Storage, Realtime, pgvector) • Razorpay (INR) / Stripe (USD) • Serverless GPU Workers.  
-> **Verification Status:** **256 / 256 Automated Tests Passing** • `flutter analyze`: **0 Issues Found**.
+> **Verification Status:** **256 / 256 Mobile Tests Passing** • **38 / 38 Backend Tests Passing** • `flutter analyze`: **0 Issues Found**.
 
 > [!WARNING]
 > **CRITICAL QA NOTICE ON IMAGE GENERATION QUALITY & FREE TIER ENGINES:**  
@@ -73,6 +73,10 @@ Located in `lib/features/tools/views/`:
    E-commerce product staging with realistic shadows and studio lighting.
 9. **AI Upscale (`upscale_view.dart`):**  
    Lossless 2K to 4K super-resolution upscaler with texture enhancement.
+
+> [!TIP]
+> **Edge-Case & Anti-Credit-Waste Protection on AI Tools:**  
+> All 9 creative tools enforce dual-layer sanity validation (on-device preflight + server-side tensor checks). If a user uploads an invalid or unprocessable input (such as a 0-byte file, corrupt image, solid white blank canvas, or an empty eraser mask), the request is rejected immediately with a friendly toast/snackbar notification, and **exactly 0 credits are deducted**. Users are never charged for invalid or failed inputs.
 
 ---
 
@@ -308,10 +312,36 @@ Managed dynamically via `public.credit_packages` in Supabase:
 
 ---
 
+### Test Suite 5: Input Validation, Edge-Case & Anti-Credit Waste Protection
+* **TC-EDGE-01: Corrupt File / 0-Byte / Fake Extension Upload**
+  * *Action:* In Studio or any AI Tool (e.g., Background Remover, Object Eraser), attempt to select or upload a 0-byte file or a text/executable file renamed with `.jpg` or `.png` extension.
+  * *Pass Criteria:* The client intercepts the file via binary magic header inspection and rejects it with: `"Corrupted or invalid image file. Please select a valid photo."` The invalid file is not uploaded, the request is not dispatched, and **0 credits are deducted**. If sent directly via API, backend returns HTTP 400 `ValidationException`.
+* **TC-EDGE-02: Solid White / Completely Blank / Featureless Canvas Upload**
+  * *Action:* Upload a purely white, black, or flat uniform color image into AI Background Remover, AI Backgrounds, Magic Grab, or Product Studio and trigger processing.
+  * *Pass Criteria:* The system evaluates image variance and rejects the job with: `"No distinct foreground subject found to isolate."` or `"No distinct product found in the uploaded image."` No distorted output or silent fallback is rendered, and **0 credits are deducted**.
+* **TC-EDGE-03: Solid Blank Photo in AI Upscale & Photo Colorizer**
+  * *Action:* Upload a blank/featureless canvas into AI Upscaler or Photo Colorizer.
+  * *Pass Criteria:* System intercepts before inference with: `"The selected photo is completely blank or uniform. Please select a valid photo to upscale."` User is not billed 2 credits.
+* **TC-EDGE-04: Empty Brush Mask on Magic Object Eraser & Magic Grab**
+  * *Action:* Open Magic Object Eraser, select a photo, but do NOT brush over any object. Tap "Erase Object" with an empty canvas mask.
+  * *Pass Criteria:* Rejected with: `"No object area was selected to erase. Please brush over the object you want to remove."` **0 credits deducted.**
+* **TC-EDGE-05: Excessive / Oversized Brush Coverage (> 90%)**
+  * *Action:* In Magic Object Eraser, paint over virtually the entire screen (> 90% of total image pixels) and tap "Erase Object".
+  * *Pass Criteria:* Rejected with: `"Selected area is too large (>90%). Please brush only the specific object to erase."` **0 credits deducted.**
+* **TC-EDGE-06: Zero Silent Fallbacks / No Mock Leaks**
+  * *Action:* Disconnect network or trigger a failed tool processing job.
+  * *Pass Criteria:* App displays a clean error snackbar. The app NEVER replaces the user's photo with a random stock photo (no mock leaks). The original photo remains intact, and **0 credits are deducted**.
+* **TC-EDGE-07: Microscopic Image Dimension Auto-Normalization**
+  * *Action:* Upload a tiny thumbnail image (< 64x64 px) to AI Background Remover.
+  * *Pass Criteria:* The engine smoothly resamples the image to workable dimensions without throwing a 500 tensor dimension mismatch error or crashing the app.
+
+---
+
 ## 11. Automated Test Verification Commands
 
 The following commands must pass before any QA sign-off:
 
+### 11.1 Mobile Test Suite (Flutter) — `craftai_studio_mobile`
 ```bash
 # 1. Static analysis (Must return "No issues found!")
 flutter analyze
@@ -321,4 +351,13 @@ flutter test test/core/ui_ux_integrity_test.dart
 
 # 3. Full test regression suite (256/256 tests must pass)
 flutter test
+```
+
+### 11.2 Backend Test Suite (FastAPI) — `craftai_studio_backend`
+```bash
+# 1. Edge-case input validation tests (11/11 passing)
+python3 -m unittest tests/test_ai_tools_edge_cases.py
+
+# 2. Full backend regression suite (38/38 tests must pass)
+python3 -m unittest discover -s tests -p 'test_*.py'
 ```
