@@ -17,7 +17,7 @@ class WalletModel {
     return WalletModel(
       purchasedBalance: (json['purchased_balance'] as num?)?.toDouble() ?? 0.0,
       earnedRoyaltyBalance: (json['earned_royalty_balance'] as num?)?.toDouble() ?? 0.0,
-      freeDailyBalance: (json['free_daily_balance'] as num?)?.toDouble() ?? 500.0,
+      freeDailyBalance: (json['free_daily_balance'] as num?)?.toDouble() ?? 0.0,
       totalGenerations: (json['total_generations'] as num?)?.toInt() ?? 0,
       totalRoyaltiesEarned: (json['total_royalties_earned'] as num?)?.toDouble() ?? 0.0,
     );

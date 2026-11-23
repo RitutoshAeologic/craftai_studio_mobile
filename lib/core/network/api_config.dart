@@ -37,8 +37,7 @@ class ApiConfig {
   static String? get fallbackUrl {
     const envFallback = String.fromEnvironment('FALLBACK_BACKEND_URL');
     if (envFallback.trim().isNotEmpty) return envFallback.trim();
-    // Default local loopback fallback for physical Wi-Fi debugging:
-    return 'http://192.168.29.26:8000/api/v1';
+    return null;
   }
 
   /// Whether the current configured backend targets a local machine loopback.

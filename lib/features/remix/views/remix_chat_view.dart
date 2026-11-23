@@ -129,7 +129,9 @@ class _RemixChatViewState extends State<RemixChatView> {
                 ),
                 child: Center(
                   child: Text(
-                    '${shellCtrl.userCredits.value.toInt()} Cr',
+                    shellCtrl.isWalletLoaded.value
+                        ? '${shellCtrl.userCredits.value.toInt()} Cr'
+                        : '— Cr',
                     style: AppTextStyles.captionBold.copyWith(color: AppColors.accentWarning),
                   ),
                 ),

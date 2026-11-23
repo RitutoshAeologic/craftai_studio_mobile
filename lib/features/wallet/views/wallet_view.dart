@@ -61,7 +61,12 @@ class WalletView extends StatelessWidget {
                         children: [
                           Text('Purchased Balance', style: TextStyle(color: AppColors.textMuted, fontSize: 11.sp)),
                           SizedBox(height: 2.h),
-                          Text('${controller.wallet.value.purchasedBalance.toStringAsFixed(0)} Cr', style: TextStyle(color: AppColors.primary, fontSize: 22.sp, fontWeight: FontWeight.bold)),
+                          Text(
+                            controller.shellCtrl.isWalletLoaded.value
+                                ? '${controller.wallet.value.purchasedBalance.toStringAsFixed(0)} Cr'
+                                : '— Cr',
+                            style: TextStyle(color: AppColors.primary, fontSize: 22.sp, fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                       Column(
@@ -69,7 +74,12 @@ class WalletView extends StatelessWidget {
                         children: [
                           Text('Earned Royalties', style: TextStyle(color: AppColors.textMuted, fontSize: 11.sp)),
                           SizedBox(height: 2.h),
-                          Text('${controller.wallet.value.earnedRoyaltyBalance.toStringAsFixed(1)} Cr', style: TextStyle(color: AppColors.accentSuccess, fontSize: 22.sp, fontWeight: FontWeight.bold)),
+                          Text(
+                            controller.shellCtrl.isWalletLoaded.value
+                                ? '${controller.wallet.value.earnedRoyaltyBalance.toStringAsFixed(1)} Cr'
+                                : '— Cr',
+                            style: TextStyle(color: AppColors.accentSuccess, fontSize: 22.sp, fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                     ],
@@ -80,7 +90,12 @@ class WalletView extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Cash Value: \$${(controller.wallet.value.earnedRoyaltyBalance * 0.1).toStringAsFixed(2)} USD', style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp)),
+                      Text(
+                        controller.shellCtrl.isWalletLoaded.value
+                            ? 'Cash Value: \$${(controller.wallet.value.earnedRoyaltyBalance * 0.1).toStringAsFixed(2)} USD'
+                            : 'Cash Value: —',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12.sp),
+                      ),
                       ElevatedButton(
                         onPressed: controller.requestPayout,
                         style: ElevatedButton.styleFrom(
@@ -102,9 +117,10 @@ class WalletView extends StatelessWidget {
             SizedBox(height: 12.h),
 
             // Packs
-            _buildPackItem('Starter Pack', 25, 1.99, controller),
-            _buildPackItem('Creator Pack (Popular)', 70, 4.99, controller, isHighlight: true),
-            _buildPackItem('Pro Studio Pack', 250, 14.99, controller),
+            _buildPackItem('Starter Pack', 100, 1.99, controller),
+            _buildPackItem('Creator Pack (Popular)', 300, 4.99, controller, isHighlight: true),
+            _buildPackItem('Pro Studio Pack', 750, 9.99, controller),
+            _buildPackItem('Agency / Master Pack', 2000, 19.99, controller),
 
             SizedBox(height: 24.h),
             Divider(color: AppColors.border, height: 1.h),

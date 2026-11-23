@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimens.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../features/shell/controllers/shell_controller.dart';
 import 'interactions/bouncy_tap.dart';
 
 /// [CreditCostChip] is a shared, reusable credit badge component used across
@@ -52,9 +53,18 @@ class CreditCostChip extends StatelessWidget {
         EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h);
 
     Widget buildContent(double amount) {
-      final text = amount == amount.roundToDouble()
-          ? amount.toInt().toString()
-          : amount.toStringAsFixed(1);
+      final isLoaded = Get.isRegistered<ShellController>()
+          ? ShellController.to.isWalletLoaded.value
+          : true;
+      final text = staticCredits != null
+          ? (amount == amount.roundToDouble()
+              ? amount.toInt().toString()
+              : amount.toStringAsFixed(1))
+          : (!isLoaded
+              ? '—'
+              : (amount == amount.roundToDouble()
+                  ? amount.toInt().toString()
+                  : amount.toStringAsFixed(1)));
 
       return BouncyTap(
         onTap: onTap,

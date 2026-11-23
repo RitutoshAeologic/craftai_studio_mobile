@@ -155,6 +155,9 @@ class AuthController extends GetxController {
         if (Get.isRegistered<CollectionController>()) {
           Get.find<CollectionController>().clearLocalData();
         }
+        if (Get.isRegistered<ShellController>()) {
+          Get.find<ShellController>().clearLocalData();
+        }
       default:
         break;
     }

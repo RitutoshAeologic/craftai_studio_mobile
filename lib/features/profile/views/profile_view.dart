@@ -262,7 +262,9 @@ class ProfileView extends StatelessWidget {
                   border: Border.all(color: AppColors.border),
                 ),
                 child: Text(
-                  '${controller.shellController.userCredits.value.toStringAsFixed(0)} Cr',
+                  controller.shellController.isWalletLoaded.value
+                      ? '${controller.shellController.userCredits.value.toStringAsFixed(0)} Cr'
+                      : '— Cr',
                   style: TextStyle(
                     color: AppColors.primary,
                     fontSize: 12.sp,

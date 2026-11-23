@@ -131,7 +131,7 @@ class ExploreCardModel {
           'blurry, low quality, distorted, extra limbs, bad anatomy, text, watermark',
       createdAt: json['created_at'] != null
           ? json['created_at'].toString()
-          : 'Oct 28, 2026',
+          : DateTime.now().toIso8601String(),
     );
   }
 

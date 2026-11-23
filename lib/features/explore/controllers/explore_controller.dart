@@ -101,8 +101,11 @@ class ExploreController extends GetxController {
     'Product',
   ].obs;
 
-  /// Community-curated prompt and style cards.
-  final RxList<ExploreCardModel> cards = <ExploreCardModel>[
+  /// Community-curated prompt and style cards (starts empty so shimmer skeleton renders smoothly).
+  final RxList<ExploreCardModel> cards = <ExploreCardModel>[].obs;
+
+  /// Curated fallback cards when offline or on initial network failure.
+  static final List<ExploreCardModel> _kFallbackCards = [
     ExploreCardModel(
       id: '00000000-0000-4000-8000-000000000001',
       authorName: 'Neo Akira',
@@ -295,7 +298,7 @@ class ExploreController extends GetxController {
       remixCount: 310,
       likeCount: 820,
     ),
-  ].obs;
+  ];
 
   @override
   void onInit() {
@@ -346,9 +349,9 @@ class ExploreController extends GetxController {
 
       if (isRefresh) {
         if (fetched.isNotEmpty) {
-          final fetchedIds = fetched.map((c) => c.id).toSet();
-          final remainingLocal = cards.where((c) => !fetchedIds.contains(c.id) && c.id.startsWith('00000000')).toList();
-          cards.assignAll([...fetched, ...remainingLocal]);
+          cards.assignAll(fetched);
+        } else if (cards.isEmpty) {
+          cards.assignAll(_kFallbackCards);
         }
       } else {
         final existingIds = cards.map((c) => c.id).toSet();
@@ -365,6 +368,9 @@ class ExploreController extends GetxController {
     } catch (e) {
       AppLogger.w('Explore pagination error: $e', tag: 'EXPLORE');
       paginationError.value = 'Failed to load creations. Tap to retry.';
+      if (cards.isEmpty) {
+        cards.assignAll(_kFallbackCards);
+      }
     } finally {
       isInitialLoading.value = false;
       isLoadingMore.value = false;

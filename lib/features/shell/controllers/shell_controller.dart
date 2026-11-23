@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
@@ -18,14 +19,18 @@ class ShellController extends GetxController {
   final RxInt currentIndex = 0.obs;
 
   /// Observable wallet credit balance.
-  /// Initialized to 500.0 Cr for rapid development and testing.
-  final RxDouble userCredits = 500.0.obs;
+  /// Starts at 0.0 with isWalletLoaded flag to prevent flashing 500 before remote fetch completes.
+  final RxDouble userCredits = 0.0.obs;
+  final RxBool isWalletLoaded = false.obs;
+  final RxBool isWalletLoading = false.obs;
+
+  static const _storage = FlutterSecureStorage();
 
   /// Complete observable dual-ledger wallet model (purchased, royalties, free)
   final Rx<WalletModel> walletModel = WalletModel(
     purchasedBalance: 0.0,
     earnedRoyaltyBalance: 0.0,
-    freeDailyBalance: 500.0,
+    freeDailyBalance: 0.0,
     totalGenerations: 0,
     totalRoyaltiesEarned: 0.0,
   ).obs;
@@ -33,49 +38,82 @@ class ShellController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _loadCachedWallet();
     fetchWalletCredits();
+  }
+
+  /// Restores last known wallet balance from secure storage for 0ms initial render
+  Future<void> _loadCachedWallet() async {
+    try {
+      final user = SupabaseService.client.auth.currentUser;
+      if (user != null) {
+        final cached = await _storage.read(key: 'craftai_credits_${user.id}');
+        if (cached != null) {
+          final parsed = double.tryParse(cached);
+          if (parsed != null && !isWalletLoaded.value) {
+            userCredits.value = parsed;
+            isWalletLoaded.value = true;
+            AppLogger.d('Restored cached wallet credits: $parsed Cr', tag: 'WALLET');
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   /// Fetches latest wallet balance from Supabase wallets table
   Future<void> fetchWalletCredits() async {
-    try {
-      final user = SupabaseService.client.auth.currentUser;
-      if (user != null) {
-        final res = await SupabaseService.client
-            .from('wallets')
-            .select('*')
-            .eq('user_id', user.id)
-            .maybeSingle();
+    final user = SupabaseService.client.auth.currentUser;
+    if (user == null) {
+      isWalletLoading.value = false;
+      return;
+    }
 
-        if (res != null) {
-          final wallet = WalletModel.fromJson(res);
-          walletModel.value = wallet;
-          userCredits.value = wallet.totalSpendable;
-          AppLogger.s('Synced wallet balance from Supabase: ${userCredits.value} Cr (Purchased: ${wallet.purchasedBalance}, Royalties: ${wallet.earnedRoyaltyBalance}, Free: ${wallet.freeDailyBalance})', tag: 'WALLET');
-        } else {
-          // Brand new user: auto-create wallet row in Supabase with initial 500 credits
+    isWalletLoading.value = true;
+    try {
+      final res = await SupabaseService.client
+          .from('wallets')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (res != null) {
+        final wallet = WalletModel.fromJson(res);
+        walletModel.value = wallet;
+        userCredits.value = wallet.totalSpendable;
+        isWalletLoaded.value = true;
+        try {
+          await _storage.write(key: 'craftai_credits_${user.id}', value: wallet.totalSpendable.toString());
+        } catch (_) {}
+        AppLogger.s('Synced wallet balance from Supabase: ${userCredits.value} Cr (Purchased: ${wallet.purchasedBalance}, Royalties: ${wallet.earnedRoyaltyBalance}, Free: ${wallet.freeDailyBalance})', tag: 'WALLET');
+      } else {
+        // Brand new user: auto-create wallet row in Supabase with initial 500 credits
+        try {
+          await SupabaseService.client.from('wallets').upsert({
+            'user_id': user.id,
+            'free_daily_balance': 500.0,
+            'purchased_balance': 0.0,
+            'earned_royalty_balance': 0.0,
+            'credits': 500.0,
+          }, onConflict: 'user_id');
+          userCredits.value = 500.0;
+          isWalletLoaded.value = true;
+          walletModel.value = WalletModel(
+            purchasedBalance: 0.0,
+            earnedRoyaltyBalance: 0.0,
+            freeDailyBalance: 500.0,
+            totalGenerations: 0,
+            totalRoyaltiesEarned: 0.0,
+          );
           try {
-            await SupabaseService.client.from('wallets').upsert({
-              'user_id': user.id,
-              'free_daily_balance': 500.0,
-              'purchased_balance': 0.0,
-              'earned_royalty_balance': 0.0,
-              'credits': 500.0,
-            }, onConflict: 'user_id');
-            userCredits.value = 500.0;
-            walletModel.value = WalletModel(
-              purchasedBalance: 0.0,
-              earnedRoyaltyBalance: 0.0,
-              freeDailyBalance: 500.0,
-              totalGenerations: 0,
-              totalRoyaltiesEarned: 0.0,
-            );
-            AppLogger.s('Initialized new user wallet with 500.0 Cr in Supabase', tag: 'WALLET');
+            await _storage.write(key: 'craftai_credits_${user.id}', value: '500.0');
           } catch (_) {}
-        }
+          AppLogger.s('Initialized new user wallet with 500.0 Cr in Supabase', tag: 'WALLET');
+        } catch (_) {}
       }
     } catch (e) {
       AppLogger.d('Wallet fetch skipped or table pending migration: $e', tag: 'WALLET');
+    } finally {
+      isWalletLoading.value = false;
     }
   }
 
@@ -170,6 +208,20 @@ class ShellController extends GetxController {
             }, onConflict: 'user_id');
       }
     } catch (_) {}
+  }
+
+  /// Cleans up in-memory wallet balances on user sign-out
+  void clearLocalData() {
+    userCredits.value = 0.0;
+    isWalletLoaded.value = false;
+    isWalletLoading.value = false;
+    walletModel.value = WalletModel(
+      purchasedBalance: 0.0,
+      earnedRoyaltyBalance: 0.0,
+      freeDailyBalance: 0.0,
+      totalGenerations: 0,
+      totalRoyaltiesEarned: 0.0,
+    );
   }
 }
 
