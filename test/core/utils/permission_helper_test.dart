@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:craftai_studio_mobile/core/utils/permission_helper.dart';
 
 void main() {
@@ -13,3 +12,4 @@ void main() {
     });
   });
 }
+

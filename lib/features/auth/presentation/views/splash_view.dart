@@ -55,7 +55,7 @@ class _SplashViewState extends State<SplashView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFF0B0F19),
       body: Stack(
         children: [
           _BackgroundGlows(),
@@ -69,29 +69,26 @@ class _SplashViewState extends State<SplashView>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Logo tile
+                      // Logo tile featuring master app icon
                       Container(
-                        width: 82.w,
-                        height: 82.w,
+                        width: 92.w,
+                        height: 92.w,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(26.r),
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [AppColors.primary, AppColors.vip],
-                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.45),
-                              blurRadius: 36,
-                              spreadRadius: 4,
+                              color: AppColors.primary.withValues(alpha: 0.5),
+                              blurRadius: 40,
+                              spreadRadius: 6,
                             ),
                           ],
                         ),
-                        child: Icon(
-                          Icons.auto_awesome_rounded,
-                          size: 42.r,
-                          color: Colors.white,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(26.r),
+                          child: Image.asset(
+                            'assets/icon/app_icon.png',
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       SizedBox(height: 28.h),
