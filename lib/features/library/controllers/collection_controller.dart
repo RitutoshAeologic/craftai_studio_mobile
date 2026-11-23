@@ -7,139 +7,13 @@ import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
 /// [CollectionController] manages user-created bookmark collections (folders),
 /// item bookmarking, and Supabase synchronization.
 class CollectionController extends GetxController {
-  final RxList<CollectionModel> collections = <CollectionModel>[
-    CollectionModel(
-      id: '00000000-0000-4000-8000-000000000101',
-      name: 'Favorites',
-      description: 'Quick bookmarks of inspiring community artwork',
-      coverImageUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop',
-      itemCount: 4,
-      createdAt: DateTime.now().subtract(const Duration(days: 7)),
-      updatedAt: DateTime.now(),
-    ),
-    CollectionModel(
-      id: '00000000-0000-4000-8000-000000000102',
-      name: 'Cyberpunk & Sci-Fi',
-      description: 'Futuristic neon aesthetics and androids',
-      coverImageUrl: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop',
-      itemCount: 6,
-      createdAt: DateTime.now().subtract(const Duration(days: 5)),
-      updatedAt: DateTime.now(),
-    ),
-    CollectionModel(
-      id: '00000000-0000-4000-8000-000000000103',
-      name: 'Character References',
-      description: 'Faces, poses, and lighting inspiration',
-      coverImageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop',
-      itemCount: 3,
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      updatedAt: DateTime.now(),
-    ),
-  ].obs;
+  final RxList<CollectionModel> collections = <CollectionModel>[].obs;
 
   /// Map of `itemId` -> Set of `collectionId`s for O(1) bookmark status lookups
   final RxMap<String, Set<String>> itemCollectionMap = <String, Set<String>>{}.obs;
 
   /// Map of `collectionId` -> List of saved image item records
-  final RxMap<String, List<Map<String, dynamic>>> collectionItemsCache = <String, List<Map<String, dynamic>>>{
-    '00000000-0000-4000-8000-000000000101': [
-      {
-        'id': 'fav-1',
-        'collection_id': '00000000-0000-4000-8000-000000000101',
-        'image_url': 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop',
-        'title': 'Neon Cyberpunk Geisha',
-        'category': 'Cyberpunk',
-      },
-      {
-        'id': 'fav-2',
-        'collection_id': '00000000-0000-4000-8000-000000000101',
-        'image_url': 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop',
-        'title': 'Cosmic Nebula Odyssey',
-        'category': 'Sci-Fi',
-      },
-      {
-        'id': 'fav-3',
-        'collection_id': '00000000-0000-4000-8000-000000000101',
-        'image_url': 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop',
-        'title': 'Ethereal Forest Spirit',
-        'category': 'Fantasy',
-      },
-      {
-        'id': 'fav-4',
-        'collection_id': '00000000-0000-4000-8000-000000000101',
-        'image_url': 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&auto=format&fit=crop',
-        'title': 'Golden Hour Portrait',
-        'category': 'Portrait',
-      },
-    ],
-    '00000000-0000-4000-8000-000000000102': [
-      {
-        'id': 'sci-1',
-        'collection_id': '00000000-0000-4000-8000-000000000102',
-        'image_url': 'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop',
-        'title': 'Cybernetic Megacity Night',
-        'category': 'Cyberpunk',
-      },
-      {
-        'id': 'sci-2',
-        'collection_id': '00000000-0000-4000-8000-000000000102',
-        'image_url': 'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=600&auto=format&fit=crop',
-        'title': 'Android Prototype 07',
-        'category': 'Sci-Fi',
-      },
-      {
-        'id': 'sci-3',
-        'collection_id': '00000000-0000-4000-8000-000000000102',
-        'image_url': 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?w=600&auto=format&fit=crop',
-        'title': 'Neon Alleyway Stalker',
-        'category': 'Cyberpunk',
-      },
-      {
-        'id': 'sci-4',
-        'collection_id': '00000000-0000-4000-8000-000000000102',
-        'image_url': 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop',
-        'title': 'Holographic User Interface',
-        'category': 'Sci-Fi',
-      },
-      {
-        'id': 'sci-5',
-        'collection_id': '00000000-0000-4000-8000-000000000102',
-        'image_url': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop',
-        'title': 'Retro Synthwave Grid',
-        'category': 'Cyberpunk',
-      },
-      {
-        'id': 'sci-6',
-        'collection_id': '00000000-0000-4000-8000-000000000102',
-        'image_url': 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop',
-        'title': 'Quantum Singularity Event',
-        'category': 'Sci-Fi',
-      },
-    ],
-    '00000000-0000-4000-8000-000000000103': [
-      {
-        'id': 'char-1',
-        'collection_id': '00000000-0000-4000-8000-000000000103',
-        'image_url': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop',
-        'title': 'Studio Lighting Reference',
-        'category': 'Character',
-      },
-      {
-        'id': 'char-2',
-        'collection_id': '00000000-0000-4000-8000-000000000103',
-        'image_url': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop',
-        'title': '45 Degree Facial Angles',
-        'category': 'Character',
-      },
-      {
-        'id': 'char-3',
-        'collection_id': '00000000-0000-4000-8000-000000000103',
-        'image_url': 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop',
-        'title': 'Profile Bone Structure Reference',
-        'category': 'Character',
-      },
-    ],
-  }.obs;
+  final RxMap<String, List<Map<String, dynamic>>> collectionItemsCache = <String, List<Map<String, dynamic>>>{}.obs;
 
   final RxBool isLoading = false.obs;
 
@@ -172,10 +46,8 @@ class CollectionController extends GetxController {
           .map((row) => CollectionModel.fromJson(row as Map<String, dynamic>))
           .toList();
 
-      if (loaded.isNotEmpty) {
-        collections.assignAll(loaded);
-        AppLogger.s('Loaded ${loaded.length} collections from Supabase', tag: 'COLLECTIONS');
-      }
+      collections.assignAll(loaded);
+      AppLogger.s('Loaded ${loaded.length} collections from Supabase', tag: 'COLLECTIONS');
 
       // Proactively clear stale cover_image_url in Supabase for any 0-item collections
       for (final row in res as List) {

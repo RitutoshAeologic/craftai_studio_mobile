@@ -13,6 +13,7 @@ import '../../../../core/services/supabase_service.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../../library/controllers/library_controller.dart';
 import '../../../library/controllers/collection_controller.dart';
+import '../../../shell/controllers/shell_controller.dart';
 import '../../../studio/presentation/controllers/studio_controller.dart';
 
 /// Permanent GetX controller — registered in [main.dart] via
@@ -137,8 +138,23 @@ class AuthController extends GetxController {
       case AuthChangeEvent.signedIn:
       case AuthChangeEvent.userUpdated:
         currentUser.value = _repo.currentUser;
+        if (Get.isRegistered<LibraryController>()) {
+          Get.find<LibraryController>().fetchUserCreations(isRefresh: true);
+        }
+        if (Get.isRegistered<CollectionController>()) {
+          Get.find<CollectionController>().fetchCollections();
+        }
+        if (Get.isRegistered<ShellController>()) {
+          Get.find<ShellController>().fetchWalletCredits();
+        }
       case AuthChangeEvent.signedOut:
         currentUser.value = null;
+        if (Get.isRegistered<LibraryController>()) {
+          Get.find<LibraryController>().clearLocalData();
+        }
+        if (Get.isRegistered<CollectionController>()) {
+          Get.find<CollectionController>().clearLocalData();
+        }
       default:
         break;
     }

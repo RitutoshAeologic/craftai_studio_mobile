@@ -71,9 +71,7 @@ class LibraryController extends GetxController {
       );
 
       if (isRefresh) {
-        if (loaded.isNotEmpty) {
-          myCreations.assignAll(loaded);
-        }
+        myCreations.assignAll(loaded);
       } else {
         final existingIds = myCreations.map((j) => j.jobId).toSet();
         final newItems = loaded.where((j) => !existingIds.contains(j.jobId)).toList();

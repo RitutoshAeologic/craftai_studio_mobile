@@ -147,6 +147,38 @@ class _PublishCreationSheetState extends State<PublishCreationSheet> {
       });
       AppLogger.s('Published creation with full metadata to Supabase explore_prompts', tag: 'EXPLORE_PUBLISH');
 
+      // 1b. Mirror to public.artworks table for instant Web Explore visibility
+      try {
+        await SupabaseService.client.from('artworks').insert({
+          'user_id': user.id,
+          'author_id': user.id,
+          'title': title,
+          'author_name': authorName,
+          'author_handle': authorHandle,
+          'preview_url': widget.job.previewUrl,
+          'image_url': widget.job.previewUrl,
+          'category': _selectedCategory,
+          'masked_summary': widget.job.prompt,
+          'prompt': widget.job.prompt,
+          'model_used': modelUsed,
+          'model': modelUsed,
+          'aspect_ratio': widget.job.aspectRatio,
+          'dimensions': widget.job.dimensions,
+          'seed': widget.job.seed,
+          'tool_applied': widget.job.toolApplied,
+          'base_remix_fee': 4.0,
+          'remix_fee': 4.0,
+          'author_royalty_cut': 1.6,
+          'creator_royalty_cut': 1.6,
+          'likes_count': 0,
+          'remixes_count': 0,
+          'total_remixes': 0,
+        });
+        AppLogger.s('Mirrored published creation to Supabase artworks', tag: 'EXPLORE_PUBLISH');
+      } catch (e) {
+        AppLogger.d('Artworks table mirror skipped: $e', tag: 'EXPLORE_PUBLISH');
+      }
+
       // 2. Add to local Explore feed state with real job specs
       exploreCtrl.publishCreation(
         title: title,
