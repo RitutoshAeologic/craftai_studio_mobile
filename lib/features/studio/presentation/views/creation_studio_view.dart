@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
+import 'package:craftai_studio_mobile/core/utils/permission_helper.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/shared/utils/reference_image_uploader.dart';
@@ -1753,9 +1754,10 @@ class CreationStudioView extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () async {
                         Get.back();
-                        final picker = ImagePicker();
-                        final picked =
-                            await picker.pickImage(source: ImageSource.camera);
+                        final picked = await AppPermissionHelper.pickImageSafely(
+                          source: ImageSource.camera,
+                          context: context,
+                        );
                         if (picked != null) {
                           controller.addReferencePhotoFile(File(picked.path));
                         }
@@ -1781,9 +1783,10 @@ class CreationStudioView extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () async {
                         Get.back();
-                        final picker = ImagePicker();
-                        final picked =
-                            await picker.pickImage(source: ImageSource.gallery);
+                        final picked = await AppPermissionHelper.pickImageSafely(
+                          source: ImageSource.gallery,
+                          context: context,
+                        );
                         if (picked != null) {
                           controller.addReferencePhotoFile(File(picked.path));
                         }
@@ -1817,9 +1820,9 @@ class CreationStudioView extends StatelessWidget {
 
   Future<void> _handleVisionScan(
       BuildContext context, StudioController controller) async {
-    final picker = ImagePicker();
-    final xfile = await picker.pickImage(
+    final xfile = await AppPermissionHelper.pickImageSafely(
         source: ImageSource.gallery,
+        context: context,
         imageQuality: 85,
         maxWidth: 1920,
         maxHeight: 1920);

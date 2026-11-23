@@ -11,6 +11,7 @@ import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_icons.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
+import 'package:craftai_studio_mobile/core/utils/permission_helper.dart';
 import 'package:craftai_studio_mobile/shared/widgets/glass/glass_container.dart';
 import 'package:craftai_studio_mobile/shared/widgets/glass/glass_icon_tile.dart';
 import 'package:craftai_studio_mobile/shared/widgets/glass/luminous_mesh_canvas.dart';
@@ -680,7 +681,6 @@ class AiToolsView extends StatelessWidget {
   }
 
   void _showRemixImageSourceSheet(BuildContext context) {
-    final picker = ImagePicker();
     final libraryCtrl = Get.isRegistered<LibraryController>()
         ? Get.find<LibraryController>()
         : Get.put(LibraryController());
@@ -825,7 +825,11 @@ class AiToolsView extends StatelessWidget {
                 subtitle: Text('Upload any local image from photo library', style: AppTextStyles.captionXs),
                 onTap: () async {
                   Get.back();
-                  final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+                  final picked = await AppPermissionHelper.pickImageSafely(
+                    source: ImageSource.gallery,
+                    context: context,
+                    imageQuality: 90,
+                  );
                   if (picked != null) {
                     Get.to(
                       () => const RemixChatView(),
@@ -855,7 +859,11 @@ class AiToolsView extends StatelessWidget {
                 subtitle: Text('Capture a live portrait or reference photo', style: AppTextStyles.captionXs),
                 onTap: () async {
                   Get.back();
-                  final picked = await picker.pickImage(source: ImageSource.camera, imageQuality: 90);
+                  final picked = await AppPermissionHelper.pickImageSafely(
+                    source: ImageSource.camera,
+                    context: context,
+                    imageQuality: 90,
+                  );
                   if (picked != null) {
                     Get.to(
                       () => const RemixChatView(),

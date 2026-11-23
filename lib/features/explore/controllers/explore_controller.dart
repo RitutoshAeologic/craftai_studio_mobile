@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:craftai_studio_mobile/core/utils/permission_helper.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/studio/presentation/controllers/studio_controller.dart';
@@ -559,8 +560,9 @@ class ExploreController extends GetxController {
   /// Prompts the user to pick a photo from their device gallery, then applies
   /// the card's style to the photo using Subject-Lock in the Studio tab.
   Future<void> remixWithMyPhoto(ExploreCardModel card) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    final picked = await AppPermissionHelper.pickImageSafely(
+      source: ImageSource.gallery,
+    );
     if (picked != null) {
       final studioCtrl = Get.find<StudioController>();
       final shellCtrl = Get.find<ShellController>();

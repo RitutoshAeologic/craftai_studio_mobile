@@ -11,6 +11,7 @@ import 'package:craftai_studio_mobile/features/studio/domain/repositories/i_stud
 import 'package:craftai_studio_mobile/features/studio/data/repositories/studio_repository_impl.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
+import 'package:craftai_studio_mobile/core/utils/permission_helper.dart';
 import 'package:craftai_studio_mobile/shared/utils/reference_image_uploader.dart';
 
 /// [ToolsController] drives the 6 MeiGen Skills Toolbox:
@@ -193,10 +194,14 @@ class ToolsController extends GetxController {
     selectedCategory.value = cat;
   }
 
-  /// Picks a photo from Gallery or Camera
+  /// Picks a photo from Gallery or Camera with resilient permission handling
   Future<File?> pickImage(ImageSource source) async {
     try {
-      final xfile = await _picker.pickImage(source: source, imageQuality: 90);
+      final xfile = await AppPermissionHelper.pickImageSafely(
+        source: source,
+        picker: _picker,
+        imageQuality: 90,
+      );
       if (xfile != null) {
         final file = File(xfile.path);
         final err = ReferenceImageUploader.validateFile(file);
