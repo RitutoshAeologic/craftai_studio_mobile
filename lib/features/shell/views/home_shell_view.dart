@@ -9,6 +9,7 @@ import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import '../controllers/shell_controller.dart';
 import '../widgets/expandable_navigation_fab.dart';
+import '../../explore/widgets/trending_templates_picker_sheet.dart';
 import '../../explore/views/explore_feed_view.dart';
 import '../../explore/controllers/explore_controller.dart';
 import '../../studio/presentation/views/creation_studio_view.dart';
@@ -263,6 +264,16 @@ class _HomeShellViewState extends State<HomeShellView> {
                         12.h,
                 rightOffset: 16.w,
                 items: [
+                  FabMenuItem(
+                    title: 'Trending & Templates',
+                    subtitle: 'Pick a trending AI style & remix your photo',
+                    icon: Icons.local_fire_department_rounded,
+                    accentColor: const Color(0xFFEF4444),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      TrendingTemplatesPickerSheet.show(context);
+                    },
+                  ),
                   FabMenuItem(
                     title: 'Prompt to Image',
                     subtitle: 'Generate AI art with prompts & styles',

@@ -1011,6 +1011,67 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     );
   }
 
+  /// Initiates instant ChatGPT-style photo remix generation using a template
+  Future<void> startTemplateRemixGeneration({
+    required ExploreCardModel template,
+    required File userPhoto,
+  }) async {
+    // 1. Switch active tab to Studio (Index 1)
+    if (Get.isRegistered<ShellController>()) {
+      final shellCtrl = Get.find<ShellController>();
+      shellCtrl.switchTab(1);
+    }
+
+    // 2. Record provenance for creator royalty attribution
+    remixedFromPromptId.value = template.id;
+
+    // 3. Attach user photo into reference strip
+    referenceImages.clear();
+    referenceImages.add(userPhoto.path);
+
+    // 4. Resolve unmasked prompt with Subject-Lock (Face-Lock) constraints
+    final cleanPrompt = template.fullPrompt.isNotEmpty && !template.fullPrompt.contains('[Secret Recipe Encrypted]')
+        ? template.fullPrompt
+        : template.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', '');
+
+    promptController.text =
+        'DO NOT CHANGE THE HUMAN SUBJECT. HUMAN SUBJECT — ABSOLUTE LOCK. $cleanPrompt';
+
+    // 5. Sync generation settings with the template
+    if (template.aspectRatio.isNotEmpty) {
+      selectedAspectRatio.value = template.aspectRatio;
+    }
+    final modelLower = template.modelUsed.toLowerCase();
+    if (modelLower.contains('flux')) {
+      selectedModel.value = 'flux';
+    } else if (modelLower.contains('gemini')) {
+      selectedModel.value = 'gemini';
+    } else if (modelLower.contains('chatgpt') || modelLower.contains('dall')) {
+      selectedModel.value = 'chatgpt';
+    } else if (template.modelUsed.isNotEmpty) {
+      selectedModel.value = template.modelUsed;
+    }
+
+    // 6. Provide instant feedback toast
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      Get.snackbar(
+        'Generating Remix... ⚡',
+        'Applying ${template.title} style to your photo with Subject Lock!',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.surface,
+        colorText: AppColors.primary,
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.auto_awesome, color: AppColors.primary),
+      );
+    }
+
+    // 7. Auto-start image generation
+    await generateVisual();
+  }
+
+  /// Compatibility alias for [generateVisual]
+  Future<void> generateImage() => generateVisual();
+
   /// "✨ Describe Edits" Flow (MeiGen Parity):
   /// 1. Attaches the image as `image1` in the reference strip
   /// 2. Pre-fills the prompt with `'Edit image1 as follows: '`
@@ -1073,13 +1134,15 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     final shellCtrl = Get.find<ShellController>();
     final cost = calculatedCreditCost.toDouble();
     if (shellCtrl.userCredits.value < cost) {
-      Get.snackbar(
-        AppStrings.insufficientCredits,
-        AppStrings.insufficientCreditsMsg,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.surface,
-        colorText: AppColors.accentWarning,
-      );
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        Get.snackbar(
+          AppStrings.insufficientCredits,
+          AppStrings.insufficientCreditsMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.surface,
+          colorText: AppColors.accentWarning,
+        );
+      }
       return;
     }
 
