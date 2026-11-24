@@ -975,7 +975,10 @@ class StudioController extends GetxController with WidgetsBindingObserver {
   void loadPromptFromRemix(ExploreCardModel card) {
     if (isBusy) return;
     remixedFromPromptId.value = card.id;
-    promptController.text = card.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', '');
+    final cleanPrompt = card.fullPrompt.isNotEmpty && !card.fullPrompt.contains('[Secret Recipe Encrypted]')
+        ? card.fullPrompt
+        : card.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', '');
+    promptController.text = cleanPrompt;
     Get.snackbar(
       AppStrings.remixLoaded,
       'Created by ${card.authorName} (${(card.creatorRoyaltyCut / card.remixFee * 100).toInt()}% royalty to author)',
@@ -994,7 +997,9 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     remixedFromPromptId.value = card.id;
     referenceImages.clear();
     referenceImages.add(userPhoto.path);
-    final cleanPrompt = card.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', '');
+    final cleanPrompt = card.fullPrompt.isNotEmpty && !card.fullPrompt.contains('[Secret Recipe Encrypted]')
+        ? card.fullPrompt
+        : card.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', '');
     promptController.text =
         'DO NOT CHANGE THE HUMAN SUBJECT. HUMAN SUBJECT — ABSOLUTE LOCK. $cleanPrompt';
     Get.snackbar(

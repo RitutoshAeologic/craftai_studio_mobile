@@ -567,7 +567,9 @@ class _ImageDetailsBottomSheetState extends State<ImageDetailsBottomSheet> {
                     'anchorImageUrl': widget.card.previewUrl,
                     'sourceType': 'explore',
                     'remixedFromPromptId': widget.card.id,
-                    'initialPrompt': widget.card.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', ''),
+                    'initialPrompt': widget.card.fullPrompt.isNotEmpty && !widget.card.fullPrompt.contains('[Secret Recipe Encrypted]')
+                        ? widget.card.fullPrompt
+                        : widget.card.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', ''),
                     'authorName': widget.card.authorName,
                     'royaltyPercent': widget.card.remixFee > 0
                         ? (widget.card.creatorRoyaltyCut / widget.card.remixFee * 100).toInt()

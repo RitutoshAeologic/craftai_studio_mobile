@@ -92,35 +92,65 @@ class ExploreCardWidget extends StatelessWidget {
                   ),
                 ),
 
-                // Category Tag (Top-left) - routes directly to ExploreCategoryView (hidden on Similar Creation page)
-                if (showCategory)
-                  Positioned(
-                    top: 8.h,
-                    left: 8.w,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Get.to(() => ExploreCategoryView(category: card.category));
-                      },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-                        decoration: BoxDecoration(
-                          color: AppColors.black.withValues(alpha: 0.75),
-                          borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-                          border: Border.all(color: AppColors.border.withValues(alpha: 0.5), width: 0.5),
-                        ),
-                        child: Text(
-                          card.category,
-                          style: AppTextStyles.captionXs.copyWith(
-                            color: AppColors.white,
-                            fontSize: 9.sp,
-                            fontWeight: FontWeight.bold,
+                // Category & Trending Tags (Top-left)
+                Positioned(
+                  top: 8.h,
+                  left: 8.w,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (card.isTrending) ...[
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+                          decoration: BoxDecoration(
+                            color: AppColors.accentError.withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.local_fire_department, size: 10.sp, color: AppColors.white),
+                              SizedBox(width: 2.w),
+                              Text(
+                                'Trending',
+                                style: AppTextStyles.captionXs.copyWith(
+                                  color: AppColors.white,
+                                  fontSize: 8.5.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ),
+                        SizedBox(width: 4.w),
+                      ],
+                      if (showCategory)
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Get.to(() => ExploreCategoryView(category: card.category));
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+                            decoration: BoxDecoration(
+                              color: AppColors.black.withValues(alpha: 0.75),
+                              borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                              border: Border.all(color: AppColors.border.withValues(alpha: 0.5), width: 0.5),
+                            ),
+                            child: Text(
+                              card.category,
+                              style: AppTextStyles.captionXs.copyWith(
+                                color: AppColors.white,
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                ),
 
                 // Heart / Like Target with 48dp hit area (Top-right)
                 Positioned(

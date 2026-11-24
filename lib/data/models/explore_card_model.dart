@@ -23,6 +23,8 @@ class ExploreCardModel {
   final String fullPrompt;
   final String negativePrompt;
   final String createdAt;
+  final List<String> tags;
+  final bool isTrending;
 
   ExploreCardModel({
     required this.id,
@@ -48,6 +50,8 @@ class ExploreCardModel {
     String? fullPrompt,
     this.negativePrompt = 'blurry, low quality, distorted, extra limbs, bad anatomy, text, watermark',
     this.createdAt = 'Oct 28, 2026',
+    this.tags = const [],
+    this.isTrending = false,
   }) : fullPrompt = fullPrompt ?? maskedSummary;
 
   ExploreCardModel copyWith({
@@ -63,6 +67,8 @@ class ExploreCardModel {
     String? fullPrompt,
     String? negativePrompt,
     String? createdAt,
+    List<String>? tags,
+    bool? isTrending,
   }) {
     return ExploreCardModel(
       id: id,
@@ -88,6 +94,8 @@ class ExploreCardModel {
       fullPrompt: fullPrompt ?? this.fullPrompt,
       negativePrompt: negativePrompt ?? this.negativePrompt,
       createdAt: createdAt ?? this.createdAt,
+      tags: tags ?? this.tags,
+      isTrending: isTrending ?? this.isTrending,
     );
   }
 
@@ -101,6 +109,7 @@ class ExploreCardModel {
       title: json['title'] as String? ?? 'Masterpiece',
       previewUrl: json['preview_image_url'] as String? ??
           json['preview_url'] as String? ??
+          json['image_url'] as String? ??
           '',
       category: json['category'] as String? ?? 'General',
       maskedSummary: json['masked_summary'] as String? ??
@@ -126,12 +135,17 @@ class ExploreCardModel {
       dimensions: json['dimensions'] as String? ?? '1344x768',
       seed: (json['seed'] as num?)?.toInt() ?? 4291823,
       costCredits: (json['cost_credits'] as num?)?.toDouble() ?? 2.0,
-      fullPrompt: json['full_prompt'] as String?,
+      fullPrompt: json['full_prompt'] as String? ??
+          json['prompt'] as String? ??
+          json['masked_summary'] as String? ??
+          json['masked_prompt_summary'] as String?,
       negativePrompt: json['negative_prompt'] as String? ??
           'blurry, low quality, distorted, extra limbs, bad anatomy, text, watermark',
       createdAt: json['created_at'] != null
           ? json['created_at'].toString()
           : DateTime.now().toIso8601String(),
+      tags: (json['tags'] as List?)?.map((e) => e.toString()).toList() ?? <String>[],
+      isTrending: json['is_trending'] as bool? ?? false,
     );
   }
 
@@ -144,6 +158,7 @@ class ExploreCardModel {
       'title': title,
       'preview_url': previewUrl,
       'preview_image_url': previewUrl,
+      'image_url': previewUrl,
       'category': category,
       'masked_summary': maskedSummary,
       'masked_prompt_summary': maskedSummary,
@@ -164,8 +179,11 @@ class ExploreCardModel {
       'seed': seed,
       'cost_credits': costCredits,
       'full_prompt': fullPrompt,
+      'prompt': fullPrompt,
       'negative_prompt': negativePrompt,
       'created_at': createdAt,
+      'tags': tags,
+      'is_trending': isTrending,
     };
   }
 }
