@@ -10,6 +10,9 @@ class ExploreCardModel {
   final double remixFee;
   final double creatorRoyaltyCut;
   final int remixCount;
+
+  /// Alias for parity with web/sql column aliases
+  int get remixesCount => remixCount;
   final int likeCount;
   final bool isLiked;
   final bool isBookmarked;

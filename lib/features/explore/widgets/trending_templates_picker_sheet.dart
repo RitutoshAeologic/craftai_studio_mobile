@@ -8,17 +8,16 @@ import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/features/explore/controllers/explore_controller.dart';
+import '../views/trending_templates_view.dart';
 import 'template_photo_remix_bottom_sheet.dart';
 
 class TrendingTemplatesPickerSheet extends StatelessWidget {
   const TrendingTemplatesPickerSheet({super.key});
 
   static void show(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const TrendingTemplatesPickerSheet(),
+    Get.to(
+      () => const TrendingTemplatesView(),
+      transition: Transition.cupertino,
     );
   }
 
