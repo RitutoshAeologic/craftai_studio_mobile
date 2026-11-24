@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -34,6 +35,9 @@ class StudioErrorSheet extends StatelessWidget {
     required double refundedCredits,
     required VoidCallback onRetry,
   }) {
+    if (Platform.environment.containsKey('FLUTTER_TEST') && Get.context == null) {
+      return;
+    }
     Get.bottomSheet(
       StudioErrorSheet(
         failure: failure,

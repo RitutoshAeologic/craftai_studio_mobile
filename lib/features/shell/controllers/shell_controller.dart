@@ -45,7 +45,7 @@ class ShellController extends GetxController {
   /// Restores last known wallet balance from secure storage for 0ms initial render
   Future<void> _loadCachedWallet() async {
     try {
-      final user = SupabaseService.client.auth.currentUser;
+      final user = SupabaseService.instance.currentUser;
       if (user != null) {
         final cached = await _storage.read(key: 'craftai_credits_${user.id}');
         if (cached != null) {
@@ -62,7 +62,7 @@ class ShellController extends GetxController {
 
   /// Fetches latest wallet balance from Supabase wallets table
   Future<void> fetchWalletCredits() async {
-    final user = SupabaseService.client.auth.currentUser;
+    final user = SupabaseService.instance.currentUser;
     if (user == null) {
       isWalletLoading.value = false;
       return;
