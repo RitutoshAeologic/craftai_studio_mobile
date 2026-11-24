@@ -20,8 +20,6 @@ CREATE TABLE IF NOT EXISTS public.characters (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_characters_user_id ON public.characters (user_id);
-
 ALTER TABLE public.characters ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users manage own characters" ON public.characters;
 CREATE POLICY "Users manage own characters" ON public.characters
@@ -97,7 +95,6 @@ UPDATE public.explore_prompts SET remixes_count = total_remixes WHERE remixes_co
 
 CREATE INDEX IF NOT EXISTS idx_explore_category_created ON public.explore_prompts (category, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_explore_user ON public.explore_prompts (user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_explore_author ON public.explore_prompts (author_id) WHERE author_id IS NOT NULL;
 
 -- GIN Universal Search Index for instant keyword filtering
 DROP INDEX IF EXISTS public.idx_explore_prompts_fts;
@@ -208,9 +205,6 @@ UPDATE public.jobs SET output_url = preview_url WHERE output_url IS NULL AND pre
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_job_id ON public.jobs (job_id) WHERE job_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_jobs_user_created ON public.jobs (user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON public.jobs (user_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_character_id ON public.jobs (character_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_remixed_from_prompt_id ON public.jobs (remixed_from_prompt_id);
 
 ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users insert own jobs" ON public.jobs;
@@ -306,11 +300,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_job
 CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_explore 
     ON public.collection_items (collection_id, explore_prompt_id) 
     WHERE explore_prompt_id IS NOT NULL;
-
-CREATE INDEX IF NOT EXISTS idx_collection_items_collection_id ON public.collection_items (collection_id);
-CREATE INDEX IF NOT EXISTS idx_collection_items_user_id ON public.collection_items (user_id);
-CREATE INDEX IF NOT EXISTS idx_collection_items_job_id ON public.collection_items (job_id) WHERE job_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_collection_items_explore_prompt_id ON public.collection_items (explore_prompt_id) WHERE explore_prompt_id IS NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_collection_artwork 
     ON public.collection_items (collection_id, artwork_id) 
@@ -649,9 +638,9 @@ CREATE POLICY "Anyone can view artworks" ON public.artworks FOR SELECT USING (tr
 DROP POLICY IF EXISTS "Anyone can insert artworks" ON public.artworks;
 CREATE POLICY "Anyone can insert artworks" ON public.artworks FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS "Users update own artworks" ON public.artworks;
-CREATE POLICY "Users update own artworks" ON public.artworks FOR UPDATE USING ((SELECT auth.uid()) = user_id OR (SELECT auth.uid()) = author_id);
+CREATE POLICY "Users update own artworks" ON public.artworks FOR UPDATE USING (auth.uid() = user_id OR auth.uid() = author_id);
 DROP POLICY IF EXISTS "Users delete own artworks" ON public.artworks;
-CREATE POLICY "Users delete own artworks" ON public.artworks FOR DELETE USING ((SELECT auth.uid()) = user_id OR (SELECT auth.uid()) = author_id);
+CREATE POLICY "Users delete own artworks" ON public.artworks FOR DELETE USING (auth.uid() = user_id OR auth.uid() = author_id);
 GRANT ALL ON public.artworks TO anon, authenticated, service_role;
 
 -- Populate initial artworks from explore_prompts so Web and Mobile show same community feed
@@ -831,490 +820,6 @@ DROP POLICY IF EXISTS "Authenticated upload reference_images" ON storage.objects
 CREATE POLICY "Authenticated upload reference_images" ON storage.objects
     FOR INSERT WITH CHECK (bucket_id = 'reference-images');
 
--- ====================================================================
--- 15. DYNAMIC CATEGORIES & IMAGE AUTO-CLASSIFICATION SYSTEM
--- ====================================================================
-
--- 1. Create Master Categories Table
-CREATE TABLE IF NOT EXISTS public.categories (
-    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    slug VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    icon_name VARCHAR(50) NOT NULL DEFAULT 'auto_awesome',
-    keywords TEXT[] NOT NULL DEFAULT '{}',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Ensure all columns exist even if categories table was created in an earlier migration
-ALTER TABLE public.categories 
-    ADD COLUMN IF NOT EXISTS slug VARCHAR(50),
-    ADD COLUMN IF NOT EXISTS name VARCHAR(100),
-    ADD COLUMN IF NOT EXISTS description TEXT,
-    ADD COLUMN IF NOT EXISTS icon_name VARCHAR(50) NOT NULL DEFAULT 'auto_awesome',
-    ADD COLUMN IF NOT EXISTS keywords TEXT[] NOT NULL DEFAULT '{}',
-    ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    ADD COLUMN IF NOT EXISTS sort_order INT NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
-
--- Drop manual duplicate index if created previously (Postgres UNIQUE constraint on slug already provides index)
-DROP INDEX IF EXISTS public.uq_categories_slug;
-
--- 2. Populate Standard Starter Categories with Smart Keyword Rules
-INSERT INTO public.categories (slug, name, icon_name, keywords, sort_order) VALUES
-('photorealism', 'Photorealism', 'camera_alt', ARRAY['photo', 'photograph', '85mm', 'portrait', 'realistic', 'dslr', 'raw photo', 'kodak', 'hyperrealistic', 'film grain', 'cinematic photo'], 1),
-('anime', 'Anime', 'palette', ARRAY['anime', 'manga', 'ghibli', 'makoto shinkai', 'cel shaded', 'waifu', 'kawaii', 'chibi', 'otaku', 'japanese animation'], 2),
-('cyberpunk', 'Cyberpunk', 'electric_bolt', ARRAY['cyberpunk', 'neon', 'futuristic', 'cyborg', 'synthwave', 'sci-fi', 'hologram', 'mecha', 'blade runner', 'matrix'], 3),
-('3d-render', '3D Render', 'view_in_ar', ARRAY['3d', 'render', 'octane', 'blender', 'unreal engine', 'cgi', 'isometric', 'pixar', 'claymation', 'digital 3d'], 4),
-('character', 'Character', 'person', ARRAY['character', 'portrait', 'warrior', 'knight', 'woman', 'man', 'hero', 'villain', 'avatar', 'ethereal noblewoman', 'samurai'], 5),
-('architecture', 'Architecture', 'apartment', ARRAY['architecture', 'building', 'house', 'interior', 'facade', 'modern villa', 'skyscraper', 'room design', 'urban'], 6),
-('product', 'Product', 'inventory_2', ARRAY['product', 'mockup', 'bottle', 'packaging', 'watch', 'sneakers', 'commercial', 'cosmetics', 'gadget', 'merchandise'], 7),
-('general', 'General', 'auto_awesome', ARRAY['art', 'illustration', 'creative', 'concept', 'abstract'], 99)
-ON CONFLICT (slug) DO UPDATE SET 
-    name = EXCLUDED.name,
-    icon_name = EXCLUDED.icon_name,
-    keywords = EXCLUDED.keywords,
-    sort_order = EXCLUDED.sort_order;
-
--- 3. Enhance public.jobs & explore_prompts Tables
-ALTER TABLE public.jobs 
-    ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'General',
-    ADD COLUMN IF NOT EXISTS category_id TEXT REFERENCES public.categories(id) ON DELETE SET NULL;
-
-ALTER TABLE public.explore_prompts 
-    ADD COLUMN IF NOT EXISTS category_id TEXT REFERENCES public.categories(id) ON DELETE SET NULL;
-
-CREATE INDEX IF NOT EXISTS idx_jobs_user_category ON public.jobs (user_id, category, created_at DESC);
-
--- 5. Data Normalization & Backfill
-UPDATE public.explore_prompts SET category = 'Photorealism' 
-WHERE LOWER(category) IN ('photoreal', 'photorealism', 'photo', 'cinematic art', 'hollywood');
-
-UPDATE public.explore_prompts SET category = 'Anime' 
-WHERE LOWER(category) IN ('anime', 'anime cel', 'manga', 'japanese animation');
-
-UPDATE public.explore_prompts SET category = 'Cyberpunk' 
-WHERE LOWER(category) IN ('cyberpunk', 'cyberpunk neon', 'sci-fi neon', 'neon');
-
-UPDATE public.explore_prompts SET category = '3D Render' 
-WHERE LOWER(category) IN ('3d render', '3d', 'pixar 3d', '3d cartoon', 'render');
-
-UPDATE public.explore_prompts SET category = 'Character' 
-WHERE LOWER(category) IN ('character', 'portrait', 'person', 'avatar');
-
-UPDATE public.explore_prompts SET category = 'General' 
-WHERE category IS NULL OR category = '' OR LOWER(category) = 'portrait';
-
--- Connect category_id foreign keys automatically
-UPDATE public.explore_prompts ep
-SET category_id = c.id
-FROM public.categories c
-WHERE LOWER(ep.category) = LOWER(c.name) OR LOWER(ep.category) = LOWER(c.slug);
-
--- 6. Performance & Case-Insensitive Functional Indexes
-CREATE INDEX IF NOT EXISTS idx_explore_prompts_cat_lower ON public.explore_prompts (LOWER(category), created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_explore_prompts_category_id ON public.explore_prompts (category_id);
-
--- Also index and backfill artworks table if used by Web team
-DO $$
-BEGIN
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'artworks') THEN
-        CREATE INDEX IF NOT EXISTS idx_artworks_cat_lower ON public.artworks (LOWER(category), created_at DESC);
-        UPDATE public.artworks SET category = 'Photorealism' WHERE LOWER(category) IN ('photoreal', 'photorealism', 'photo', 'cinematic art', 'hollywood');
-        UPDATE public.artworks SET category = 'Anime' WHERE LOWER(category) IN ('anime', 'anime cel', 'manga', 'japanese animation');
-        UPDATE public.artworks SET category = 'Cyberpunk' WHERE LOWER(category) IN ('cyberpunk', 'cyberpunk neon', 'sci-fi neon', 'neon');
-        UPDATE public.artworks SET category = '3D Render' WHERE LOWER(category) IN ('3d render', '3d', 'pixar 3d', '3d cartoon', 'render');
-        UPDATE public.artworks SET category = 'Character' WHERE LOWER(category) IN ('character', 'portrait', 'person', 'avatar');
-        UPDATE public.artworks SET category = 'General' WHERE category IS NULL OR category = '';
-    END IF;
-END $$;
-
--- 7. RLS Governance
-ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Public can view active categories" ON public.categories;
-CREATE POLICY "Public can view active categories" ON public.categories
-    FOR SELECT USING (is_active = true);
-GRANT SELECT ON public.categories TO anon, authenticated;
-GRANT ALL ON public.categories TO service_role;
-
--- ============================================================================
--- 8. RAZORPAY PAYMENT GATEWAY & CREDIT LEDGER SYSTEM
--- ============================================================================
-
--- A. DYNAMIC CREDIT PACKAGES TABLE (Admin controlled via Supabase Dashboard)
-CREATE TABLE IF NOT EXISTS public.credit_packages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    package_id TEXT UNIQUE NOT NULL,                  -- e.g. 'pack_starter_99', 'pack_creator_249'
-    name TEXT NOT NULL,                               -- e.g. 'Creator Pack'
-    badge TEXT,                                       -- e.g. 'Most Popular', 'Diwali 50% Extra'
-    price_inr NUMERIC(10, 2) NOT NULL,                -- e.g. 249.00
-    price_usd NUMERIC(10, 2) NOT NULL,                -- e.g. 2.99
-    credits INT NOT NULL,                             -- Base credits: 250
-    bonus_credits INT NOT NULL DEFAULT 0,             -- Bonus credits: 50
-    features JSONB NOT NULL DEFAULT '[]'::jsonb,      -- Feature bullets
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,          -- Toggle visibility
-    is_popular BOOLEAN NOT NULL DEFAULT FALSE,        -- Visual highlight
-    sort_order INT NOT NULL DEFAULT 1,                -- UI sort order
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Ensure all columns exist even if table was created in an earlier partial run
-ALTER TABLE public.credit_packages 
-    ADD COLUMN IF NOT EXISTS package_id TEXT,
-    ADD COLUMN IF NOT EXISTS name TEXT,
-    ADD COLUMN IF NOT EXISTS badge TEXT,
-    ADD COLUMN IF NOT EXISTS price_inr NUMERIC(10, 2),
-    ADD COLUMN IF NOT EXISTS price_usd NUMERIC(10, 2),
-    ADD COLUMN IF NOT EXISTS credits INT,
-    ADD COLUMN IF NOT EXISTS bonus_credits INT DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS features JSONB DEFAULT '[]'::jsonb,
-    ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE,
-    ADD COLUMN IF NOT EXISTS is_popular BOOLEAN DEFAULT FALSE,
-    ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 1,
-    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
-    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
-
--- Drop manual duplicate index if created previously (Postgres UNIQUE constraint on package_id already provides index)
-DROP INDEX IF EXISTS public.uq_credit_packages_package_id;
-
-ALTER TABLE public.credit_packages ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Public can view active packages" ON public.credit_packages;
-CREATE POLICY "Public can view active packages" ON public.credit_packages
-    FOR SELECT USING (is_active = TRUE);
-GRANT SELECT ON public.credit_packages TO anon, authenticated;
-GRANT ALL ON public.credit_packages TO service_role;
-
--- B. PAYMENT TRANSACTIONS AUDIT TABLE
-CREATE TABLE IF NOT EXISTS public.payment_transactions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    package_id TEXT NOT NULL REFERENCES public.credit_packages(package_id),
-    razorpay_order_id TEXT NOT NULL,
-    razorpay_payment_id TEXT UNIQUE,
-    razorpay_signature TEXT,
-    amount_inr NUMERIC(10, 2) NOT NULL,
-    credits_credited INT NOT NULL,
-    currency TEXT NOT NULL DEFAULT 'INR',
-    status TEXT NOT NULL DEFAULT 'created',           -- created, processing, success, failed, refunded
-    payment_method TEXT,                              -- upi, card, netbanking, wallet
-    error_message TEXT,
-    metadata JSONB,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-ALTER TABLE public.payment_transactions 
-    ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    ADD COLUMN IF NOT EXISTS package_id TEXT,
-    ADD COLUMN IF NOT EXISTS razorpay_order_id TEXT,
-    ADD COLUMN IF NOT EXISTS razorpay_payment_id TEXT,
-    ADD COLUMN IF NOT EXISTS razorpay_signature TEXT,
-    ADD COLUMN IF NOT EXISTS amount_inr NUMERIC(10, 2),
-    ADD COLUMN IF NOT EXISTS credits_credited INT,
-    ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'INR',
-    ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'created',
-    ADD COLUMN IF NOT EXISTS payment_method TEXT,
-    ADD COLUMN IF NOT EXISTS error_message TEXT,
-    ADD COLUMN IF NOT EXISTS metadata JSONB,
-    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
-    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
-
--- Drop manual duplicate index if created previously (Postgres UNIQUE constraint on razorpay_payment_id already provides index)
-DROP INDEX IF EXISTS public.uq_payment_transactions_payment_id;
-
--- Covering indexes for foreign keys
-CREATE INDEX IF NOT EXISTS idx_payment_transactions_user_id ON public.payment_transactions (user_id);
-CREATE INDEX IF NOT EXISTS idx_payment_transactions_package_id ON public.payment_transactions (package_id);
-
-ALTER TABLE public.payment_transactions ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users view own transactions" ON public.payment_transactions;
-CREATE POLICY "Users view own transactions" ON public.payment_transactions
-    FOR SELECT USING ((SELECT auth.uid()) = user_id);
-GRANT ALL ON public.payment_transactions TO authenticated, service_role;
-
--- C. WALLET LEDGER (Itemized Credit Passbook)
-CREATE TABLE IF NOT EXISTS public.wallet_ledger (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    amount NUMERIC(10, 2) NOT NULL,                   -- Positive for credit, negative for debit
-    balance_after NUMERIC(10, 2) NOT NULL,
-    event_type TEXT NOT NULL,                         -- purchase, generation, download_4k, tool_usage, refund, royalty
-    description TEXT NOT NULL,                        -- e.g. "Top-up: Creator Pack", "Generated Cyber Ronin"
-    reference_id TEXT,                                -- task_id or razorpay_payment_id
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-ALTER TABLE public.wallet_ledger 
-    ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    ADD COLUMN IF NOT EXISTS amount NUMERIC(10, 2),
-    ADD COLUMN IF NOT EXISTS balance_after NUMERIC(10, 2),
-    ADD COLUMN IF NOT EXISTS event_type TEXT,
-    ADD COLUMN IF NOT EXISTS description TEXT,
-    ADD COLUMN IF NOT EXISTS reference_id TEXT,
-    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
-
-CREATE INDEX IF NOT EXISTS idx_wallet_ledger_user ON public.wallet_ledger(user_id, created_at DESC);
-ALTER TABLE public.wallet_ledger ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users view own ledger" ON public.wallet_ledger;
-CREATE POLICY "Users view own ledger" ON public.wallet_ledger
-    FOR SELECT USING ((SELECT auth.uid()) = user_id);
-GRANT ALL ON public.wallet_ledger TO authenticated, service_role;
-
--- D. ATOMIC RPC: fulfill_credit_purchase (Strictly Idempotent, Concurrency Safe, & Dual Web/Mobile Compatible)
-CREATE OR REPLACE FUNCTION public.fulfill_credit_purchase(
-    p_user_id UUID,
-    p_package_id TEXT,
-    p_order_id TEXT DEFAULT NULL,
-    p_payment_id TEXT DEFAULT NULL,
-    p_signature TEXT DEFAULT NULL,
-    p_payment_method TEXT DEFAULT 'razorpay',
-    -- Web compatibility parameter aliases
-    p_razorpay_payment_id TEXT DEFAULT NULL,
-    p_razorpay_order_id TEXT DEFAULT NULL,
-    p_razorpay_signature TEXT DEFAULT NULL,
-    p_amount_paid_inr NUMERIC DEFAULT NULL,
-    p_credits_to_add INT DEFAULT NULL
-)
-RETURNS JSONB AS $$
-DECLARE
-    v_pkg public.credit_packages;
-    v_total_credits INT;
-    v_wallet public.wallets;
-    v_new_total NUMERIC(10, 2);
-    v_tx_id UUID;
-    v_eff_payment_id TEXT;
-    v_eff_order_id TEXT;
-    v_eff_signature TEXT;
-BEGIN
-    v_eff_payment_id := COALESCE(p_payment_id, p_razorpay_payment_id);
-    v_eff_order_id := COALESCE(p_order_id, p_razorpay_order_id, 'ord_direct_' || floor(extract(epoch from now())*1000)::text);
-    v_eff_signature := COALESCE(p_signature, p_razorpay_signature, 'sig_client_verified');
-
-    IF v_eff_payment_id IS NULL OR v_eff_payment_id = '' THEN
-        RETURN jsonb_build_object('success', FALSE, 'error', 'Payment ID is required');
-    END IF;
-
-    -- 1. Fetch server-verified package details (matching package_id or UUID string)
-    SELECT * INTO v_pkg FROM public.credit_packages 
-    WHERE package_id = p_package_id OR id::text = p_package_id;
-
-    IF NOT FOUND THEN
-        IF p_credits_to_add IS NOT NULL AND p_credits_to_add > 0 THEN
-            v_total_credits := p_credits_to_add;
-        ELSE
-            RETURN jsonb_build_object('success', FALSE, 'error', 'Package not found');
-        END IF;
-    ELSE
-        v_total_credits := v_pkg.credits + v_pkg.bonus_credits;
-    END IF;
-
-    -- 2. Concurrency-Safe Atomic Insertion (Winner takes all)
-    -- If concurrent client RPC & webhook arrive simultaneously, exactly ONE succeeds.
-    INSERT INTO public.payment_transactions (
-        user_id, package_id, razorpay_order_id, razorpay_payment_id,
-        razorpay_signature, amount_inr, credits_credited, status, payment_method
-    ) VALUES (
-        p_user_id, 
-        COALESCE(v_pkg.package_id, p_package_id), 
-        v_eff_order_id, 
-        v_eff_payment_id,
-        v_eff_signature, 
-        COALESCE(v_pkg.price_inr, p_amount_paid_inr, 0.00), 
-        v_total_credits, 
-        'success', 
-        p_payment_method
-    )
-    ON CONFLICT (razorpay_payment_id) DO NOTHING
-    RETURNING id INTO v_tx_id;
-
-    -- If v_tx_id is NULL, this payment was already fulfilled
-    IF v_tx_id IS NULL THEN
-        SELECT * INTO v_wallet FROM public.wallets WHERE user_id = p_user_id;
-        RETURN jsonb_build_object(
-            'success', TRUE,
-            'message', 'Transaction already fulfilled (Idempotent replay blocked duplicate credit)',
-            'current_balance', COALESCE(v_wallet.credits, 0),
-            'duplicate', TRUE
-        );
-    END IF;
-
-    -- 3. Lock wallet row and perform atomic credit addition
-    SELECT * INTO v_wallet FROM public.wallets WHERE user_id = p_user_id FOR UPDATE;
-    IF NOT FOUND THEN
-        INSERT INTO public.wallets (user_id, free_daily_balance, purchased_balance, credits)
-        VALUES (p_user_id, 0.00, v_total_credits, v_total_credits)
-        RETURNING * INTO v_wallet;
-    ELSE
-        UPDATE public.wallets 
-        SET 
-            purchased_balance = purchased_balance + v_total_credits,
-            credits = credits + v_total_credits,
-            updated_at = NOW()
-        WHERE user_id = p_user_id
-        RETURNING * INTO v_wallet;
-    END IF;
-
-    v_new_total := v_wallet.credits;
-
-    -- 4. Append to ledger audit trail
-    INSERT INTO public.wallet_ledger (
-        user_id, amount, balance_after, event_type, description, reference_id
-    ) VALUES (
-        p_user_id, 
-        v_total_credits, 
-        v_new_total, 
-        'purchase',
-        'Top-up: ' || COALESCE(v_pkg.name, 'AI Credits') || ' (+' || v_total_credits || ' Credits)',
-        v_eff_payment_id
-    );
-
-    RETURN jsonb_build_object(
-        'success', TRUE,
-        'credited', v_total_credits,
-        'new_balance', v_new_total,
-        'package_name', COALESCE(v_pkg.name, 'Credit Pack'),
-        'transaction_id', v_tx_id
-    );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- E. INITIAL SEED CREDIT PACKAGES
-INSERT INTO public.credit_packages (package_id, name, badge, price_inr, price_usd, credits, bonus_credits, is_popular, sort_order, features)
-VALUES 
-('pack_starter_99', 'Starter Pack', 'Quick Trial', 99.00, 1.29, 100, 0, FALSE, 1, '["50 High-Res Generations", "FLUX & SDXL Access", "InstantID Character Lock", "Community Publishing"]'::jsonb),
-('pack_creator_249', 'Creator Pack', 'Most Popular', 249.00, 2.99, 250, 50, TRUE, 2, '["150 High-Res Generations", "50 Free Bonus Credits", "4K Lossless Downloads", "Commercial Usage Rights", "Fast Queue Priority"]'::jsonb),
-('pack_pro_499', 'Pro Studio Pack', 'Best Value', 499.00, 5.99, 500, 150, FALSE, 3, '["325 High-Res Generations", "150 Free Bonus Credits", "Unlimited 4K Upscaling", "All AI Editing Tools Included", "Instant Support"]'::jsonb),
-('pack_master_999', 'Master Agency Pack', 'Max Power', 999.00, 11.99, 1000, 500, FALSE, 4, '["750 High-Res Generations", "500 Mega Bonus Credits", "Full Commercial License", "Zero Watermark", "VIP Generation Server"]'::jsonb)
-ON CONFLICT (package_id) DO NOTHING;
-
--- ====================================================================
--- 16. REMIX LAB SESSIONS & CREATOR ROYALTY LEDGER SYSTEM
--- ====================================================================
-
--- 1. Persistent Remix Sessions Table (Multi-Device & Cross-Platform State)
-CREATE TABLE IF NOT EXISTS public.remix_sessions (
-    id TEXT PRIMARY KEY,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    anchor_image_url TEXT NOT NULL,
-    source_type VARCHAR(50) NOT NULL DEFAULT 'explore',
-    remixed_from_prompt_id UUID REFERENCES public.explore_prompts(id) ON DELETE SET NULL,
-    current_prompt TEXT NOT NULL,
-    style_weight NUMERIC(3, 2) NOT NULL DEFAULT 0.60,
-    turn_count INT NOT NULL DEFAULT 0,
-    last_generated_job_id TEXT,
-    status VARCHAR(20) NOT NULL DEFAULT 'active',
-    messages JSONB NOT NULL DEFAULT '[]'::jsonb,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-ALTER TABLE public.remix_sessions 
-    ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    ADD COLUMN IF NOT EXISTS anchor_image_url TEXT,
-    ADD COLUMN IF NOT EXISTS source_type VARCHAR(50) DEFAULT 'explore',
-    ADD COLUMN IF NOT EXISTS remixed_from_prompt_id UUID REFERENCES public.explore_prompts(id) ON DELETE SET NULL,
-    ADD COLUMN IF NOT EXISTS current_prompt TEXT,
-    ADD COLUMN IF NOT EXISTS style_weight NUMERIC(3, 2) DEFAULT 0.60,
-    ADD COLUMN IF NOT EXISTS turn_count INT DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS last_generated_job_id TEXT,
-    ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active',
-    ADD COLUMN IF NOT EXISTS messages JSONB DEFAULT '[]'::jsonb,
-    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
-    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
-
-CREATE INDEX IF NOT EXISTS idx_remix_sessions_user ON public.remix_sessions(user_id, updated_at DESC);
-CREATE INDEX IF NOT EXISTS idx_remix_sessions_prompt ON public.remix_sessions(remixed_from_prompt_id);
-
-ALTER TABLE public.remix_sessions ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users manage own remix sessions" ON public.remix_sessions;
-CREATE POLICY "Users manage own remix sessions" ON public.remix_sessions
-    FOR ALL USING ((SELECT auth.uid()) = user_id OR user_id IS NULL);
-GRANT ALL ON public.remix_sessions TO anon, authenticated, service_role;
-
--- 2. Atomic Creator Royalty Credit RPC
-CREATE OR REPLACE FUNCTION public.increment_creator_royalty(
-    p_creator_id UUID,
-    p_amount NUMERIC(10, 2),
-    p_prompt_id UUID DEFAULT NULL,
-    p_buyer_id UUID DEFAULT NULL
-)
-RETURNS JSONB AS $$
-DECLARE
-    v_wallet public.wallets;
-    v_new_balance NUMERIC(10, 2);
-    v_prompt_title TEXT;
-BEGIN
-    IF p_prompt_id IS NOT NULL THEN
-        SELECT title INTO v_prompt_title FROM public.explore_prompts WHERE id = p_prompt_id;
-    END IF;
-    v_prompt_title := COALESCE(v_prompt_title, 'Community Artwork');
-
-    SELECT * INTO v_wallet FROM public.wallets WHERE user_id = p_creator_id FOR UPDATE;
-    IF NOT FOUND THEN
-        INSERT INTO public.wallets (user_id, free_daily_balance, purchased_balance, earned_royalty_balance, total_royalties_earned, credits)
-        VALUES (p_creator_id, 5.00, 0.00, p_amount, p_amount, 5.00 + p_amount)
-        RETURNING * INTO v_wallet;
-    ELSE
-        UPDATE public.wallets 
-        SET 
-            earned_royalty_balance = COALESCE(earned_royalty_balance, 0.00) + p_amount,
-            total_royalties_earned = COALESCE(total_royalties_earned, 0.00) + p_amount,
-            credits = credits + p_amount,
-            updated_at = NOW()
-        WHERE user_id = p_creator_id
-        RETURNING * INTO v_wallet;
-    END IF;
-
-    v_new_balance := v_wallet.credits;
-
-    INSERT INTO public.wallet_ledger (
-        user_id, amount, balance_after, event_type, description, reference_id
-    ) VALUES (
-        p_creator_id,
-        p_amount,
-        v_new_balance,
-        'royalty',
-        'Creator Royalty: Community remix of "' || v_prompt_title || '" (+' || p_amount || ' Credits)',
-        COALESCE(p_prompt_id::text, 'remix')
-    );
-
-    RETURN jsonb_build_object(
-        'success', TRUE,
-        'credited', p_amount,
-        'new_balance', v_new_balance,
-        'creator_id', p_creator_id
-    );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-GRANT EXECUTE ON FUNCTION public.increment_creator_royalty TO authenticated, service_role;
-
--- 3. Atomic Prompt Remix Counter RPC
-CREATE OR REPLACE FUNCTION public.increment_prompt_remix_count(p_prompt_id UUID)
-RETURNS INT AS $$
-DECLARE
-    new_count INT;
-BEGIN
-    UPDATE public.explore_prompts
-    SET 
-        remixes_count = COALESCE(remixes_count, 0) + 1,
-        total_remixes = COALESCE(total_remixes, 0) + 1
-    WHERE id = p_prompt_id
-    RETURNING remixes_count INTO new_count;
-
-    UPDATE public.artworks
-    SET 
-        remixes_count = COALESCE(remixes_count, 0) + 1,
-        total_remixes = COALESCE(total_remixes, 0) + 1
-    WHERE id = p_prompt_id::text;
-
-    RETURN COALESCE(new_count, 1);
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-GRANT EXECUTE ON FUNCTION public.increment_prompt_remix_count TO anon, authenticated, service_role;
-
 -- ==============================================================================
 -- Migration 009: Trending Images, Inspiration Prompts & Template Remix Engine
 -- Unified schema & rich seed data for Web and Mobile discovery parity
@@ -1406,7 +911,7 @@ CREATE POLICY "Public can view marketplace prompts" ON public.explore_prompts
 GRANT ALL ON public.explore_prompts TO anon, authenticated, service_role;
 
 -- ==============================================================================
--- 6. Insert 12 Ultra-High-Quality Curated Trending Templates
+-- 6. Insert 12 100% Visually-Matched Curated Trending Templates
 -- Populates both modern and legacy columns (masked_prompt_summary, masked_summary,
 -- preview_url, preview_image_url, image_url, prompt, negative_prompt)
 -- ==============================================================================
@@ -1421,40 +926,40 @@ INSERT INTO public.explore_prompts (
 (
     '10000000-0000-4000-8000-000000000001',
     'Cyberpunk Neo-Tokyo Rain',
-    'Cinematic close-up portrait of a cyberpunk character standing in a rain-drenched futuristic Tokyo alley, luminous pink and cyan neon signs reflecting on wet jacket and skin, volumetric steam, 85mm portrait lens f/1.4, shallow depth of field, 8k octane render, hyperrealistic cinematic lighting',
+    'Cinematic wide night street in neo-Tokyo with towering illuminated neon signage, rain-slicked asphalt reflecting vibrant magenta and cyan lights, futuristic cyberpunk atmosphere, 8k resolution, photorealistic cinematic lighting',
     'blurry, low quality, distorted, extra limbs, bad anatomy, text, watermark',
-    'Cyber Ronin • Wet Neon Street • 85mm Bokeh',
-    'Cyber Ronin • Wet Neon Street • 85mm Bokeh',
+    'Neo-Tokyo • Neon Street • Rain Reflections',
+    'Neo-Tokyo • Neon Street • Rain Reflections',
     'Cyberpunk',
     'FLUX.1 Schnell',
     '9:16',
     '768x1344',
-    'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop',
-    'Cinematic close-up portrait of a cyberpunk character standing in a rain-drenched futuristic Tokyo alley, luminous pink and cyan neon signs reflecting on wet jacket and skin, volumetric steam, 85mm portrait lens f/1.4, shallow depth of field, 8k octane render, hyperrealistic cinematic lighting',
+    'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&auto=format&fit=crop',
+    'Cinematic wide night street in neo-Tokyo with towering illuminated neon signage, rain-slicked asphalt reflecting vibrant magenta and cyan lights, futuristic cyberpunk atmosphere, 8k resolution, photorealistic cinematic lighting',
     1240, 485, 485,
     'Kaito Vance', '@kaitovance', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop',
-    ARRAY['cyberpunk', 'neon', 'rain', 'portrait', 'tokyo'],
+    ARRAY['cyberpunk', 'neon', 'rain', 'tokyo', 'street'],
     TRUE, TRUE, 1, TRUE
 ),
 (
     '10000000-0000-4000-8000-000000000002',
     'Golden Hour Editorial Portrait',
-    'High fashion editorial magazine cover portrait of a subject smiling in warm golden hour sunset light, wind-blown hair, natural skin texture, visible freckles, dramatic rim light, soft creamy bokeh, shot on Hasselblad H6D-100c, 85mm f/1.2, photorealistic masterpiece',
+    'High fashion editorial magazine cover portrait of a subject in warm golden hour sunset light, wind-blown hair, natural skin texture, visible freckles, dramatic rim light, soft creamy bokeh, 85mm f/1.2, photorealistic masterpiece',
     'plastic skin, airbrushed, cartoon, oversaturated, deformed, watermark',
-    'Natural Beauty • Hasselblad 100c • Soft Golden Hour',
-    'Natural Beauty • Hasselblad 100c • Soft Golden Hour',
+    'Natural Beauty • Golden Hour • 85mm Bokeh',
+    'Natural Beauty • Golden Hour • 85mm Bokeh',
     'Photorealism',
     'FLUX.1 Schnell',
     '1:1',
     '1024x1024',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop',
-    'High fashion editorial magazine cover portrait of a subject smiling in warm golden hour sunset light, wind-blown hair, natural skin texture, visible freckles, dramatic rim light, soft creamy bokeh, shot on Hasselblad H6D-100c, 85mm f/1.2, photorealistic masterpiece',
+    'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&auto=format&fit=crop',
+    'High fashion editorial magazine cover portrait of a subject in warm golden hour sunset light, wind-blown hair, natural skin texture, visible freckles, dramatic rim light, soft creamy bokeh, 85mm f/1.2, photorealistic masterpiece',
     1890, 720, 720,
     'Elena Rostova', '@elena_visuals', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop',
     ARRAY['portrait', 'goldenhour', 'fashion', 'editorial', 'photorealistic'],
@@ -1463,211 +968,211 @@ INSERT INTO public.explore_prompts (
 (
     '10000000-0000-4000-8000-000000000003',
     'Studio Luxury Perfume Splash',
-    'Commercial studio product photography of an elegant crystal perfume bottle on dark polished obsidian rock, dynamic water splash frozen in mid-air, dramatic dual-point rim lighting with cyan and gold gels, hyper-detailed reflections, 8k commercial catalogue quality',
+    'Commercial luxury perfume bottle photography, clear faceted crystal glass flacon with delicate pink fragrance, surrounded by soft blush rose petals and floating water droplets, studio softbox lighting, shallow depth of field, high-end cosmetics advertisement',
     'blurry, low resolution, cheap, noisy, text, label distortion',
-    'Gold Chrome Fluid • Minimalist Luxury • Studio White',
-    'Gold Chrome Fluid • Minimalist Luxury • Studio White',
-    'Product',
+    'Luxury Perfume • Crystal Flacon • Rose Petals',
+    'Luxury Perfume • Crystal Flacon • Rose Petals',
+    'Commercial',
     'FLUX.1 Schnell',
     '1:1',
     '1024x1024',
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop',
-    'Commercial studio product photography of an elegant crystal perfume bottle on dark polished obsidian rock, dynamic water splash frozen in mid-air, dramatic dual-point rim lighting with cyan and gold gels, hyper-detailed reflections, 8k commercial catalogue quality',
+    'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop',
+    'Commercial luxury perfume bottle photography, clear faceted crystal glass flacon with delicate pink fragrance, surrounded by soft blush rose petals and floating water droplets, studio softbox lighting, shallow depth of field, high-end cosmetics advertisement',
     950, 310, 310,
     'Studio Lux', '@studiolux_3d', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop',
-    ARRAY['product', 'commercial', 'water', 'splash', 'luxury'],
+    ARRAY['product', 'commercial', 'perfume', 'luxury', 'cosmetics'],
     TRUE, TRUE, 3, TRUE
 ),
 (
     '10000000-0000-4000-8000-000000000004',
-    '3D Pixar Cozy Fox Character',
-    'Charming 3D animated little red fox wearing an oversized knitted autumn wool sweater and round spectacles, sitting inside a cozy treehouse library sipping hot cocoa, warm fireplace glow, Pixar Disney animation render, Unreal Engine 5 subsurface scattering, highly detailed fur texture',
-    '2D, flat, ugly, distorted, harsh shadows, low polygon',
-    'Pixar 3D Render • Cozy Treehouse • Subsurface Scattering',
-    'Pixar 3D Render • Cozy Treehouse • Subsurface Scattering',
-    '3D Render',
+    'Woodland Red Fox in Snow',
+    'Close-up wildlife portrait of a fluffy red fox sitting in pristine white snow, warm golden winter sunlight rim-lighting the fur, soft bokeh pine forest background, national geographic style, crystal clear 8k resolution, shot on 400mm telephoto lens',
+    '2D, flat, ugly, distorted, harsh shadows, cartoon, bad anatomy',
+    'Red Fox • Sunlit Snow • National Geographic',
+    'Red Fox • Sunlit Snow • National Geographic',
+    'Wildlife',
     'FLUX.1 Schnell',
-    '1:1',
-    '1024x1024',
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop',
-    'Charming 3D animated little red fox wearing an oversized knitted autumn wool sweater and round spectacles, sitting inside a cozy treehouse library sipping hot cocoa, warm fireplace glow, Pixar Disney animation render, Unreal Engine 5 subsurface scattering, highly detailed fur texture',
+    '4:5',
+    '896x1120',
+    'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop',
+    'Close-up wildlife portrait of a fluffy red fox sitting in pristine white snow, warm golden winter sunlight rim-lighting the fur, soft bokeh pine forest background, national geographic style, crystal clear 8k resolution, shot on 400mm telephoto lens',
     2150, 890, 890,
-    'Artisan 3D', '@artisan_3d', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop',
-    ARRAY['3d', 'pixar', 'character', 'cute', 'cozy'],
+    'Wild Horizon', '@wildhorizon', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop',
+    ARRAY['wildlife', 'fox', 'winter', 'snow', 'nature'],
     TRUE, TRUE, 4, TRUE
 ),
 (
     '10000000-0000-4000-8000-000000000005',
-    'Anime Ethereal Blossom Spirit',
-    'Makoto Shinkai style anime illustration of a mystical spirit girl in a flowing ceremonial kimono standing in a sea of glowing sakura cherry blossoms at twilight, starry sky with a giant crescent moon, ethereal purple and indigo lighting, delicate brushwork, emotional atmosphere, 4k masterpiece',
+    'Anime Sakura Blossom Stream',
+    'Breathtaking night view of a serene Tokyo river canal arched over with blooming pink cherry blossom trees, glowing traditional paper lanterns casting soft pink and warm amber reflections on the water, Makoto Shinkai anime style, dreamy and atmospheric 4k',
     'bad anatomy, 3d, realistic photograph, western comic, low resolution',
-    'Makoto Shinkai Pastoral • Golden Clouds • Whimsical Anime',
-    'Makoto Shinkai Pastoral • Golden Clouds • Whimsical Anime',
+    'Sakura River • Glowing Lanterns • Anime Dream',
+    'Sakura River • Glowing Lanterns • Anime Dream',
     'Anime',
     'FLUX.1 Schnell',
     '16:9',
     '1344x768',
-    'https://images.unsplash.com/photo-1563089145-599997674d42?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1563089145-599997674d42?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1563089145-599997674d42?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1563089145-599997674d42?w=800&auto=format&fit=crop',
-    'Makoto Shinkai style anime illustration of a mystical spirit girl in a flowing ceremonial kimono standing in a sea of glowing sakura cherry blossoms at twilight, starry sky with a giant crescent moon, ethereal purple and indigo lighting, delicate brushwork, emotional atmosphere, 4k masterpiece',
+    'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800&auto=format&fit=crop',
+    'Breathtaking night view of a serene Tokyo river canal arched over with blooming pink cherry blossom trees, glowing traditional paper lanterns casting soft pink and warm amber reflections on the water, Makoto Shinkai anime style, dreamy and atmospheric 4k',
     1680, 640, 640,
     'Sora Anime', '@sorashinkai', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop',
-    ARRAY['anime', 'shinkai', 'sakura', 'twilight', 'fantasy'],
+    ARRAY['anime', 'shinkai', 'sakura', 'lanterns', 'night'],
     TRUE, TRUE, 5, TRUE
 ),
 (
     '10000000-0000-4000-8000-000000000006',
-    'Futuristic Biophilic Villa',
-    'Architectural digest photograph of an ultra-modern cliffside luxury villa seamlessly integrated with lush tropical waterfalls and hanging gardens, floor-to-ceiling curved glass walls, cantilevered infinity pool overlooking misty ocean sunrise, minimal Scandinavian warm wood and concrete, architectural photography',
+    'Futuristic Biophilic Pool Villa',
+    'Architectural digest photo of an ultra-luxury modern biophilic villa with curved glass walls, cantilevered infinity pool overlooking lush tropical gardens, sunlit terrace with palm trees, clean modern lines, bright daylight, hyperrealistic architectural photography',
     'distorted walls, cartoon, messy structure, noisy, oversaturated',
-    'Solarpunk Architecture • Crystal Towers • Twilight Speedtrails',
-    'Solarpunk Architecture • Crystal Towers • Twilight Speedtrails',
+    'Luxury Pool Villa • Palm Trees • Modern Architecture',
+    'Luxury Pool Villa • Palm Trees • Modern Architecture',
     'Architecture',
     'FLUX.1 Schnell',
     '16:9',
     '1344x768',
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop',
-    'Architectural digest photograph of an ultra-modern cliffside luxury villa seamlessly integrated with lush tropical waterfalls and hanging gardens, floor-to-ceiling curved glass walls, cantilevered infinity pool overlooking misty ocean sunrise, minimal Scandinavian warm wood and concrete, architectural photography',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop',
+    'Architectural digest photo of an ultra-luxury modern biophilic villa with curved glass walls, cantilevered infinity pool overlooking lush tropical gardens, sunlit terrace with palm trees, clean modern lines, bright daylight, hyperrealistic architectural photography',
     1420, 390, 390,
     'ArchDaily AI', '@archdaily_ai', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop',
-    ARRAY['architecture', 'villa', 'modern', 'luxury', 'biophilic'],
+    ARRAY['architecture', 'villa', 'pool', 'luxury', 'modern'],
     TRUE, TRUE, 6, TRUE
 ),
 (
     '10000000-0000-4000-8000-000000000007',
-    'Vibrant Neon Cyberpunk Supercar',
-    'Dynamic rolling tracking shot of a matte black futuristic electric hypercar drifting through a rain-slicked city avenue at midnight, iridescent violet underglow neon lights, water spray trails, motion blur on background skyscrapers, Reflections on wet carbon fiber body, 8k photorealistic automotive photography',
+    'Midnight Supercar Horizon',
+    'Cinematic low-angle tracking shot of a sleek aerodynamic black sports car cruising on an open coastal highway during twilight, glowing red LED taillights, motion blur wheels, reflections of sunset sky on polished gloss metallic body, Top Gear automotive photography',
     'poor reflections, cartoon, toy car, low detail wheels, distorted perspective',
-    'Cyberpunk Drift • Neon Reflections • Carbon Fiber',
-    'Cyberpunk Drift • Neon Reflections • Carbon Fiber',
-    'Cyberpunk',
+    'Black Supercar • Twilight Highway • LED Lights',
+    'Black Supercar • Twilight Highway • LED Lights',
+    'Concept Art',
     'FLUX.1 Schnell',
     '16:9',
     '1344x768',
-    'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&auto=format&fit=crop',
-    'Dynamic rolling tracking shot of a matte black futuristic electric hypercar drifting through a rain-slicked city avenue at midnight, iridescent violet underglow neon lights, water spray trails, motion blur on background skyscrapers, Reflections on wet carbon fiber body, 8k photorealistic automotive photography',
+    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&auto=format&fit=crop',
+    'Cinematic low-angle tracking shot of a sleek aerodynamic black sports car cruising on an open coastal highway during twilight, glowing red LED taillights, motion blur wheels, reflections of sunset sky on polished gloss metallic body, Top Gear automotive photography',
     1340, 520, 520,
     'Velocity Lab', '@velocity_ai', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop',
-    ARRAY['car', 'supercar', 'drift', 'neon', 'automotive'],
+    ARRAY['car', 'supercar', 'highway', 'porsche', 'automotive'],
     TRUE, TRUE, 7, TRUE
 ),
 (
     '10000000-0000-4000-8000-000000000008',
-    'Ethereal Crystal Deer Spirit',
-    'Mythical forest guardian deer composed of glowing translucent quartz crystal and blooming bioluminescent flora, standing gracefully in a misty ancient enchanted forest, sunbeams filtering through colossal canopy, tiny floating dust motes, magical realism, high fantasy illustration',
+    'Majestic Forest Stag Spirit',
+    'Magnificent wild stag with large branched antlers standing proudly in an ancient sunlit woodland, ethereal rays of light filtering through the tree canopy, lush green mossy forest floor, magical mythical nature photography, 8k crisp details',
     'ugly, deformed antlers, blurry, grainy, flat colors',
-    'Mythical Crystal Deer • Bioluminescent Flora • Forest Ray',
-    'Mythical Crystal Deer • Bioluminescent Flora • Forest Ray',
-    'Fantasy',
+    'Forest Stag • Grand Antlers • Sunlit Woodland',
+    'Forest Stag • Grand Antlers • Sunlit Woodland',
+    'Wildlife',
     'FLUX.1 Schnell',
     '1:1',
     '1024x1024',
-    'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop',
-    'Mythical forest guardian deer composed of glowing translucent quartz crystal and blooming bioluminescent flora, standing gracefully in a misty ancient enchanted forest, sunbeams filtering through colossal canopy, tiny floating dust motes, magical realism, high fantasy illustration',
+    'https://images.unsplash.com/photo-1484406566174-9da000fda645?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1484406566174-9da000fda645?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1484406566174-9da000fda645?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1484406566174-9da000fda645?w=800&auto=format&fit=crop',
+    'Magnificent wild stag with large branched antlers standing proudly in an ancient sunlit woodland, ethereal rays of light filtering through the tree canopy, lush green mossy forest floor, magical mythical nature photography, 8k crisp details',
     1780, 610, 610,
     'Mythic Dreamer', '@mythic_dreamer', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop',
-    ARRAY['fantasy', 'crystal', 'spirit', 'nature', 'mythical'],
+    ARRAY['wildlife', 'stag', 'deer', 'forest', 'nature'],
     TRUE, TRUE, 8, TRUE
 ),
 (
     '10000000-0000-4000-8000-000000000009',
-    'Retro 70s Vintage Film Portrait',
-    'Authentic 1970s Kodachrome 35mm film photograph of a woman wearing retro round sunglasses and vintage leather jacket, standing outside an old California roadside diner, warm vintage grain, cinematic desaturated colors, natural analog lens flare, classic vintage aesthetic',
-    'digital, sterile, modern smartphone look, over-sharpened, plastic',
-    'Authentic 1970s Kodachrome • Vintage Diner • Warm Film Grain',
-    'Authentic 1970s Kodachrome • Vintage Diner • Warm Film Grain',
+    'Retro Boho Sunglasses Portrait',
+    'Vibrant vintage 70s summer fashion portrait of a stylish woman holding round sunglasses, retro bohemian crop top, warm sun-kissed skin, golden sunlight against a sunny backdrop, authentic Kodachrome film grain, analog color grade, effortless indie aesthetic',
+    'digital render, modern plastic look, low detail, oversaturated neon, bad eyes',
+    '70s Boho Chic • Round Sunglasses • Golden Summer',
+    '70s Boho Chic • Round Sunglasses • Golden Summer',
     'Photorealism',
     'FLUX.1 Schnell',
     '9:16',
     '768x1344',
-    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop',
-    'Authentic 1970s Kodachrome 35mm film photograph of a woman wearing retro round sunglasses and vintage leather jacket, standing outside an old California roadside diner, warm vintage grain, cinematic desaturated colors, natural analog lens flare, classic vintage aesthetic',
-    1190, 430, 430,
-    'Analog Soul', '@analog_soul', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop',
-    ARRAY['vintage', 'retro', 'film', 'kodachrome', '70s'],
+    'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=800&auto=format&fit=crop',
+    'Vibrant vintage 70s summer fashion portrait of a stylish woman holding round sunglasses, retro bohemian crop top, warm sun-kissed skin, golden sunlight against a sunny backdrop, authentic Kodachrome film grain, analog color grade, effortless indie aesthetic',
+    1420, 530, 530,
+    'Chloe Laurent', '@chloelaurent', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop',
+    ARRAY['vintage', '70s', 'portrait', 'sunglasses', 'summer'],
     TRUE, TRUE, 9, TRUE
 ),
 (
     '10000000-0000-4000-8000-000000000010',
-    'Surreal Floating Island Sanctuary',
-    'Surrealist digital painting of a serene floating verdant island high in the clouds, miniature marble pagoda temple beside a bonsai tree, water overflowing into endless sky, peaceful sunset atmosphere, dreamlike Studio Ghibli meets Salvador Dali aesthetic, 8k wallpaper',
-    'turbulent, dark, messy, bad composition, noisy',
-    'Surreal Floating Island • Cloud Temple • Ghibli Aesthetic',
-    'Surreal Floating Island • Cloud Temple • Ghibli Aesthetic',
-    'Fantasy',
+    'Cosmic Mirror Ocean Sanctuary',
+    'Surreal fantasy landscape of a lone sailboat on a perfectly calm mirror ocean under an awe-inspiring starry night sky and glowing purple galaxy nebula, surreal cosmic reflection on the water surface, serene and peaceful dreamscape, 8k wallpaper',
+    'turbulent water, modern city, pollution, blurry stars, low resolution',
+    'Cosmic Ocean • Starry Galaxy • Mirror Reflection',
+    'Cosmic Ocean • Starry Galaxy • Mirror Reflection',
+    'Surrealism',
     'FLUX.1 Schnell',
     '16:9',
     '1344x768',
-    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop',
-    'Surrealist digital painting of a serene floating verdant island high in the clouds, miniature marble pagoda temple beside a bonsai tree, water overflowing into endless sky, peaceful sunset atmosphere, dreamlike Studio Ghibli meets Salvador Dali aesthetic, 8k wallpaper',
+    'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop',
+    'Surreal fantasy landscape of a lone sailboat on a perfectly calm mirror ocean under an awe-inspiring starry night sky and glowing purple galaxy nebula, surreal cosmic reflection on the water surface, serene and peaceful dreamscape, 8k wallpaper',
     1550, 480, 480,
     'Dreamscape AI', '@dreamscape_ai', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop',
-    ARRAY['surreal', 'fantasy', 'island', 'clouds', 'dream'],
+    ARRAY['surreal', 'fantasy', 'ocean', 'galaxy', 'stars'],
     TRUE, TRUE, 10, TRUE
 ),
 (
     '10000000-0000-4000-8000-000000000011',
-    'Cybernetic Android Geisha',
-    'Hauntingly beautiful cybernetic geisha with porcelain white face and intricate polished gold mechanical filigree seams along cheekbones and neck, dark glossy hair with neon fiber-optic pins, intense amber eyes, studio portrait lighting, high-contrast dark luxury backdrop, cyberpunk couture',
+    'Neon Cyberpunk Studio Portrait',
+    'Moody high-fashion cyberpunk studio portrait of a subject with slicked-back hair, striking dual neon lighting with electric cyan and magenta side highlights on cheekbones, dark cinematic gradient backdrop, flawless skin texture, 85mm prime lens f/1.4, vogue cyberpunk',
     'deformed eyes, blurry seams, flat texture, cartoonish, low resolution',
-    'Cybernetic Geisha • Polished Gold Seams • Cyberpunk Couture',
-    'Cybernetic Geisha • Polished Gold Seams • Cyberpunk Couture',
+    'Cyan & Violet Neon • Studio Rim Light • Cyberpunk Chic',
+    'Cyan & Violet Neon • Studio Rim Light • Cyberpunk Chic',
     'Cyberpunk',
     'FLUX.1 Schnell',
-    '1:1',
-    '1024x1024',
-    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop',
-    'Hauntingly beautiful cybernetic geisha with porcelain white face and intricate polished gold mechanical filigree seams along cheekbones and neck, dark glossy hair with neon fiber-optic pins, intense amber eyes, studio portrait lighting, high-contrast dark luxury backdrop, cyberpunk couture',
+    '4:5',
+    '896x1120',
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop',
+    'Moody high-fashion cyberpunk studio portrait of a subject with slicked-back hair, striking dual neon lighting with electric cyan and magenta side highlights on cheekbones, dark cinematic gradient backdrop, flawless skin texture, 85mm prime lens f/1.4, vogue cyberpunk',
     1920, 780, 780,
     'Kurogane Lab', '@kurogane_ai', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop',
-    ARRAY['cyberpunk', 'geisha', 'gold', 'portrait', 'android'],
+    ARRAY['cyberpunk', 'portrait', 'neon', 'editorial', 'model'],
     TRUE, TRUE, 11, TRUE
 ),
 (
     '10000000-0000-4000-8000-000000000012',
     'Nordic Minimalist Oak Living Room',
-    'Sun-drenched minimalist desert architecture with smooth terracotta rammed-earth walls, sharp geometric shadow play from mid-day sun, serene shallow reflective water pool in central courtyard, lone olive tree, Palm Springs meets Mexico modernism, architectural magazine cover shot',
-    'busy, cluttered, messy textures, cloudy, distorted lines',
-    'Minimalist Desert Villa • Rammed Earth • Reflective Pool',
-    'Minimalist Desert Villa • Rammed Earth • Reflective Pool',
+    'Interior design photography of a sunlit Scandinavian minimalist living room, natural light oak furniture, warm caramel leather sofa, large fiddle leaf fig plant in ceramic pot, neutral warm linen textiles, clean serene architecture, Kinfolk aesthetic, 8k resolution',
+    'busy, cluttered, messy textures, cloudy, distorted lines, plastic furniture',
+    'Nordic Oak • Caramel Leather • Sunlit Living Room',
+    'Nordic Oak • Caramel Leather • Sunlit Living Room',
     'Architecture',
     'FLUX.1 Schnell',
     '1:1',
     '1024x1024',
-    'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop',
-    'Sun-drenched minimalist desert architecture with smooth terracotta rammed-earth walls, sharp geometric shadow play from mid-day sun, serene shallow reflective water pool in central courtyard, lone olive tree, Palm Springs meets Mexico modernism, architectural magazine cover shot',
+    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&auto=format&fit=crop',
+    'Interior design photography of a sunlit Scandinavian minimalist living room, natural light oak furniture, warm caramel leather sofa, large fiddle leaf fig plant in ceramic pot, neutral warm linen textiles, clean serene architecture, Kinfolk aesthetic, 8k resolution',
     1100, 360, 360,
-    'Desert Modern', '@desertmodern', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop',
-    ARRAY['architecture', 'minimalist', 'desert', 'shadows', 'modern'],
+    'Nordic Spaces', '@nordicspaces', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop',
+    ARRAY['architecture', 'interior', 'minimalist', 'nordic', 'livingroom'],
     TRUE, TRUE, 12, TRUE
 )
 ON CONFLICT (id) DO UPDATE SET
@@ -1691,4 +1196,3 @@ ON CONFLICT (id) DO UPDATE SET
     is_trending = EXCLUDED.is_trending,
     is_featured = EXCLUDED.is_featured,
     display_order = EXCLUDED.display_order;
-
