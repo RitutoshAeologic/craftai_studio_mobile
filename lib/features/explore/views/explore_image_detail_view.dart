@@ -571,6 +571,29 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
                     fontSize: 11.sp,
                   ),
                 ),
+                // Tag Pills
+                if (widget.card.tags.isNotEmpty) ...[
+                  SizedBox(height: 8.h),
+                  Wrap(
+                    spacing: 6.w,
+                    runSpacing: 4.h,
+                    children: widget.card.tags.map((tag) => Container(
+                      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Text(
+                        '#$tag',
+                        style: AppTextStyles.captionXs.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )).toList(),
+                  ),
+                ],
               ],
             ),
           ),
@@ -788,10 +811,68 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Dominant Primary CTA: Remix in Lab (Full Width, 52dp)
+            // Studio Creation Actions Row (MeiGen & Web Parity)
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 44.h,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Get.back();
+                        _controller.useAsPrompt(widget.card);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                        ),
+                      ),
+                      icon: const Icon(Icons.auto_fix_high, size: 16),
+                      label: Text(
+                        'Use Prompt',
+                        style: AppTextStyles.captionBold.copyWith(color: AppColors.primary),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: SizedBox(
+                    height: 44.h,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Get.back();
+                        _controller.remixWithMyPhoto(widget.card);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.purpleAccent.withValues(alpha: 0.15),
+                        foregroundColor: AppColors.purpleAccent,
+                        elevation: 0,
+                        side: BorderSide(color: AppColors.purpleAccent.withValues(alpha: 0.4)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                        ),
+                      ),
+                      icon: const Icon(Icons.face_retouching_natural, size: 16),
+                      label: Text(
+                        '⚡ My Photo',
+                        style: AppTextStyles.captionBold.copyWith(color: AppColors.purpleAccent),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8.h),
+
+            // Dominant Primary CTA: Remix in Lab (Full Width, 50dp)
             SizedBox(
               width: double.infinity,
-              height: 52.h,
+              height: 50.h,
               child: ElevatedButton.icon(
                 onPressed: () {
                   HapticFeedback.mediumImpact();
@@ -801,7 +882,9 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
                       'anchorImageUrl': widget.card.previewUrl,
                       'sourceType': 'explore',
                       'remixedFromPromptId': widget.card.id,
-                      'initialPrompt': widget.card.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', ''),
+                      'initialPrompt': widget.card.fullPrompt.isNotEmpty && !widget.card.fullPrompt.contains('[Secret Recipe Encrypted]')
+                          ? widget.card.fullPrompt
+                          : widget.card.maskedSummary.replaceAll(' • [Secret Recipe Encrypted]', ''),
                       'authorName': widget.card.authorName,
                       'royaltyPercent': widget.card.remixFee > 0
                           ? (widget.card.creatorRoyaltyCut / widget.card.remixFee * 100).toInt()
@@ -818,13 +901,13 @@ class _ExploreImageDetailViewState extends State<ExploreImageDetailView> {
                     borderRadius: BorderRadius.circular(AppDimens.radiusMd),
                   ),
                 ),
-                icon: const Icon(Icons.shuffle_rounded, size: 20),
+                icon: const Icon(Icons.shuffle_rounded, size: 18),
                 label: Text(
-                  'Remix in Lab',
+                  'Remix in Lab (Chat)',
                   style: AppTextStyles.titleSmall.copyWith(
                     fontWeight: FontWeight.w800,
                     color: AppColors.surface,
-                    fontSize: 15.sp,
+                    fontSize: 14.sp,
                   ),
                 ),
               ),
