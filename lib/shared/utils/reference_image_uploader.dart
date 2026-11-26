@@ -60,9 +60,33 @@ class ReferenceImageUploader {
     return null;
   }
 
+  /// Checks whether a URL is a valid remote HTTPS URL safe from SSRF guards
+  /// (never local file paths, localhost, loopback, or inline data URIs).
+  static bool isValidCloudHttpsUrl(String url) {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null || uri.scheme.toLowerCase() != 'https') return false;
+    final host = uri.host.toLowerCase();
+    if (host.isEmpty ||
+        host == 'localhost' ||
+        host == '127.0.0.1' ||
+        host == '10.0.2.2' ||
+        host == '0.0.0.0' ||
+        host.startsWith('192.168.') ||
+        host.startsWith('10.')) {
+      return false;
+    }
+    return true;
+  }
+
   /// Uploads validated reference photo to Supabase Storage bucket 'reference-images'
   /// Uses backend admin gateway first (bypasses RLS), falling back to direct Supabase client.
-  static Future<({String? url, StudioFailure? failure})> uploadReferenceImage(File file) async {
+  ///
+  /// When [allowDataUriFallback] is false (required for Face-Lock Selfie Remix
+  /// external providers), only a valid `https://` URL is returned.
+  static Future<({String? url, StudioFailure? failure})> uploadReferenceImage(
+    File file, {
+    bool allowDataUriFallback = true,
+  }) async {
     final validationError = validateFile(file);
     if (validationError != null) {
       return (url: null, failure: validationError);
@@ -80,8 +104,10 @@ class ReferenceImageUploader {
       );
       if (res.statusCode == 200 && res.data is Map && res.data['url'] != null) {
         final publicUrl = res.data['url'] as String;
-        AppLogger.s('Reference uploaded via Backend Gateway: $publicUrl', tag: 'UPLOADER');
-        return (url: publicUrl, failure: null);
+        if (allowDataUriFallback || isValidCloudHttpsUrl(publicUrl)) {
+          AppLogger.s('Reference uploaded via Backend Gateway: $publicUrl', tag: 'UPLOADER');
+          return (url: publicUrl, failure: null);
+        }
       }
     } catch (e) {
       AppLogger.w('Backend gateway upload attempt failed: $e', tag: 'UPLOADER');
@@ -101,15 +127,26 @@ class ReferenceImageUploader {
           );
 
       final publicUrl = client.storage.from('user_generations').getPublicUrl(storagePath);
-      AppLogger.s('Reference uploaded directly to Supabase: $publicUrl', tag: 'UPLOADER');
-      return (url: publicUrl, failure: null);
+      if (allowDataUriFallback || isValidCloudHttpsUrl(publicUrl)) {
+        AppLogger.s('Reference uploaded directly to Supabase: $publicUrl', tag: 'UPLOADER');
+        return (url: publicUrl, failure: null);
+      }
     } on StorageException catch (e) {
-      AppLogger.w('Supabase Storage notice: ${e.message}. Using Data URI fallback.', tag: 'UPLOADER');
+      AppLogger.w('Supabase Storage notice: ${e.message}.', tag: 'UPLOADER');
     } catch (e) {
-      AppLogger.w('Direct storage notice: $e. Using Data URI fallback.', tag: 'UPLOADER');
+      AppLogger.w('Direct storage notice: $e.', tag: 'UPLOADER');
     }
 
-    // 3. Guaranteed in-memory Data URI fallback
+    if (!allowDataUriFallback) {
+      return (
+        url: null,
+        failure: const StudioNetworkFailure(
+          'Unable to upload selfie to secure HTTPS cloud storage. Please check your connection and try again.',
+        ),
+      );
+    }
+
+    // 3. Guaranteed in-memory Data URI fallback (tools only)
     try {
       final bytes = await file.readAsBytes();
       final ext = file.path.split('.').last.toLowerCase();

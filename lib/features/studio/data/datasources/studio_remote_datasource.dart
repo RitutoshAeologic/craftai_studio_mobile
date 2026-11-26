@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import '../../domain/models/ai_model_item.dart';
 import '../../domain/models/prompt_expand_model.dart';
 import '../../domain/models/prompt_compile_model.dart';
 import '../../domain/models/generation_dispatch_model.dart';
@@ -94,6 +95,25 @@ class StudioRemoteDataSource {
     return data['output_url'] as String? ?? data['image_url'] as String?;
   }
 
+  /// Fetches live model catalog from `GET /api/v1/models`.
+  Future<List<AiModelItem>> fetchModels() async {
+    final response = await _dio.get(
+      '/models',
+      options: Options(receiveTimeout: const Duration(seconds: 10)),
+    );
+    final raw = response.data;
+    final List<dynamic> list = raw is List
+        ? raw
+        : (raw is Map && raw['models'] is List
+            ? raw['models'] as List
+            : (raw is Map && raw['data'] is List ? raw['data'] as List : const []));
+
+    return list
+        .whereType<Map>()
+        .map((e) => AiModelItem.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
   /// Dispatches an image generation job to `/prompt-engineering/generation/dispatch`.
   /// Follows API_INTEGRATION_SPEC.md §2.1.
   Future<GenerationDispatchModel> dispatchGeneration({
@@ -107,11 +127,17 @@ class StudioRemoteDataSource {
     int height = 1024,
     String? model,
     String? remixedFromPromptId,
+    String? quality,
+    bool enhancePrompt = false,
+    String? idempotencyKey,
   }) async {
     final response = await _dio.post(
       '/prompt-engineering/generation/dispatch',
       options: Options(
         receiveTimeout: const Duration(seconds: 120),
+        extra: {
+          if (idempotencyKey != null) 'idempotency_key': idempotencyKey,
+        },
       ),
       data: {
         'prompt': prompt,
@@ -124,8 +150,12 @@ class StudioRemoteDataSource {
           'structured_metadata': structuredMetadata,
         'width': width,
         'height': height,
-        'model': model ?? 'flux',
+        'model': model ?? 'auto',
         'remixed_from_prompt_id': remixedFromPromptId,
+        if (quality != null) 'quality': quality,
+        'enhance_prompt': enhancePrompt,
+        if (idempotencyKey != null && idempotencyKey.isNotEmpty)
+          'idempotency_key': idempotencyKey,
       },
     );
 
@@ -448,6 +478,8 @@ class StudioRemoteDataSource {
     String language = 'Auto',
     String quality = '1k',
     String? userId,
+    Map<String, dynamic>? layoutTemplate,
+    String exportFormat = 'png',
   }) async {
     final response = await _dio.post(
       '/prompt-engineering/tools/marketing-poster',
@@ -466,6 +498,8 @@ class StudioRemoteDataSource {
         'language': language,
         'quality': quality,
         if (userId != null) 'user_id': userId,
+        if (layoutTemplate != null) 'layout_template': layoutTemplate,
+        'export_format': exportFormat,
       },
       options: Options(receiveTimeout: const Duration(seconds: 120)),
     );

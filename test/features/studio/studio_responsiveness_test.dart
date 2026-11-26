@@ -80,6 +80,9 @@ class MockStudioRepository extends FakeStudioRepository {
     int height = 1024,
     String? model,
     String? remixedFromPromptId,
+    String? quality,
+    bool enhancePrompt = false,
+    String? idempotencyKey,
   }) async {
     return (
       data: const GenerationDispatchModel(
@@ -169,7 +172,7 @@ void main() {
       // Ensure key elements are visible and rendered without errors
       expect(find.byType(CreationStudioView), findsOneWidget);
       expect(find.text(AppStrings.studioTitle), findsOneWidget);
-      expect(find.text('FLUX.1 Pro'), findsOneWidget);
+      expect(find.text('Auto (Recommended)'), findsOneWidget);
     });
   }
 
@@ -213,7 +216,7 @@ void main() {
     await tester.tap(find.text('Open Models'));
     await tester.pumpAndSettle();
     expect(find.byType(StudioModelSheet), findsOneWidget);
-    expect(find.text('Google Gemini'), findsOneWidget);
+    expect(find.text('Local SDXL'), findsOneWidget);
 
     // Dismiss sheet
     Get.back();

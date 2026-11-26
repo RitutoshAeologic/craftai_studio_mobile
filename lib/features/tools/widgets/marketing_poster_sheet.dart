@@ -8,6 +8,8 @@ import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_dimens.dart';
 import 'package:craftai_studio_mobile/core/constants/app_text_styles.dart';
 import 'package:craftai_studio_mobile/features/tools/controllers/tools_controller.dart';
+import '../domain/models/poster_layout_model.dart';
+import 'poster_canvas_preview.dart';
 import 'tool_result_preview_sheet.dart';
 
 class MarketingPosterSheet extends StatefulWidget {
@@ -50,10 +52,22 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
   void initState() {
     super.initState();
     controller.clearActiveSession();
+    _topicCtrl.addListener(_onFieldChanged);
+    _headlineCtrl.addListener(_onFieldChanged);
+    _subtextCtrl.addListener(_onFieldChanged);
+    _discountCtrl.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _topicCtrl.removeListener(_onFieldChanged);
+    _headlineCtrl.removeListener(_onFieldChanged);
+    _subtextCtrl.removeListener(_onFieldChanged);
+    _discountCtrl.removeListener(_onFieldChanged);
     _topicCtrl.dispose();
     _headlineCtrl.dispose();
     _subtextCtrl.dispose();
@@ -126,6 +140,18 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
 
                 // 5. Discount / Promotion Tag (Optional)
                 _buildDiscountField(),
+                SizedBox(height: 14.h),
+
+                // Live Normalized 0.0-1.0 CustomPainter + InteractiveViewer Canvas Preview
+                PosterCanvasPreview(
+                  layout: PosterLayoutTemplate.forCategory(_selectedCategory),
+                  aspectRatio: _selectedRatio,
+                  topic: _topicCtrl.text,
+                  headline: _headlineCtrl.text,
+                  subtext: _subtextCtrl.text,
+                  discountBadge: _discountCtrl.text,
+                  imagePath: _selectedImagePath,
+                ),
                 SizedBox(height: 14.h),
 
                 // 6. Aspect Ratio Dropdown
@@ -652,6 +678,7 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
       return;
     }
 
+    final layoutTemplate = PosterLayoutTemplate.forCategory(_selectedCategory).toJson();
     final outUrl = await controller.runMarketingPoster(
       topic: topic,
       path: _selectedImagePath,
@@ -662,6 +689,7 @@ class _MarketingPosterSheetState extends State<MarketingPosterSheet> {
       discountBadge: _discountCtrl.text.trim().isNotEmpty ? _discountCtrl.text.trim() : null,
       language: _selectedLanguage,
       quality: _selectedQuality,
+      layoutTemplate: layoutTemplate,
     );
 
     if (outUrl != null && mounted) {

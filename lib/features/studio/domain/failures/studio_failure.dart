@@ -20,9 +20,16 @@ final class StudioRateLimitFailure extends StudioFailure {
       : super(code: 'RATE_LIMIT_429');
 }
 
+final class StudioInsufficientCreditsFailure extends StudioFailure {
+  const StudioInsufficientCreditsFailure([super.message = 'Insufficient credits. Please top up your wallet to continue.'])
+      : super(code: 'INSUFFICIENT_CREDITS_402');
+}
+
 final class StudioValidationFailure extends StudioFailure {
-  const StudioValidationFailure([super.message = 'Invalid prompt or studio parameter.'])
-      : super(code: 'VALIDATION_400');
+  const StudioValidationFailure([
+    super.message = 'Invalid prompt or studio parameter.',
+    String code = 'VALIDATION_400',
+  ]) : super(code: code);
 }
 
 final class StudioModerationFailure extends StudioFailure {

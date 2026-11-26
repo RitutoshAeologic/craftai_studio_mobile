@@ -79,6 +79,9 @@ class MockStudioRepository extends FakeStudioRepository {
     int height = 1024,
     String? model,
     String? remixedFromPromptId,
+    String? quality,
+    bool enhancePrompt = false,
+    String? idempotencyKey,
   }) async {
     return (
       data: const GenerationDispatchModel(
@@ -161,7 +164,7 @@ void main() {
     expect(find.byType(CreationStudioView), findsOneWidget);
     expect(find.text(AppStrings.studioTitle), findsOneWidget);
     expect(find.text('Gemini'), findsOneWidget);
-    expect(find.text('FLUX.1 Pro'), findsOneWidget);
+    expect(find.text('Auto (Recommended)'), findsOneWidget);
   });
 
   testWidgets('PromptChatCopilotView renders without Obx or widget build exceptions', (WidgetTester tester) async {

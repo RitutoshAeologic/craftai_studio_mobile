@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../failures/studio_failure.dart';
+import '../models/ai_model_item.dart';
 import '../models/prompt_expand_model.dart';
 import '../models/prompt_compile_model.dart';
 import '../models/generation_dispatch_model.dart';
@@ -36,6 +37,10 @@ abstract class IStudioRepository {
   /// Real zero-token local CPU background removal (outputs transparent PNG URL)
   Future<StudioResult<String>> removeBackground({required String imageUrl});
 
+  /// Live multi-provider model catalog (`GET /api/v1/models`)
+  Future<StudioResult<List<AiModelItem>>> fetchModels() async =>
+      (data: AiModelItem.defaultSeedCatalog, failure: null);
+
   /// Automated Tier 0/Tier 1 Generation Dispatcher
   Future<StudioResult<GenerationDispatchModel>> dispatchGeneration({
     required String prompt,
@@ -48,6 +53,9 @@ abstract class IStudioRepository {
     int height = 1024,
     String? model,
     String? remixedFromPromptId,
+    String? quality,
+    bool enhancePrompt = false,
+    String? idempotencyKey,
   });
 
   /// Progress listener with automatic HTTP recovery
@@ -131,6 +139,8 @@ abstract class IStudioRepository {
     String language = 'Auto',
     String quality = '1k',
     String? userId,
+    Map<String, dynamic>? layoutTemplate,
+    String exportFormat = 'png',
   }) async => (data: null, failure: null);
 
   /// E-Commerce 4-Pack Auto-Listing Generator (Shopify Magic / Photoroom Pro parity)

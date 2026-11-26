@@ -63,6 +63,10 @@ class ApiErrorHandler {
         // Handle HTTP Status codes from FastAPI
         if (statusCode == 401) {
           return const AuthTokenException();
+        } else if (statusCode == 402) {
+          final message = _extractFastApiMessage(data) ??
+              'Insufficient credits. Please top up your wallet to continue.';
+          return InsufficientCreditsException(message);
         } else if (statusCode == 429) {
           return const RateLimitException();
         } else if (statusCode == 400 || statusCode == 422) {
@@ -144,9 +148,10 @@ class ApiErrorHandler {
       NetworkTimeoutException e => StudioTimeoutFailure(e.message),
       TunnelUnavailableException e => StudioNetworkFailure(e.message),
       AuthTokenException e => StudioServerFailure(e.message, code: 'UNAUTHORIZED_401'),
+      InsufficientCreditsException e => StudioInsufficientCreditsFailure(e.message),
       RateLimitException e => StudioRateLimitFailure(e.message),
-      ServerException e when e.statusCode == 422 => StudioValidationFailure(e.message),
-      ServerException e when e.statusCode == 400 => StudioValidationFailure(e.message),
+      ServerException e when e.statusCode == 422 => StudioValidationFailure(e.message, 'VALIDATION_422'),
+      ServerException e when e.statusCode == 400 => StudioValidationFailure(e.message, 'BAD_REQUEST_400'),
       ServerException e => StudioServerFailure(e.message, code: e.code ?? 'SERVER_ERROR'),
     };
   }

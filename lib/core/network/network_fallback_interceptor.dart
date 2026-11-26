@@ -7,8 +7,9 @@ import '../utils/app_logger.dart';
 /// when primary connection fails due to connectionError or connectionTimeout.
 class NetworkFallbackInterceptor extends Interceptor {
   final Dio _dio;
+  final List<String> fallbackUrls;
 
-  NetworkFallbackInterceptor(this._dio);
+  NetworkFallbackInterceptor(this._dio, {this.fallbackUrls = const []});
 
   static const String _retriedKey = '_craftai_fallback_retried';
 
@@ -35,6 +36,7 @@ class NetworkFallbackInterceptor extends Interceptor {
     if (isConnectionDead || isTunnelDown) {
       final currentBaseUrl = err.requestOptions.baseUrl;
       final candidateFallbacks = <String>[
+        ...fallbackUrls.where((u) => !currentBaseUrl.contains(u)),
         if (ApiConfig.fallbackUrl != null && !currentBaseUrl.contains(ApiConfig.fallbackUrl!))
           ApiConfig.fallbackUrl!,
         if (ApiConfig.isAndroidDevice &&

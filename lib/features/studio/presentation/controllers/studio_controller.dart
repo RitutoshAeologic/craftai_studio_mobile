@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import 'package:craftai_studio_mobile/shared/utils/reference_image_uploader.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
 import 'package:craftai_studio_mobile/core/constants/app_strings.dart';
@@ -10,6 +12,8 @@ import 'package:craftai_studio_mobile/data/models/explore_card_model.dart';
 import 'package:craftai_studio_mobile/data/models/character_model.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
+import 'package:craftai_studio_mobile/features/wallet/widgets/wallet_top_up_sheet.dart';
+import '../../domain/models/ai_model_item.dart';
 import '../../domain/models/structured_prompt_metadata.dart';
 import '../../domain/repositories/i_studio_repository.dart';
 import '../../domain/failures/studio_failure.dart';
@@ -43,7 +47,9 @@ class StudioController extends GetxController with WidgetsBindingObserver {
   /// Text controller managing the prompt input field.
   final TextEditingController promptController = TextEditingController();
   StreamSubscription? _progressSubscription;
+  RealtimeChannel? _jobRealtimeChannel;
   String? _activeTaskId;
+  double _activeTaskCost = 0.0;
 
   /// Number of images to generate concurrently (default 1).
   final RxInt batchCount = 1.obs;
@@ -58,8 +64,16 @@ class StudioController extends GetxController with WidgetsBindingObserver {
   /// Target image resolution tier ('HD', '2K', '4K').
   final RxString selectedResolution = '2K'.obs;
 
-  /// Currently selected diffusion model ('flux', 'gemini', 'chatgpt').
-  final RxString selectedModel = 'flux'.obs;
+  /// Currently selected diffusion model ('auto' recommended, or a model_key).
+  final RxString selectedModel = 'auto'.obs;
+
+  /// Whether backend LLM prompt enhancement should run on dispatch
+  /// (automatically forced false on curated Trending Template remixes).
+  final RxBool enhancePromptOnDispatch = false.obs;
+
+  /// Live model catalog from `GET /api/v1/models`, seeded with offline fallback models.
+  final RxList<AiModelItem> catalogModels = AiModelItem.defaultSeedCatalog.obs;
+  final RxBool isLoadingModels = false.obs;
 
   /// Currently selected LLM for prompt expansion ('gemini', 'groq', 'claude', 'gpt4').
   final RxString selectedPromptEngine = 'gemini'.obs;
@@ -308,6 +322,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
     _fetchDynamicLlmConfig();
+    fetchAvailableModels();
     promptController.addListener(() {
       promptLength.value = promptController.text.length;
 
@@ -358,32 +373,63 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     },
   ];
 
-  final List<Map<String, String>> availableModels = const [
-    {
-      'id': 'flux',
-      'name': 'FLUX.1 Pro',
-      'desc': 'Default • Best for Photorealism & Faces',
-      'badge': 'Photoreal',
-      'credits': '2 Cr',
-      'icon': '⚡',
-    },
-    {
-      'id': 'gemini',
-      'name': 'Google Gemini',
-      'desc': 'Creative lighting, artistic compositions',
-      'badge': 'Creative',
-      'credits': '3 Cr',
-      'icon': '🎨',
-    },
-    {
-      'id': 'chatgpt',
-      'name': 'ChatGPT (OpenAI)',
-      'desc': 'High prompt accuracy & complex scenes',
-      'badge': 'Accuracy',
-      'credits': '3 Cr',
-      'icon': '🤖',
-    },
-  ];
+  /// Active Studio task key used to filter compatible models in [StudioModelSheet].
+  String get activeStudioTask {
+    if (isImageEditMode.value) return 'image_edit';
+    if (referenceImages.isNotEmpty || selectedCharacter.value != null) {
+      return 'face_lock_remix';
+    }
+    return 'text_to_image';
+  }
+
+  /// Backward-compatible legacy map view of [catalogModels].
+  List<Map<String, String>> get availableModels =>
+      catalogModels.map((m) => m.toLegacyMap()).toList();
+
+  /// Returns the currently selected [AiModelItem] from [catalogModels].
+  AiModelItem get selectedModelItem {
+    return catalogModels.firstWhere(
+      (m) => m.modelKey == selectedModel.value,
+      orElse: () => catalogModels.isNotEmpty
+          ? catalogModels.first
+          : AiModelItem.defaultSeedCatalog.first,
+    );
+  }
+
+  /// Whether [model] can be selected for the current Studio task.
+  bool isModelSelectable(AiModelItem model) {
+    return model.isAvailable && model.supportsTask(activeStudioTask);
+  }
+
+  /// Fetches the live model catalog from `GET /api/v1/models`, retaining the
+  /// hardcoded [AiModelItem.defaultSeedCatalog] when offline or on cold-start.
+  Future<void> fetchAvailableModels() async {
+    isLoadingModels.value = true;
+    try {
+      final res = await _repository.fetchModels();
+      final fetched = res.data;
+      if (fetched != null && fetched.isNotEmpty) {
+        final hasAuto = fetched.any((m) => m.modelKey == 'auto');
+        final merged = <AiModelItem>[
+          if (!hasAuto) AiModelItem.defaultSeedCatalog.first,
+          ...fetched,
+        ];
+        catalogModels.assignAll(merged);
+
+        // If selected model is no longer available or missing (and not a legacy alias), reset to auto
+        final sel = selectedModel.value;
+        final isLegacyAlias = sel == 'flux' || sel == 'local';
+        final match = merged.firstWhereOrNull((m) => m.modelKey == sel);
+        if (!isLegacyAlias && sel != 'auto' && (match == null || !match.isAvailable)) {
+          selectedModel.value = 'auto';
+        }
+      }
+    } catch (e) {
+      AppLogger.d('Using offline seed model catalog: $e', tag: 'STUDIO_CONFIG');
+    } finally {
+      isLoadingModels.value = false;
+    }
+  }
 
   /// Calculates the total credit cost based on the active diffusion model,
   /// selected resolution (e.g. 4K surcharge), and batch count multiplier.
@@ -392,16 +438,31 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     if (isImageEditMode.value && freeEditAttemptsRemaining.value > 0) {
       return 0;
     }
-    int base = 2;
-    if (selectedModel.value == 'gemini') base = 3;
-    if (selectedModel.value == 'chatgpt') base = 3;
+    int base = selectedModelItem.creditCost.round();
+    if (selectedModel.value == 'gemini' && base <= 2) base = 3;
+    if (selectedModel.value == 'chatgpt' && base <= 2) base = 3;
     if (selectedResolution.value == '4K') base += 2;
     return base * batchCount.value;
   }
 
-  /// Sets the active diffusion model id ('flux', 'gemini', 'chatgpt').
+  /// Sets the active diffusion model key ('auto', 'local_sdxl', 'flux_schnell', etc.).
   void setModel(String modelId) {
     if (isBusy) return;
+    final match = catalogModels.firstWhereOrNull((m) => m.modelKey == modelId);
+    if (match != null && !isModelSelectable(match)) {
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        Get.snackbar(
+          'Model Unavailable',
+          !match.isAvailable
+              ? '${match.displayName} requires an active provider key. Switch to Auto (Recommended).'
+              : '${match.displayName} does not support $activeStudioTask mode.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.surface,
+          colorText: AppColors.accentWarning,
+        );
+      }
+      return;
+    }
     selectedModel.value = modelId;
   }
 
@@ -1022,8 +1083,9 @@ class StudioController extends GetxController with WidgetsBindingObserver {
       shellCtrl.switchTab(1);
     }
 
-    // 2. Record provenance for creator royalty attribution
+    // 2. Record provenance for creator royalty attribution and disable LLM re-expansion on curated templates
     remixedFromPromptId.value = template.id;
+    enhancePromptOnDispatch.value = false;
 
     // 3. Attach user photo into reference strip
     referenceImages.clear();
@@ -1043,7 +1105,10 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     }
     final modelLower = template.modelUsed.toLowerCase();
     if (modelLower.contains('flux')) {
-      selectedModel.value = 'flux';
+      final hasLiveFlux = catalogModels.any(
+        (m) => (m.modelKey == 'flux_pulid_facelock' || m.modelKey == 'flux_schnell') && m.isAvailable,
+      );
+      selectedModel.value = hasLiveFlux ? 'flux_pulid_facelock' : 'flux';
     } else if (modelLower.contains('gemini')) {
       selectedModel.value = 'gemini';
     } else if (modelLower.contains('chatgpt') || modelLower.contains('dall')) {
@@ -1220,14 +1285,24 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     isGenerating.value = true;
     generationProgress.value = 8;
     generationPhase.value = 'Preparing creative canvas...';
+    _activeTaskCost = cost;
 
     bool creditsDeducted = false;
     shellCtrl.deductCredits(cost);
     creditsDeducted = true;
 
+    final idempotencyKey = const Uuid().v4();
+    final quality = switch (selectedResolution.value) {
+      'HD' => 'economy',
+      '4K' => 'premium',
+      _ => 'standard',
+    };
+    final shouldEnhanceOnDispatch =
+        remixedFromPromptId.value != null ? false : enhancePromptOnDispatch.value;
+
     final List<String> remoteReferenceUrls = [];
     try {
-      // 1. Lazy upload any local reference files first, reflecting upload state in UI
+      // 1. Upload any local reference files to HTTPS cloud storage (SSRF-safe contract)
       if (referenceImages.isNotEmpty) {
         generationProgress.value = 18;
         generationPhase.value = 'Uploading reference photo...';
@@ -1238,15 +1313,68 @@ class StudioController extends GetxController with WidgetsBindingObserver {
 
       for (final ref in referenceImages) {
         if (ref.startsWith('http://') || ref.startsWith('https://')) {
+          if (!ReferenceImageUploader.isValidCloudHttpsUrl(ref)) {
+            _progressSubscription?.cancel();
+            _resetLoadingState();
+            if (creditsDeducted) {
+              shellCtrl.addCredits(cost);
+              creditsDeducted = false;
+            }
+            StudioErrorSheet.show(
+              failure: const StudioValidationFailure(
+                'Reference photo URL must be a public HTTPS cloud URL (localhost and private IPs are blocked).',
+              ),
+              refundedCredits: cost,
+              onRetry: () => generateVisual(),
+            );
+            return;
+          }
           remoteReferenceUrls.add(ref);
+        } else if (ref.startsWith('data:')) {
+          _progressSubscription?.cancel();
+          _resetLoadingState();
+          if (creditsDeducted) {
+            shellCtrl.addCredits(cost);
+            creditsDeducted = false;
+          }
+          StudioErrorSheet.show(
+            failure: const StudioValidationFailure(
+              'Selfie photo must be uploaded to cloud storage before remixing.',
+            ),
+            refundedCredits: cost,
+            onRetry: () => generateVisual(),
+          );
+          return;
         } else {
           AppLogger.i('Uploading confirmed reference photo before generation: $ref', tag: 'STUDIO_UPLOAD');
-          final upRes = await ReferenceImageUploader.uploadReferenceImage(File(ref));
-          if (upRes.url != null) {
-            remoteReferenceUrls.add(upRes.url!);
+          final upRes = await ReferenceImageUploader.uploadReferenceImage(
+            File(ref),
+            allowDataUriFallback: false,
+          );
+          if (upRes.url == null || !ReferenceImageUploader.isValidCloudHttpsUrl(upRes.url!)) {
+            _progressSubscription?.cancel();
+            _resetLoadingState();
+            if (creditsDeducted) {
+              shellCtrl.addCredits(cost);
+              creditsDeducted = false;
+            }
+            StudioErrorSheet.show(
+              failure: upRes.failure ??
+                  const StudioNetworkFailure(
+                    'Could not upload reference selfie to cloud storage. Credits refunded.',
+                  ),
+              refundedCredits: cost,
+              onRetry: () => generateVisual(),
+            );
+            return;
           }
+          remoteReferenceUrls.add(upRes.url!);
         }
       }
+
+      final Map<String, dynamic>? dispatchMetadata = isPromptEnhanced
+          ? (activeStructuredMetadata.value?.toJson()?..remove('style_only'))
+          : null;
 
       // 2. Dispatch generation job with complete payload contracts
       final dispatchRes = await _repository.dispatchGeneration(
@@ -1257,14 +1385,17 @@ class StudioController extends GetxController with WidgetsBindingObserver {
             ? geminiNegativePrompt.value
             : null,
         seed: isSeedLocked.value ? (seedValue.value.clamp(0, 2147483647).toInt()) : null,
-        structuredMetadata: isPromptEnhanced ? activeStructuredMetadata.value?.toJson() : null,
+        structuredMetadata: dispatchMetadata,
         width: w,
         height: h,
         model: selectedModel.value,
         remixedFromPromptId: remixedFromPromptId.value,
+        quality: quality,
+        enhancePrompt: shouldEnhanceOnDispatch,
+        idempotencyKey: idempotencyKey,
       );
 
-      // 3. Robust Error Handling (Rules.md §2 & §6):
+      // 3. Robust Error Handling (Rules.md §2 & §6 + HTTP 400 / 402):
       if (dispatchRes.failure != null || dispatchRes.data == null) {
         _progressSubscription?.cancel();
         _resetLoadingState();
@@ -1276,21 +1407,26 @@ class StudioController extends GetxController with WidgetsBindingObserver {
         final failure = dispatchRes.failure ?? const StudioUnknownFailure('Generation failed. Credits refunded.');
         AppLogger.w('Generation dispatch failed: ${failure.message}', tag: 'STUDIO_GEN');
 
-        StudioErrorSheet.show(
-          failure: failure,
-          refundedCredits: cost,
-          onRetry: () => generateVisual(),
-        );
+        _handleDispatchFailure(failure, cost);
         return;
       }
 
       final generatedTaskId = dispatchRes.data?.taskId ?? 'job_${DateTime.now().millisecondsSinceEpoch}';
       _activeTaskId = generatedTaskId;
 
-      // 4. Attach progress listener and resolve authoritative image URL (sync or async WebSocket/polling)
+      // 4. Attach progress listener + Supabase Realtime fallback for backgrounded jobs
       String? outputUrl = dispatchRes.data?.directImageUrl;
       if (outputUrl == null || outputUrl.trim().isEmpty || !outputUrl.startsWith('http')) {
         final completer = Completer<String?>();
+        _subscribeToJobRealtime(
+          generatedTaskId,
+          onCompletedUrl: (url) {
+            if (!completer.isCompleted) completer.complete(url);
+          },
+          onFailed: () {
+            if (!completer.isCompleted) completer.complete(null);
+          },
+        );
         _progressSubscription?.cancel();
         _progressSubscription = _repository.listenToGenerationProgress(
           taskId: generatedTaskId,
@@ -1347,26 +1483,28 @@ class StudioController extends GetxController with WidgetsBindingObserver {
       );
 
       // Persist to Supabase jobs table (use upsert to handle jobs created by backend)
-      try {
-        final user = SupabaseService.client.auth.currentUser;
-        if (user != null) {
-          await SupabaseService.client.from('jobs').upsert({
-            'job_id': generatedTaskId,
-            'user_id': user.id,
-            'type': 'IMAGE_GEN',
-            'status': 'completed',
-            'category': categoryToSave,
-            'prompt': promptUsed,
-            'prompt_text': promptUsed,
-            'preview_url': outputUrl,
-            'preview_image_url': outputUrl,
-            'credits_deducted': cost,
-            'is_download_unlocked': false,
-          }, onConflict: 'job_id');
-          AppLogger.s('Saved generation $generatedTaskId to Supabase jobs table', tag: 'STUDIO_GEN');
+      if (SupabaseService.instance.isInitialized) {
+        try {
+          final user = SupabaseService.client.auth.currentUser;
+          if (user != null) {
+            await SupabaseService.client.from('jobs').upsert({
+              'job_id': generatedTaskId,
+              'user_id': user.id,
+              'type': 'IMAGE_GEN',
+              'status': 'completed',
+              'category': categoryToSave,
+              'prompt': promptUsed,
+              'prompt_text': promptUsed,
+              'preview_url': outputUrl,
+              'preview_image_url': outputUrl,
+              'credits_deducted': cost,
+              'is_download_unlocked': false,
+            }, onConflict: 'job_id');
+            AppLogger.s('Saved generation $generatedTaskId to Supabase jobs table', tag: 'STUDIO_GEN');
+          }
+        } catch (e) {
+          AppLogger.d('Cloud job save skipped or table not yet created: $e', tag: 'STUDIO_GEN');
         }
-      } catch (e) {
-        AppLogger.d('Cloud job save skipped or table not yet created: $e', tag: 'STUDIO_GEN');
       }
 
       AppLogger.s('✨ Generation complete! Saved to Library. Output URL: $outputUrl', tag: 'STUDIO_GEN');
@@ -1456,10 +1594,105 @@ class StudioController extends GetxController with WidgetsBindingObserver {
 
   /// Resets all generation loading states back to initial clean state.
   void _resetLoadingState() {
+    _unsubscribeJobRealtime();
     isGenerating.value = false;
     generationProgress.value = 0;
     generationPhase.value = '';
     _activeTaskId = null;
+    _activeTaskCost = 0.0;
+  }
+
+  /// Handles HTTP 402 (Insufficient Credits) and HTTP 400 (Model Unavailable) UX cleanly.
+  void _handleDispatchFailure(StudioFailure failure, double refundedCost) {
+    if (failure is StudioInsufficientCreditsFailure) {
+      WalletTopUpSheet.show(message: failure.message);
+      return;
+    }
+
+    if (failure is StudioValidationFailure && failure.code == 'BAD_REQUEST_400') {
+      if (!Platform.environment.containsKey('FLUTTER_TEST') && Get.context != null) {
+        Get.snackbar(
+          'Model Unavailable',
+          '${failure.message} Tap Switch to Auto to use an available engine.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.surface,
+          colorText: AppColors.accentWarning,
+          duration: const Duration(seconds: 4),
+          mainButton: TextButton(
+            onPressed: () {
+              selectedModel.value = 'auto';
+              Get.closeCurrentSnackbar();
+            },
+            child: const Text('Switch to Auto'),
+          ),
+        );
+      }
+      StudioErrorSheet.show(
+        failure: failure,
+        refundedCredits: refundedCost,
+        onSwitchToAuto: () {
+          selectedModel.value = 'auto';
+          generateVisual();
+        },
+        onRetry: () => generateVisual(),
+      );
+      return;
+    }
+
+    StudioErrorSheet.show(
+      failure: failure,
+      refundedCredits: refundedCost,
+      onRetry: () => generateVisual(),
+    );
+  }
+
+  /// Subscribes to Supabase Realtime changes on `public.jobs` for [taskId]
+  /// so long-running HD / Face-Lock jobs sync immediately on resume or completion.
+  void _subscribeToJobRealtime(
+    String taskId, {
+    required void Function(String url) onCompletedUrl,
+    required VoidCallback onFailed,
+  }) {
+    _unsubscribeJobRealtime();
+    if (!SupabaseService.instance.isInitialized) return;
+    try {
+      final channel = SupabaseService.client.channel('studio_job_$taskId');
+      channel
+          .onPostgresChanges(
+            event: PostgresChangeEvent.update,
+            schema: 'public',
+            table: 'jobs',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'job_id',
+              value: taskId,
+            ),
+            callback: (payload) {
+              final record = payload.newRecord;
+              final status = (record['status'] as String? ?? '').toLowerCase();
+              final url = (record['preview_image_url'] ?? record['preview_url'] ?? record['master_url']) as String?;
+              if (status == 'completed' && url != null && url.isNotEmpty) {
+                onCompletedUrl(url);
+              } else if (status == 'failed' || status == 'error') {
+                onFailed();
+              }
+            },
+          )
+          .subscribe();
+      _jobRealtimeChannel = channel;
+    } catch (e) {
+      AppLogger.d('Supabase Realtime job subscription skipped: $e', tag: 'STUDIO_LIFECYCLE');
+    }
+  }
+
+  void _unsubscribeJobRealtime() {
+    final channel = _jobRealtimeChannel;
+    _jobRealtimeChannel = null;
+    if (channel != null && SupabaseService.instance.isInitialized) {
+      try {
+        SupabaseService.client.removeChannel(channel);
+      } catch (_) {}
+    }
   }
 
   @override
@@ -1477,20 +1710,26 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     AppLogger.i('App resumed with in-flight generation ($taskId). Verifying cloud completion...', tag: 'STUDIO_LIFECYCLE');
     try {
       // 1. Check Supabase jobs table first (persistent cloud ledger)
-      final user = SupabaseService.client.auth.currentUser;
-      if (user != null) {
-        final job = await SupabaseService.client
-            .from('jobs')
-            .select('preview_image_url, preview_url, status')
-            .eq('job_id', taskId)
-            .maybeSingle();
+      if (SupabaseService.instance.isInitialized) {
+        final user = SupabaseService.client.auth.currentUser;
+        if (user != null) {
+          final job = await SupabaseService.client
+              .from('jobs')
+              .select('preview_image_url, preview_url, status')
+              .eq('job_id', taskId)
+              .maybeSingle();
 
-        final status = job?['status'] as String?;
-        final url = (job?['preview_image_url'] ?? job?['preview_url']) as String?;
+          final status = (job?['status'] as String? ?? '').toLowerCase();
+          final url = (job?['preview_image_url'] ?? job?['preview_url']) as String?;
 
-        if (status == 'completed' && url != null && url.isNotEmpty) {
-          _handleGenerationSuccess(taskId, url);
-          return;
+          if (status == 'completed' && url != null && url.isNotEmpty) {
+            _handleGenerationSuccess(taskId, url);
+            return;
+          }
+          if (status == 'failed' || status == 'error') {
+            _handleBackgroundedFailure();
+            return;
+          }
         }
       }
 
@@ -1506,6 +1745,8 @@ class StudioController extends GetxController with WidgetsBindingObserver {
 
         if (status == 'completed' && url != null && url.isNotEmpty) {
           _handleGenerationSuccess(taskId, url);
+        } else if (status == 'failed' || status == 'error') {
+          _handleBackgroundedFailure();
         }
       } catch (_) {}
     } catch (e) {
@@ -1513,10 +1754,26 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     }
   }
 
+  void _handleBackgroundedFailure() {
+    final refund = _activeTaskCost;
+    _progressSubscription?.cancel();
+    _resetLoadingState();
+    if (refund > 0 && Get.isRegistered<ShellController>()) {
+      Get.find<ShellController>().addCredits(refund);
+    }
+    StudioErrorSheet.show(
+      failure: const StudioServerFailure('Generation failed while in background. Credits refunded.'),
+      refundedCredits: refund,
+      onRetry: () => generateVisual(),
+    );
+  }
+
   void _handleGenerationSuccess(String taskId, String url) {
     AppLogger.s('Task $taskId completed while backgrounded! Revealing artwork: $url', tag: 'STUDIO_LIFECYCLE');
     _progressSubscription?.cancel();
+    _unsubscribeJobRealtime();
     _activeTaskId = null;
+    _activeTaskCost = 0.0;
     lastGeneratedImageUrl.value = url;
     showResultHero.value = true;
     isGenerating.value = false;
@@ -1589,6 +1846,7 @@ class StudioController extends GetxController with WidgetsBindingObserver {
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
     _progressSubscription?.cancel();
+    _unsubscribeJobRealtime();
     promptController.dispose();
     super.onClose();
   }

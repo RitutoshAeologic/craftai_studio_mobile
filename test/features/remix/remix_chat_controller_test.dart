@@ -115,6 +115,9 @@ class MockRemixStudioRepository extends FakeStudioRepository {
     int height = 1024,
     String? model,
     String? remixedFromPromptId,
+    String? quality,
+    bool enhancePrompt = false,
+    String? idempotencyKey,
   }) async {
     if (shouldFailGeneration) {
       return (data: null, failure: null);

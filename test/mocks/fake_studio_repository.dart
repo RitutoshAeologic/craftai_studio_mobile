@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:craftai_studio_mobile/features/studio/domain/repositories/i_studio_repository.dart';
+import 'package:craftai_studio_mobile/features/studio/domain/models/ai_model_item.dart';
 import 'package:craftai_studio_mobile/features/studio/domain/models/prompt_expand_model.dart';
 import 'package:craftai_studio_mobile/features/studio/domain/models/prompt_compile_model.dart';
 import 'package:craftai_studio_mobile/features/studio/domain/models/generation_dispatch_model.dart';
@@ -38,6 +39,10 @@ class FakeStudioRepository implements IStudioRepository {
   Future<StudioResult<String>> removeBackground({required String imageUrl}) async => (data: null, failure: null);
 
   @override
+  Future<StudioResult<List<AiModelItem>>> fetchModels() async =>
+      (data: AiModelItem.defaultSeedCatalog, failure: null);
+
+  @override
   Future<StudioResult<GenerationDispatchModel>> dispatchGeneration({
     required String prompt,
     String? characterId,
@@ -49,6 +54,9 @@ class FakeStudioRepository implements IStudioRepository {
     int height = 1024,
     String? model,
     String? remixedFromPromptId,
+    String? quality,
+    bool enhancePrompt = false,
+    String? idempotencyKey,
   }) async => (data: null, failure: null);
 
   @override
@@ -132,6 +140,8 @@ class FakeStudioRepository implements IStudioRepository {
     String language = 'Auto',
     String quality = '1k',
     String? userId,
+    Map<String, dynamic>? layoutTemplate,
+    String exportFormat = 'png',
   }) async => (data: null, failure: null);
 
   @override

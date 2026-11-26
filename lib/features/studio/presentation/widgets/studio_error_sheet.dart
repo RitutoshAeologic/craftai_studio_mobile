@@ -23,17 +23,20 @@ class StudioErrorSheet extends StatelessWidget {
     required this.failure,
     required this.refundedCredits,
     required this.onRetry,
+    this.onSwitchToAuto,
   });
 
   final StudioFailure failure;
   final double refundedCredits;
   final VoidCallback onRetry;
+  final VoidCallback? onSwitchToAuto;
 
   /// Convenience launcher to present the error modal.
   static void show({
     required StudioFailure failure,
     required double refundedCredits,
     required VoidCallback onRetry,
+    VoidCallback? onSwitchToAuto,
   }) {
     if (Platform.environment.containsKey('FLUTTER_TEST') && Get.context == null) {
       return;
@@ -43,6 +46,7 @@ class StudioErrorSheet extends StatelessWidget {
         failure: failure,
         refundedCredits: refundedCredits,
         onRetry: onRetry,
+        onSwitchToAuto: onSwitchToAuto,
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -231,11 +235,19 @@ class StudioErrorSheet extends StatelessWidget {
                 SizedBox(width: AppDimens.spacingMd),
                 Expanded(
                   child: AppButton(
-                    label: 'Retry',
-                    icon: Icon(Icons.refresh_rounded, color: Colors.white, size: 18.sp),
+                    label: onSwitchToAuto != null ? 'Use Auto' : 'Retry',
+                    icon: Icon(
+                      onSwitchToAuto != null ? Icons.auto_awesome_rounded : Icons.refresh_rounded,
+                      color: Colors.white,
+                      size: 18.sp,
+                    ),
                     onPressed: () {
                       Get.back();
-                      onRetry();
+                      if (onSwitchToAuto != null) {
+                        onSwitchToAuto!();
+                      } else {
+                        onRetry();
+                      }
                     },
                   ),
                 ),

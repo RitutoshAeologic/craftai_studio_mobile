@@ -546,6 +546,8 @@ class ToolsController extends GetxController {
     String? theme,
     String language = 'Auto',
     String quality = '1k',
+    Map<String, dynamic>? layoutTemplate,
+    String exportFormat = 'png',
   }) async {
     final cost = quality == '1k' ? 10.0 : 14.0;
     if (!_preflightCheck(requiredCredits: cost)) return null;
@@ -569,6 +571,8 @@ class ToolsController extends GetxController {
         theme: theme,
         language: language,
         quality: quality,
+        layoutTemplate: layoutTemplate,
+        exportFormat: exportFormat,
       );
 
       if (result.data != null && result.data!.isNotEmpty) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import '../../domain/failures/studio_failure.dart';
+import '../../domain/models/ai_model_item.dart';
 import '../../domain/models/prompt_expand_model.dart';
 import '../../domain/models/prompt_compile_model.dart';
 import '../../domain/models/generation_dispatch_model.dart';
@@ -116,6 +117,21 @@ class StudioRepositoryImpl implements IStudioRepository {
   }
 
   @override
+  Future<StudioResult<List<AiModelItem>>> fetchModels() async {
+    try {
+      final models = await _remoteDataSource.fetchModels();
+      AppLogger.s('Loaded ${models.length} models from /api/v1/models', tag: 'STUDIO_REPO');
+      return (data: models, failure: null);
+    } on DioException catch (e) {
+      AppLogger.w('fetchModels API exception (${e.type}): ${e.message}', tag: 'STUDIO_REPO');
+      return (data: null, failure: _mapDioException(e));
+    } catch (e, st) {
+      AppLogger.e('Unexpected error fetching models', tag: 'STUDIO_REPO', error: e, stackTrace: st);
+      return (data: null, failure: StudioUnknownFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<StudioResult<GenerationDispatchModel>> dispatchGeneration({
     required String prompt,
     String? characterId,
@@ -127,6 +143,9 @@ class StudioRepositoryImpl implements IStudioRepository {
     int height = 1024,
     String? model,
     String? remixedFromPromptId,
+    String? quality,
+    bool enhancePrompt = false,
+    String? idempotencyKey,
   }) async {
     try {
       final data = await _remoteDataSource.dispatchGeneration(
@@ -140,6 +159,9 @@ class StudioRepositoryImpl implements IStudioRepository {
         height: height,
         model: model,
         remixedFromPromptId: remixedFromPromptId,
+        quality: quality,
+        enhancePrompt: enhancePrompt,
+        idempotencyKey: idempotencyKey,
       );
       AppLogger.s('Generation dispatched: taskId=${data.taskId} | Tier=${data.tier} | DirectUrl=${data.directImageUrl}', tag: 'STUDIO_REPO');
       return (data: data, failure: null);
@@ -348,6 +370,8 @@ class StudioRepositoryImpl implements IStudioRepository {
     String language = 'Auto',
     String quality = '1k',
     String? userId,
+    Map<String, dynamic>? layoutTemplate,
+    String exportFormat = 'png',
   }) async {
     try {
       final res = await _remoteDataSource.generateMarketingPoster(
@@ -362,6 +386,8 @@ class StudioRepositoryImpl implements IStudioRepository {
         language: language,
         quality: quality,
         userId: userId,
+        layoutTemplate: layoutTemplate,
+        exportFormat: exportFormat,
       );
       final outUrl = res['output_url'] as String? ?? res['image_url'] as String? ?? '';
       return (data: outUrl, failure: null);

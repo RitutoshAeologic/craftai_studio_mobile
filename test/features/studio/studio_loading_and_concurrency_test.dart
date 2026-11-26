@@ -47,6 +47,9 @@ class MockControlledStudioRepository extends FakeStudioRepository {
     int height = 1024,
     String? model,
     String? remixedFromPromptId,
+    String? quality,
+    bool enhancePrompt = false,
+    String? idempotencyKey,
   }) async {
     if (shouldFail) {
       return (
@@ -170,9 +173,9 @@ void main() {
 
       // 4. Verify no secondary task can execute during loading
       // E.g., changing model or aspect ratio is blocked by isBusy
-      expect(studioController.selectedModel.value, 'flux');
-      studioController.setModel('chatgpt');
-      expect(studioController.selectedModel.value, 'flux',
+      expect(studioController.selectedModel.value, 'auto');
+      studioController.setModel('local_sdxl');
+      expect(studioController.selectedModel.value, 'auto',
           reason: 'Model selection must be blocked while studio is busy');
 
       // Tapping enhance during generation is blocked

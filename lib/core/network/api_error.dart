@@ -47,6 +47,14 @@ class RateLimitException extends AppNetworkException {
   ]) : super(code: 'RATE_LIMIT_429', statusCode: statusCode);
 }
 
+/// Billing Layer: 402 Insufficient Credits / Wallet Top-Up required.
+class InsufficientCreditsException extends AppNetworkException {
+  const InsufficientCreditsException([
+    super.message = 'Insufficient credits. Please top up your wallet to continue.',
+    int? statusCode = 402,
+  ]) : super(code: 'INSUFFICIENT_CREDITS_402', statusCode: statusCode);
+}
+
 /// Backend Application Layer: 400, 422, or 500 response from FastAPI business logic.
 class ServerException extends AppNetworkException {
   final dynamic responseData;

@@ -1059,10 +1059,7 @@ class CreationStudioView extends StatelessWidget {
           GestureDetector(
             onTap: () => StudioModelSheet.show(context),
             child: Obx(() {
-              final m = controller.availableModels.firstWhere(
-                (mod) => mod['id'] == controller.selectedModel.value,
-                orElse: () => controller.availableModels.first,
-              );
+              final m = controller.selectedModelItem;
               return Container(
                 margin: EdgeInsets.only(right: AppDimens.spacingSm),
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
@@ -1078,7 +1075,7 @@ class CreationStudioView extends StatelessWidget {
                         size: 14.sp, color: AppColors.primary),
                     SizedBox(width: 5.w),
                     Text(
-                      m['name']!,
+                      m.displayName,
                       style: AppTextStyles.captionBold
                           .copyWith(color: AppColors.textPrimary),
                     ),

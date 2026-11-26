@@ -78,6 +78,8 @@ class MockCreativeToolsRepository extends FakeStudioRepository {
     String language = 'Auto',
     String quality = '1k',
     String? userId,
+    Map<String, dynamic>? layoutTemplate,
+    String exportFormat = 'png',
   }) async {
     lastProductName = productName;
     return (data: 'https://images.unsplash.com/mock-product-detail-result', failure: null);
@@ -146,6 +148,8 @@ class MockCreativeToolsRepository extends FakeStudioRepository {
     String language = 'Auto',
     String quality = '1k',
     String? userId,
+    Map<String, dynamic>? layoutTemplate,
+    String exportFormat = 'png',
   }) async {
     lastPosterTopic = topic;
     return (data: 'https://images.unsplash.com/mock-marketing-poster-result', failure: null);

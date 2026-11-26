@@ -44,6 +44,9 @@ class MockStudioRepository extends FakeStudioRepository {
     int height = 1024,
     String? model,
     String? remixedFromPromptId,
+    String? quality,
+    bool enhancePrompt = false,
+    String? idempotencyKey,
   }) async {
     return (
       data: const GenerationDispatchModel(

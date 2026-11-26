@@ -156,6 +156,48 @@ class StudioAdvancedSettingsSheet extends StatelessWidget {
               ),
             ),
 
+            SizedBox(height: AppDimens.vSpacingMd),
+
+            // Enhance Prompt on Dispatch Row
+            Container(
+              padding: EdgeInsets.all(AppDimens.spacingMd),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('AI Prompt Enhancement', style: AppTextStyles.bodyMediumBold),
+                        SizedBox(height: AppDimens.vSpacingXxs),
+                        Text(
+                          'Auto-expand freeform prompts via LLM on dispatch (skipped for templates)',
+                          style: AppTextStyles.captionXs.copyWith(color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: AppDimens.spacingSm),
+                  Obx(() {
+                    final isRemix = controller.remixedFromPromptId.value != null;
+                    return Switch.adaptive(
+                      value: isRemix ? false : controller.enhancePromptOnDispatch.value,
+                      activeThumbColor: AppColors.primary,
+                      activeTrackColor: AppColors.primary.withValues(alpha: 0.3),
+                      onChanged: (isRemix || controller.isBusy)
+                          ? null
+                          : (val) => controller.enhancePromptOnDispatch.value = val,
+                    );
+                  }),
+                ],
+              ),
+            ),
+
             SizedBox(height: AppDimens.vSpacingXl),
           ],
         ),
