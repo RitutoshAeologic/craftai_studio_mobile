@@ -25,7 +25,6 @@ class ProfileView extends StatelessWidget {
       final activePreset = themeController.currentPreset.value;
 
       return Scaffold(
-        key: ValueKey('profile_scaffold_${activePreset.name}'),
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.background,
@@ -432,7 +431,7 @@ class ProfileView extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                if (preset == AppThemePreset.luminousAurora) ...[
+                                if (isSelected) ...[
                                   SizedBox(width: 6.w),
                                   Container(
                                     padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),

@@ -87,7 +87,7 @@ void main() {
       expect(find.text('2.0 Credits'), findsOneWidget);
 
       // Verify Sticky Ergonomic Bottom Bar
-      expect(find.text('Remix in Lab'), findsOneWidget);
+      expect(find.text('Remix in Lab (Chat)'), findsOneWidget);
       expect(find.text('Save'), findsOneWidget);
       expect(find.text('Use Ref'), findsOneWidget);
       expect(find.text('Share'), findsOneWidget);
@@ -216,7 +216,7 @@ void main() {
       // Verifies navigation to ExploreImageDetailView
       expect(find.byType(ExploreImageDetailView), findsOneWidget);
       expect(find.text('Prompt Recipe'), findsOneWidget);
-      expect(find.text('Remix in Lab'), findsOneWidget);
+      expect(find.text('Remix in Lab (Chat)'), findsOneWidget);
     });
 
     testWidgets('Clicking category badge on ExploreCardWidget navigates to ExploreCategoryView', (tester) async {

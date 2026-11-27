@@ -1105,16 +1105,19 @@ class StudioController extends GetxController with WidgetsBindingObserver {
     }
     final modelLower = template.modelUsed.toLowerCase();
     if (modelLower.contains('flux')) {
-      final hasLiveFlux = catalogModels.any(
-        (m) => (m.modelKey == 'flux_pulid_facelock' || m.modelKey == 'flux_schnell') && m.isAvailable,
+      final hasFaceLock = catalogModels.any(
+        (m) => m.modelKey == 'flux_pulid_facelock' && m.isAvailable,
       );
-      selectedModel.value = hasLiveFlux ? 'flux_pulid_facelock' : 'flux';
-    } else if (modelLower.contains('gemini')) {
-      selectedModel.value = 'gemini';
-    } else if (modelLower.contains('chatgpt') || modelLower.contains('dall')) {
-      selectedModel.value = 'chatgpt';
-    } else if (template.modelUsed.isNotEmpty) {
-      selectedModel.value = template.modelUsed;
+      selectedModel.value = hasFaceLock ? 'flux_pulid_facelock' : 'auto';
+    } else {
+      final availableMatch = catalogModels.firstWhereOrNull(
+        (m) =>
+            m.isAvailable &&
+            m.supportsTask('face_lock_remix') &&
+            (m.modelKey.toLowerCase() == modelLower ||
+                m.displayName.toLowerCase() == modelLower),
+      );
+      selectedModel.value = availableMatch?.modelKey ?? 'auto';
     }
 
     // 6. Provide instant feedback toast

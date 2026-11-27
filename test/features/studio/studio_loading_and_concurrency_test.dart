@@ -133,6 +133,7 @@ void main() {
     setUp(() {
       Get.reset();
       shellController = Get.put(ShellController());
+      shellController.userCredits.value = 500.0;
       Get.put(LibraryController());
       repository = MockControlledStudioRepository();
       studioController = Get.put(StudioController(repository: repository));

@@ -39,6 +39,14 @@ class _HomeShellViewState extends State<HomeShellView> {
     _fabKey = GlobalKey<ExpandableNavigationFabState>();
   }
 
+  static const List<Widget> _screens = [
+    ExploreFeedView(),
+    CreationStudioView(),
+    AiToolsView(),
+    CloudLibraryView(),
+    ProfileView(),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final ShellController controller = Get.put(ShellController());
@@ -80,31 +88,13 @@ class _HomeShellViewState extends State<HomeShellView> {
         SystemNavigator.pop();
       },
       child: Obx(() {
-        final activePreset = themeController.currentPreset.value;
-
-        final List<Widget> screens = [
-          KeyedSubtree(
-              key: ValueKey('explore_${activePreset.name}'),
-              child: const ExploreFeedView()),
-          KeyedSubtree(
-              key: ValueKey('studio_${activePreset.name}'),
-              child: const CreationStudioView()),
-          KeyedSubtree(
-              key: ValueKey('tools_${activePreset.name}'),
-              child: const AiToolsView()),
-          KeyedSubtree(
-              key: ValueKey('library_${activePreset.name}'),
-              child: const CloudLibraryView()),
-          KeyedSubtree(
-              key: ValueKey('profile_${activePreset.name}'),
-              child: const ProfileView()),
-        ];
+        // Subscribe to active preset so themed surfaces repaint without destroying IndexedStack state
+        themeController.currentPreset.value;
 
         final topPadding = MediaQuery.paddingOf(context).top;
         final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
         return Scaffold(
-          key: ValueKey('shell_$activePreset'),
           extendBody: true,
           backgroundColor: AppColors.background,
           appBar: PreferredSize(
@@ -251,9 +241,8 @@ class _HomeShellViewState extends State<HomeShellView> {
               LuminousMeshCanvas(
                 showOrbs: AppColors.showAuroraOrbs,
                 child: IndexedStack(
-                  key: ValueKey('stack_$activePreset'),
                   index: controller.currentIndex.value,
-                  children: screens,
+                  children: _screens,
                 ),
               ),
               ExpandableNavigationFab(

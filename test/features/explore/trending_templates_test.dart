@@ -71,9 +71,9 @@ void main() {
         contains(template.fullPrompt),
       );
 
-      // 5. Check aspect ratio and model sync
+      // 5. Check aspect ratio and safe model fallback to 'auto' when paid Face-Lock key is unavailable
       expect(studioController.selectedAspectRatio.value, '9:16');
-      expect(studioController.selectedModel.value, 'flux');
+      expect(studioController.selectedModel.value, 'auto');
     });
 
     test('startTemplateRemixGeneration handles encrypted recipe with maskedSummary fallback', () async {

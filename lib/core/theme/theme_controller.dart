@@ -1,10 +1,13 @@
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_colors.dart';
 import 'app_theme.dart';
 
 class ThemeController extends GetxController {
   static ThemeController get to => Get.find<ThemeController>();
+
+  static const String _themePrefKey = 'craftai_theme_preset';
 
   final Rx<AppThemePreset> currentPreset = AppThemePreset.luminousAurora.obs;
 
@@ -12,6 +15,26 @@ class ThemeController extends GetxController {
   void onInit() {
     super.onInit();
     currentPreset.value = AppColors.currentPreset;
+    loadSavedTheme();
+  }
+
+  /// Restores persisted theme preset from [SharedPreferences] if present.
+  Future<void> loadSavedTheme() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedName = prefs.getString(_themePrefKey);
+      if (savedName == null || savedName.isEmpty) return;
+
+      final match = AppThemePreset.values.firstWhereOrNull((p) => p.name == savedName);
+      if (match != null && match != currentPreset.value) {
+        AppColors.applyPreset(match);
+        currentPreset.value = match;
+        if (Get.isRegistered<ThemeController>()) {
+          Get.changeTheme(AppTheme.getThemeForPreset(match));
+        }
+        update();
+      }
+    } catch (_) {}
   }
 
   void switchTheme(AppThemePreset preset) {
@@ -22,6 +45,14 @@ class ThemeController extends GetxController {
     currentPreset.value = preset;
     Get.changeTheme(AppTheme.getThemeForPreset(preset));
     update();
+    _persistTheme(preset);
+  }
+
+  Future<void> _persistTheme(AppThemePreset preset) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_themePrefKey, preset.name);
+    } catch (_) {}
   }
 
   String getPresetName(AppThemePreset preset) {

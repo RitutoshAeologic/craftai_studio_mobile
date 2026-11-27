@@ -9,6 +9,7 @@ import 'package:craftai_studio_mobile/features/studio/presentation/controllers/s
 import 'package:craftai_studio_mobile/features/library/views/cloud_library_view.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/library_controller.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/collection_controller.dart';
+import 'package:craftai_studio_mobile/data/models/collection_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:craftai_studio_mobile/features/explore/controllers/explore_controller.dart';
 import 'package:craftai_studio_mobile/features/auth/data/auth_repository.dart';
@@ -221,7 +222,27 @@ void main() {
       Get.reset();
       Get.put(ShellController());
       Get.put(LibraryController());
-      Get.put(CollectionController());
+      final colCtrl = Get.put(CollectionController());
+      colCtrl.collections.assignAll([
+        CollectionModel(
+          id: 'col_fav',
+          name: 'Favorites',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        CollectionModel(
+          id: 'col_cyber',
+          name: 'Cyberpunk & Sci-Fi',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        CollectionModel(
+          id: 'col_chars',
+          name: 'Character References',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      ]);
     });
 
     tearDown(() {

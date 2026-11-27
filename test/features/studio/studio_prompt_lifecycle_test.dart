@@ -123,7 +123,8 @@ void main() {
 
     setUp(() {
       Get.reset();
-      Get.put(ShellController());
+      final shellCtrl = Get.put(ShellController());
+      shellCtrl.userCredits.value = 500.0;
       Get.put(LibraryController());
       studioController = Get.put(
         StudioController(repository: MockLifecycleStudioRepository()),
@@ -170,7 +171,7 @@ void main() {
 
       // Assert Stage 3: What Sent for Generation is the secret Gemini master recipe!
       expect(studioController.lastDispatchedPrompt.value, 'Refined visual masterpiece anime clouds, 8K');
-      expect(studioController.lastDispatchedModel.value, 'flux');
+      expect(studioController.lastDispatchedModel.value, 'auto');
       expect(studioController.lastDispatchedDimensions.value, '1024x1024 (1:1)');
 
       // Assert UI text still remains clean user draft

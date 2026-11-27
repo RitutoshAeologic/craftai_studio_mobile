@@ -10,6 +10,7 @@ import 'package:craftai_studio_mobile/features/explore/widgets/image_details_bot
 import 'package:craftai_studio_mobile/features/explore/widgets/filter_bottom_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/widgets/save_to_collection_sheet.dart';
 import 'package:craftai_studio_mobile/features/library/controllers/collection_controller.dart';
+import 'package:craftai_studio_mobile/data/models/collection_model.dart';
 
 void main() {
   setUp(() {
@@ -162,6 +163,15 @@ void main() {
 
   group('SaveToCollectionSheet Tests', () {
     testWidgets('SaveToCollectionSheet renders title and create folder action', (tester) async {
+      final colCtrl = Get.find<CollectionController>();
+      colCtrl.collections.assignAll([
+        CollectionModel(
+          id: 'col_fav',
+          name: 'Favorites',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      ]);
       await tester.pumpWidget(createTestWidget(const SaveToCollectionSheet(
         itemId: 'test_card_1',
         imageUrl: 'https://example.com/ronin.jpg',

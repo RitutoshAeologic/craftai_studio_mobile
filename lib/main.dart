@@ -24,7 +24,8 @@ void main() async {
   // Register AuthController as permanent — alive for the full app session.
   // Every auth screen calls Get.find<AuthController>() instead of Get.put().
   Get.put(AuthController(), permanent: true);
-  Get.put(ThemeController(), permanent: true);
+  final themeController = Get.put(ThemeController(), permanent: true);
+  await themeController.loadSavedTheme();
 
   // Global repository bindings for studio & tools features
   Get.lazyPut<IStudioRepository>(() => StudioRepositoryImpl());
@@ -43,11 +44,12 @@ class CraftAIStudioApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
+        final activePreset = ThemeController.to.currentPreset.value;
         return GetMaterialApp(
           title: AppStrings.appName,
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.lightTheme,
+          theme: AppTheme.getThemeForPreset(activePreset),
+          darkTheme: AppTheme.getThemeForPreset(activePreset),
           themeMode: ThemeMode.light,
           initialRoute: AppRoutes.splash,
           getPages: AppPages.pages,

@@ -116,6 +116,7 @@ void main() {
     setUp(() {
       Get.reset();
       shellController = Get.put(ShellController());
+      shellController.userCredits.value = 500.0;
       Get.put(LibraryController());
       studioController = Get.put(
         StudioController(repository: FailingStudioRepository()),

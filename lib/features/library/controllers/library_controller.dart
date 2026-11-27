@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:craftai_studio_mobile/core/constants/app_colors.dart';
+import 'package:craftai_studio_mobile/core/services/supabase_service.dart';
 import 'package:craftai_studio_mobile/core/utils/app_logger.dart';
 import 'package:craftai_studio_mobile/data/models/job_model.dart';
 import 'package:craftai_studio_mobile/features/shell/controllers/shell_controller.dart';
@@ -71,7 +72,9 @@ class LibraryController extends GetxController {
       );
 
       if (isRefresh) {
-        myCreations.assignAll(loaded);
+        if (loaded.isNotEmpty || SupabaseService.instance.currentUser != null) {
+          myCreations.assignAll(loaded);
+        }
       } else {
         final existingIds = myCreations.map((j) => j.jobId).toSet();
         final newItems = loaded.where((j) => !existingIds.contains(j.jobId)).toList();

@@ -49,7 +49,9 @@ class ExploreCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ExploreController controller = Get.find<ExploreController>();
+    final ExploreController controller = Get.isRegistered<ExploreController>()
+        ? Get.find<ExploreController>()
+        : Get.put(ExploreController());
 
     return BouncyTap(
       onTap: () {
